@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, Globe, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
-import BeeIcon from '@/components/ui/BeeIcon';
+import FlyIcon from '@/components/ui/FlyIcon';
 import styles from './TopBar.module.scss';
 
 interface TopBarProps {
@@ -50,7 +50,7 @@ export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarPr
 
       <div className={styles.topbar__title} aria-live="polite">
         <span>{projectName}</span>
-        <BeeIcon size={22} />
+        <FlyIcon size={22} />
       </div>
 
       <div className={styles.topbar__actions}>

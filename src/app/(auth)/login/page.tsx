@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { login } from '@/services/auth.service';
 import { useAuthStore } from '@/store/useAuthStore';
+import FlyIcon from '@/components/ui/FlyIcon';
 import styles from './Login.module.scss';
 
 // Local schema — only shape-validates the inputs; real auth happens in the service.
@@ -51,6 +52,7 @@ export default function LoginPage() {
       <div className={styles.login__card}>
         <div className={styles.login__header}>
           <span className={styles.login__logo} aria-label="Spybee">
+            <FlyIcon size={28} />
             Spybee
           </span>
           <h1 className={styles.login__title}>Gestión de Incidencias</h1>

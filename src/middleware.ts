@@ -28,7 +28,8 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Match everything except Next.js internals and static assets.
+// Match everything except Next.js internals, static assets and the
+// generated icon/OG-image routes (favicon.ico, icon.svg, opengraph-image).
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|public/).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.svg|opengraph-image|public/).*)'],
 };
