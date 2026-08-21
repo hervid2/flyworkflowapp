@@ -13,7 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Spybee — Gestión de Incidencias',
+  title: 'FlyWorkFlow — Gestión de Incidencias',
   description: 'Módulo de gestión de incidencias para proyectos de construcción.',
 };
 

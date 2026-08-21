@@ -1,8 +1,8 @@
 'use client';
 /**
- * Top filter bar of the map view, recreating the Spybee toolbar: a date picker
- * and a "last visits" slider bound to the map filters store. The Compare/BIM
- * buttons are presentational placeholders matching the reference UI.
+ * Top filter bar of the map view: a date picker and a "last visits" slider
+ * bound to the map filters store. The Compare/BIM buttons are presentational
+ * placeholders.
  */
 import { PanelLeft, Filter } from 'lucide-react';
 import { format, parse } from 'date-fns';

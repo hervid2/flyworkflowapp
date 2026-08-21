@@ -1,5 +1,6 @@
 {
-  "name": "spybee-incidencias",
+  "name": "flyworkflow-incidencias",
+  "description": "Frontend de gestión de incidencias para proyectos de construcción.",
   "version": "0.1.0",
   "private": true,
   "scripts": {

@@ -20,9 +20,9 @@ import { useModalStore } from '@/store/useModalStore';
 import styles from './MapToolbar.module.scss';
 
 /**
- * Floating map toolbar replicating the Spybee chrome. Two controls are wired:
- * the 2D/3D projection toggle (filters store) and the "create incident" action
- * (modal store); the remaining icon buttons are presentational placeholders.
+ * Floating map toolbar. Two controls are wired: the 2D/3D projection toggle
+ * (filters store) and the "create incident" action (modal store); the
+ * remaining icon buttons are presentational placeholders.
  */
 export default function MapToolbar() {
   const is3D = useFiltersStore((s) => s.is3D);

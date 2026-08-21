@@ -9,7 +9,7 @@
 
 ---
 
-## Phase 0 — Documentation and process foundations _(in progress)_
+## Phase 0 — Documentation and process foundations _(complete)_
 
 **F0.1 — `docs/bootstrap-roadmap`**
 Goal: create the documentation and tooling scaffold that governs the rest of the roadmap.

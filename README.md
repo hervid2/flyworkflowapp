@@ -1,6 +1,6 @@
-# Spybee — Gestión de Incidencias
+# FlyWorkFlow — Gestión de Incidencias
 
-Frontend para el módulo de gestión de incidencias de Spybee.
+Frontend para el módulo de gestión de incidencias de FlyWorkFlow.
 
 > **Demo en producción →** _enlace de Vercel a añadir tras el primer deploy a `main`_
 >
@@ -64,7 +64,7 @@ Formulario completo validado con React Hook Form + Zod:
 ### Autenticación
 
 - Formulario de login validado con Zod.
-- Sesión en cookie (`spybee-session`) gestionada por `useAuthStore` (Zustand + `persist`).
+- Sesión en cookie (`flyworkflow-session`) gestionada por `useAuthStore` (Zustand + `persist`).
 - `middleware.ts` protege todas las rutas bajo `/mapa` y `/dashboard`.
 
 ---
@@ -93,7 +93,7 @@ Formulario completo validado con React Hook Form + Zod:
 ## Arquitectura
 
 ```text
-spybee-incidencias/
+flyworkflow-incidencias/
 ├── .github/workflows/
 │   ├── ci.yml               # Lint → type-check → test → build → E2E
 │   └── deploy.yml           # Deploy a Vercel en push a main
@@ -163,7 +163,7 @@ page.tsx (Server Component)
 
 ```bash
 git clone <url-del-repositorio>
-cd spybee-incidencias
+cd flyworkflow-incidencias
 npm install
 cp .env.example .env.local
 # Edita .env.local y añade tu NEXT_PUBLIC_MAPBOX_TOKEN

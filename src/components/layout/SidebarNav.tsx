@@ -30,7 +30,7 @@ interface NavItem {
 }
 
 // Primary destinations; only /dashboard and /mapa are implemented, the rest
-// mirror the reference Spybee UI as navigational placeholders.
+// are navigational placeholders for future routes.
 const mainNavItems: NavItem[] = [
   { href: '/', icon: <Home size={20} />, label: 'Inicio' },
   { href: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },

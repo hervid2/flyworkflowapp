@@ -44,8 +44,8 @@ export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarPr
 
   return (
     <header className={styles.topbar} role="banner">
-      <Link href="/" className={styles.topbar__logo} aria-label="Spybee - Inicio">
-        <span className={styles['topbar__logo-text']}>Spybee</span>
+      <Link href="/" className={styles.topbar__logo} aria-label="FlyWorkFlow - Inicio">
+        <span className={styles['topbar__logo-text']}>FlyWorkFlow</span>
       </Link>
 
       <div className={styles.topbar__title} aria-live="polite">

@@ -50,8 +50,8 @@ export default function LoginPage() {
     <div className={styles.login} role="main">
       <div className={styles.login__card}>
         <div className={styles.login__header}>
-          <span className={styles.login__logo} aria-label="Spybee">
-            Spybee
+          <span className={styles.login__logo} aria-label="FlyWorkFlow">
+            FlyWorkFlow
           </span>
           <h1 className={styles.login__title}>Gestión de Incidencias</h1>
           <p className={styles.login__subtitle}>Inicia sesión para continuar</p>

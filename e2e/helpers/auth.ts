@@ -34,13 +34,13 @@ function buildAuthCookieValue() {
 export async function loginViaCookie(page: Page) {
   await page.context().addCookies([
     {
-      name: 'spybee-session',
+      name: 'flyworkflow-session',
       value: '1',
       url: 'http://localhost:3000',
       sameSite: 'Lax',
     },
     {
-      name: 'spybee-auth',
+      name: 'flyworkflow-auth',
       value: buildAuthCookieValue(),
       url: 'http://localhost:3000',
       sameSite: 'Lax',

@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
   }
 
   // No session cookie → bounce to login, remembering the intended path.
-  const session = request.cookies.get('spybee-session');
+  const session = request.cookies.get('flyworkflow-session');
   if (!session?.value) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('from', pathname);
