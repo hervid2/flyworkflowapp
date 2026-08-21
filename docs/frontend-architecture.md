@@ -1,0 +1,37 @@
+# Frontend Architecture — FlyWorkFlow
+
+> Reference document, versioned alongside the code. Last updated: 2026-08-20.
+> Describes the frontend **as it stands today** — the structure, not the history. `requirements.md §4` covers the target architecture (frontend + backend together); `data-model.md` and `api-contracts.md` cover what the backend still needs to become. `best-practices.md` sets the rules for new code; this document describes what's already true of the existing code, so `roadmap.md` Phase 2's frontend-only tasks have something concrete to point at instead of assuming the reader has already read every file.
+
+## Layers, from purest to most concrete
+
+| Layer            | Folder                | Role                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain models    | `domain/models/`      | Plain TypeScript interfaces (`Incident`, `DashboardFilters`, `MapFilters`, …). Zero framework dependencies, zero I/O. The single source of truth for what an "incident" or a "filter set" looks like — everything downstream derives its shape from these, and they're what `data-model.md`'s entities are migrated from.                                                                                                                   |
+| Domain selectors | `domain/selectors/`   | Pure functions that compute derived data — `dashboard-metrics.selector.ts` takes an incident array and a filter set and returns KPIs, chart series and risk indicators. No React, no fetching, no store access: plain data in, plain data out. Testable by calling the function directly, with no mocks.                                                                                                                                    |
+| Services         | `services/`           | The data-access layer (`incidents.service.ts`, `auth.service.ts`). Every function is `async`, returns a `Promise`, throws on failure, and takes/returns only `domain/models/` shapes — exactly the interface a real HTTP client would have. Today, internally, they read from a static mock dataset and an in-memory credential table instead of calling a network API.                                                                     |
+| Stores           | `store/`              | Zustand stores (`useIssuesStore`, `useFiltersStore`, `useModalStore`, `useAuthStore`, `useIncidentDetailStore`). Built as a per-request store factory wrapped in a React Context provider, not a single module-level instance — that's what keeps them safe under Next.js SSR, with no state leaking between requests or users on the server.                                                                                               |
+| Hooks            | `hooks/`              | The glue between store and selector. `useDashboardMetrics` is a thin `useMemo` wrapper that reads incidents and filters from the store and calls the pure selector, so every chart component only ever consumes numbers, never computes them. `useMapbox` owns the app's one real piece of imperative, side-effecting logic — the Mapbox GL instance lifecycle — isolated behind a hook so no component talks to the map instance directly. |
+| Components       | `components/`, `app/` | Organized by feature (`dashboard/`, `map/`, `modals/create-issue/`, `modals/incident-detail/`, `layout/`, `ui/`), split along the Server/Client boundary: `app/**/page.tsx` files are Server Components that call the `services/` layer and pass plain data down; interactive orchestrators (`DashboardView`, `MapaView`) are `'use client'` and own local UI state, but delegate every calculation to a hook or selector.                  |
+
+Validation sits at the form boundary (`lib/validators/issue-form.schema.ts`, Zod) rather than as its own layer — see `best-practices.md §TypeScript` and `§NestJS` for how it pairs with `class-validator` once the backend exists.
+
+## Why this shape
+
+- **Dependency only flows one way**: components depend on hooks and services, services depend on domain models, domain models depend on nothing. Nothing in `domain/` imports React, Zustand, or Next.js — that's what makes `dashboard-metrics.selector.ts` testable as plain function calls with no mocking required.
+- **`services/` is already shaped like a real API client, not like "load a JSON file"**: every function is async, returns a `Promise<Incident[]>` or throws — the same contract `api-contracts.md` defines for the eventual `GET /incidents`. This is the concrete form of the "dependency inversion already in place" principle from `requirements.md §4.2`: swapping `services/incidents.service.ts`'s internals from "read a static file" to "call the real API" is a change contained to that one file — no component, hook or store needs to change shape to absorb it.
+- **Client-side validation is UX, not the source of truth**: Zod validates the create-incident form for immediate feedback, matching where `class-validator` will validate the same shape again on the backend — the frontend was never designed to assume its own validation is sufficient once a real API exists behind it.
+
+## Known seams for the backend migration
+
+Where `roadmap.md` Phase 7 (frontend↔backend integration) actually touches this structure — named here so those tasks read as edits to a known seam, not a rewrite:
+
+- **`services/incidents.service.ts`** — today reads a static mock file (with a network fallback) and hand-filters soft-deleted rows client-side. F7.2 replaces the internals with real HTTP calls to `/incidents`; the exported function signatures (`getIncidents`, `getIncidentById`, `createIncident`) don't need to change, only what runs inside them.
+- **`services/auth.service.ts`** — today validates against an in-memory credential table and returns a random UUID as the session "token." F7.1 replaces both with a real `/auth/login` call and a real JWT, per `requirements.md §1.1`.
+- **`store/useIssuesStore.ts`** — today only supports adding a locally-built incident. F7.2 adds `updateIncident`/`removeIncident` once the backend supports more than create.
+- **`components/modals/create-issue/FileUploader.tsx`** — today turns files into local `blob:` URLs for preview. F7.3 adds the presigned-upload step in front of it (`api-contracts.md §Media`) without changing how the rest of the form consumes the resulting `Media` objects.
+
+## What this document deliberately doesn't cover
+
+- No chronological build history — that's not useful going forward, and none of the other `docs/` describe their subject that way either; this is a structural snapshot, not a log.
+- No line-by-line component inventory — that's what the code itself is for. This describes the shape, not the contents.
