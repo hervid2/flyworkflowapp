@@ -11,7 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useModalStore } from '@/store/useModalStore';
-import { createIncident } from '@/services/incidents.service';
+import { createIncident } from '@/services/create-incident.service';
 import { issueFormSchema, type IssueFormValues } from '@/lib/validators/issue-form.schema';
 import { INCIDENT_TYPES } from '@/lib/constants/incident-types';
 import { MOCK_USERS } from '@/lib/constants/mock-users';

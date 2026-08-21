@@ -69,12 +69,12 @@ Every functional requirement has a MoSCoW priority:
 
 ### 1.5 Collaboration and Notifications
 
-| Priority   | Requirement                                                                                                                                          |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Should     | In-app notifications (assignment, status change, approval); simple polling, no WebSocket.                                                            |
-| Should     | Invite collaborators to a project/organization — functional reinterpretation of the decorative "Share" button.                                       |
-| Could      | Comments and mentions within an incident.                                                                                                            |
-| Won't (v1) | Real-time chat, WhatsApp integration (although the `whatsappOwner` field already exists unused in the mock dataset, that integration isn't pursued). |
+| Priority   | Requirement                                                                                                                                                           |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Should     | In-app notifications (assignment, status change, approval); simple polling, no WebSocket.                                                                             |
+| Should     | Invite collaborators to a project/organization — functional reinterpretation of the decorative "Share" button.                                                        |
+| Could      | Comments and mentions within an incident.                                                                                                                             |
+| Won't (v1) | Real-time chat, WhatsApp integration — an unused `whatsappOwner` placeholder field was dropped from the mock dataset in Phase 1 since this integration isn't pursued. |
 
 ### 1.6 Multi-tenancy / Organizations
 

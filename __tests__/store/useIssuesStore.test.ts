@@ -18,7 +18,7 @@ const baseIncident: Incident = {
   status: 'open',
   approval: false,
   project: { id: 'proj-1', name: 'Proyecto Onboarding' },
-  owner: { id: 'u1', name: 'Julian Lozano', email: 'julian@spybee.com' },
+  owner: { id: 'u1', name: 'Julian Lozano', email: 'julian@example.com' },
   assignees: [],
   observers: [],
   coordinates: { lat: 4.710989, lng: -74.072092 },

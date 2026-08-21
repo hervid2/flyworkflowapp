@@ -199,11 +199,11 @@ npm run test:e2e      # Playwright E2E (requiere servidor activo en :3000)
 
 ## Credenciales de demo
 
-| Empresa             | Email                            | Contraseña        |
-| ------------------- | -------------------------------- | ----------------- |
-| Spybee (Superadmin) | `julian.lozano@spybee.io`        | `spybee123`       |
-| Constructora        | `mateo.soto@constructora.com`    | `constructora123` |
-| Prueba Empresa      | `carlos.lopez@pruebaempresa.com` | `prueba123`       |
+| Empresa                  | Email                                    | Contraseña        |
+| ------------------------ | ---------------------------------------- | ----------------- |
+| FlyWorkFlow (Superadmin) | `camila.rojas@flyworkflow.io`            | `flyworkflow123`  |
+| Constructora del Valle   | `diego.salazar@constructoradelvalle.com` | `constructora123` |
+| Grupo Meridiano          | `santiago.ibarra@grupomeridiano.com`     | `meridiano123`    |
 
 > Las credenciales están en `src/services/auth.service.ts`. Sustituir ese archivo por llamadas a un backend real no requiere cambios en componentes ni en el middleware.
 
