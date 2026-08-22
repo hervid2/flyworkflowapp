@@ -76,6 +76,8 @@ export interface Incident {
   closingDate: string | null;
   media: Media[];
   tags: Tag[];
+  /** Soft-delete flag: `true` puts the incident in the trash, `false`/`null` otherwise. */
+  deleted?: boolean | null;
   createdAt: string;
   updatedAt: string;
 }

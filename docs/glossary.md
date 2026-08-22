@@ -5,16 +5,15 @@
 
 ## Incident domain
 
-| Term              | Meaning                                                                                                                                                                                                          |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Incident**      | A geolocated field report (fault, finding, task) within a project. The product's central entity — see `data-model.md §Incident`.                                                                                 |
-| **owner**         | The user who created the incident. Different from `assignees` (who must resolve it) and `observers` (who only follow it).                                                                                        |
-| **status**        | Lifecycle state: `open` → `on_pause` → `closed`. Not to be confused with `approval`.                                                                                                                             |
-| **approval**      | Whether the incident was reviewed and approved by an authorized role. It's a workflow independent of `status` — an incident can be `closed` without being approved.                                              |
-| **deleted**       | Soft-delete flag. The record still exists in the database but is excluded from normal views; it lives in the trash until restored. Never a physical `DELETE`.                                                    |
-| **riskFilter**    | A quick filter on the dashboard's critical incidents table, with values like `overdueToday` (due today) or `staleSince7d` (no movement for 7+ days) — distinct from the general status/priority/company filters. |
-| **typeKey**       | The short key of an incident type from the catalog (e.g. `plumbing`), used for filtering and as a foreign key — the display name (`name`/`name_en`) is only for showing.                                         |
-| **whatsappOwner** | A field present in the current mock dataset but unused by any screen or endpoint. `roadmap.md` Phase 1 decides whether it's formalized or dropped before the real data model inherits it.                        |
+| Term           | Meaning                                                                                                                                                                                                          |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Incident**   | A geolocated field report (fault, finding, task) within a project. The product's central entity — see `data-model.md §Incident`.                                                                                 |
+| **owner**      | The user who created the incident. Different from `assignees` (who must resolve it) and `observers` (who only follow it).                                                                                        |
+| **status**     | Lifecycle state: `open` → `on_pause` → `closed`. Not to be confused with `approval`.                                                                                                                             |
+| **approval**   | Whether the incident was reviewed and approved by an authorized role. It's a workflow independent of `status` — an incident can be `closed` without being approved.                                              |
+| **deleted**    | Soft-delete flag. The record still exists in the database but is excluded from normal views; it lives in the trash until restored. Never a physical `DELETE`.                                                    |
+| **riskFilter** | A quick filter on the dashboard's critical incidents table, with values like `overdueToday` (due today) or `staleSince7d` (no movement for 7+ days) — distinct from the general status/priority/company filters. |
+| **typeKey**    | The short key of an incident type from the catalog (e.g. `plumbing`), used for filtering and as a foreign key — the display name (`name`/`name_en`) is only for showing.                                         |
 
 ## Authentication, organizations and permissions
 

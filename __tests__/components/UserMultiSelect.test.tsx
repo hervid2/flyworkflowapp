@@ -9,7 +9,7 @@ import UserMultiSelect from '@/components/modals/create-issue/UserMultiSelect';
 import type { MockUserWithCompany } from '@/lib/constants/mock-users';
 
 const USERS: MockUserWithCompany[] = [
-  { id: 'u1', name: 'Ana Gómez', email: 'ana@spybee.io', company: 'SPYBEE', role: 'QA' },
+  { id: 'u1', name: 'Ana Gómez', email: 'ana@example.com', company: 'ACME', role: 'QA' },
   {
     id: 'u2',
     name: 'Carlos López',
@@ -29,7 +29,7 @@ const USERS: MockUserWithCompany[] = [
 describe('UserMultiSelect', () => {
   it('renderiza los usuarios agrupados por compañía', () => {
     render(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />);
-    expect(screen.getByText('SPYBEE')).toBeInTheDocument();
+    expect(screen.getByText('ACME')).toBeInTheDocument();
     expect(screen.getByText('CONSTRUCTORA')).toBeInTheDocument();
     expect(screen.getByText('Ana Gómez')).toBeInTheDocument();
     expect(screen.getByText('Carlos López')).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe('UserMultiSelect', () => {
   it('filtra usuarios por compañía', () => {
     render(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />);
     fireEvent.change(screen.getByPlaceholderText('Buscar usuario...'), {
-      target: { value: 'SPYBEE' },
+      target: { value: 'ACME' },
     });
     expect(screen.getByText('Ana Gómez')).toBeInTheDocument();
     expect(screen.queryByText('Carlos López')).not.toBeInTheDocument();

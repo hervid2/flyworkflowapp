@@ -14,16 +14,16 @@ interface LoginResult {
 
 // Simulated credential store — password matches company convention.
 const CREDENTIALS: Record<string, string> = {
-  'julian.lozano@spybee.io': 'spybee123',
-  'julian.rico@spybee.io': 'spybee123',
-  'ana.gomez@spybee.io': 'spybee123',
-  'mateo.soto@constructora.com': 'constructora123',
-  'felipe.herrera@constructora.com': 'constructora123',
-  'sebastian.castro@constructora.com': 'constructora123',
-  'nicolas.fernandez@constructora.com': 'constructora123',
-  'valentina.ramirez@constructora.com': 'constructora123',
-  'carlos.lopez@pruebaempresa.com': 'prueba123',
-  'maria.torres@pruebaempresa.com': 'prueba123',
+  'diego.salazar@constructoradelvalle.com': 'constructora123',
+  'paula.restrepo@constructoradelvalle.com': 'constructora123',
+  'tomas.beltran@constructoradelvalle.com': 'constructora123',
+  'camilo.duarte@constructoradelvalle.com': 'constructora123',
+  'isabela.nieto@constructoradelvalle.com': 'constructora123',
+  'camila.rojas@flyworkflow.io': 'flyworkflow123',
+  'andres.vargas@flyworkflow.io': 'flyworkflow123',
+  'laura.mendez@flyworkflow.io': 'flyworkflow123',
+  'santiago.ibarra@grupomeridiano.com': 'meridiano123',
+  'valeria.cardenas@grupomeridiano.com': 'meridiano123',
 };
 
 /**

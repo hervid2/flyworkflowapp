@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "generate-mock-data": "tsx scripts/generate-mock-data.ts",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -59,6 +60,7 @@
     "jsdom": "^29.1.1",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.4",
+    "tsx": "^4.23.12",
     "typescript": "^5",
     "vitest": "^4.1.8"
   }

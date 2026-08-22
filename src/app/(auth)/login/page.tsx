@@ -136,13 +136,15 @@ export default function LoginPage() {
         <div className={styles.login__demo} aria-label="Credenciales de demostración">
           <p className={styles.login__demo_title}>Credenciales de demo</p>
           <div className={styles.login__demo_item}>
-            <span className={styles.login__demo_label}>Spybee</span>
-            <code className={styles.login__demo_code}>julian.lozano@spybee.io / spybee123</code>
+            <span className={styles.login__demo_label}>FlyWorkFlow</span>
+            <code className={styles.login__demo_code}>
+              camila.rojas@flyworkflow.io / flyworkflow123
+            </code>
           </div>
           <div className={styles.login__demo_item}>
-            <span className={styles.login__demo_label}>Constructora</span>
+            <span className={styles.login__demo_label}>Constructora del Valle</span>
             <code className={styles.login__demo_code}>
-              mateo.soto@constructora.com / constructora123
+              diego.salazar@constructoradelvalle.com / constructora123
             </code>
           </div>
         </div>
