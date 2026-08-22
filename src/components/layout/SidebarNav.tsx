@@ -20,7 +20,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
-import BeeIcon from '@/components/ui/BeeIcon';
+import FlyIcon from '@/components/ui/FlyIcon';
 import styles from './SidebarNav.module.scss';
 
 interface NavItem {
@@ -123,7 +123,7 @@ export default function SidebarNav({
 
       <div className={styles.sidebar__title} aria-hidden="true">
         <span>{projectName}</span>
-        <BeeIcon size={16} />
+        <FlyIcon size={16} />
       </div>
     </nav>
   );
