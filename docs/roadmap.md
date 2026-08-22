@@ -18,7 +18,7 @@ Commit: `docs: bootstrap docs/ scaffold and commit-push script`
 
 ---
 
-## Phase 1 — Brand identity and domain data
+## Phase 1 — Brand identity and domain data _(complete)_
 
 Blocks everything else: no later iteration should introduce code or copy inconsistent with the FlyWorkFlow identity. Runs before any fix or feature.
 

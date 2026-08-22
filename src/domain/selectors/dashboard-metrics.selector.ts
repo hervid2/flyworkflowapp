@@ -8,10 +8,7 @@ import { differenceInDays, isAfter, isBefore, parseISO, format, startOfDay } fro
 import type { Incident } from '../models/incident.model';
 import type { DashboardFilters } from '../models/filters.model';
 import type { DashboardMetrics } from '../models/dashboard-metrics.model';
-import { MOCK_USERS } from '@/lib/constants/mock-users';
-
-// Lookup table so company filters resolve in O(1) instead of scanning users.
-const USER_COMPANY_MAP = new Map(MOCK_USERS.map((u) => [u.id, u.company]));
+import { USER_COMPANY_MAP } from '@/lib/constants/mock-users';
 
 /** Resolves the active filter preset into a concrete `[from, to]` date range. */
 function getPeriodRange(filters: DashboardFilters): { from: Date; to: Date } {
