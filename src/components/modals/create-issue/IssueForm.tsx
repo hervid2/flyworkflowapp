@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useModalStore } from '@/store/useModalStore';
+import { useCategoriesStore } from '@/store/useCategoriesStore';
 import { createIncident } from '@/services/create-incident.service';
 import { issueFormSchema, type IssueFormValues } from '@/lib/validators/issue-form.schema';
 import { INCIDENT_TYPES } from '@/lib/constants/incident-types';
@@ -53,7 +54,10 @@ interface Props {
 export default function IssueForm({ onClose }: Props) {
   const addIncident = useIssuesStore((s) => s.addIncident);
   const openModal = useModalStore((s) => s.open);
+  const customTypes = useCategoriesStore((s) => s.customTypes);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+
+  const typeCatalog = [...INCIDENT_TYPES, ...customTypes];
 
   const {
     register,
@@ -84,7 +88,7 @@ export default function IssueForm({ onClose }: Props) {
 
   // Resolve selected ids back to full objects, build the DTO, persist, reset.
   const onSubmit = async (data: IssueFormValues) => {
-    const type = INCIDENT_TYPES.find((t) => t.id === data.typeId)!;
+    const type = typeCatalog.find((t) => t.id === data.typeId)!;
     const assignees = MOCK_USERS.filter((u) => (data.assigneeIds ?? []).includes(u.id));
     const observers = MOCK_USERS.filter((u) => (data.observerIds ?? []).includes(u.id));
     const tags = MOCK_TAGS.filter((t) => (data.tagIds ?? []).includes(t.id));
@@ -206,7 +210,7 @@ export default function IssueForm({ onClose }: Props) {
                 {...register('typeId')}
               >
                 <option value="">Seleccionar categoría...</option>
-                {INCIDENT_TYPES.map((t) => (
+                {typeCatalog.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
