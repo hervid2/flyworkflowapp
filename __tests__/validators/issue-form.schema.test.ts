@@ -24,6 +24,7 @@ const validBase = {
   description: 'Se detectó una fisura horizontal en el muro del piso 3',
   dueDate: tomorrow(),
   typeId: 'e05995817a9a9bf5c0298f7d',
+  projectId: '51ae14076884e5134d3afcde',
   priority: 'high' as const,
 };
 
@@ -112,6 +113,13 @@ describe('issueFormSchema', () => {
   describe('categoría', () => {
     it('rechaza typeId vacío', () => {
       const result = issueFormSchema.safeParse({ ...validBase, typeId: '' });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('proyecto', () => {
+    it('rechaza projectId vacío', () => {
+      const result = issueFormSchema.safeParse({ ...validBase, projectId: '' });
       expect(result.success).toBe(false);
     });
   });

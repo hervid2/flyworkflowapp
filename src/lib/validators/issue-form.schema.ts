@@ -33,6 +33,8 @@ export const issueFormSchema = z.object({
 
   typeId: z.string().min(1, 'La categoría es obligatoria'),
 
+  projectId: z.string().min(1, 'El proyecto es obligatorio'),
+
   priority: z.enum(['high', 'medium', 'low'], {
     error: () => ({ message: 'Selecciona una prioridad' }),
   }),

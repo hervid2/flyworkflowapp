@@ -121,6 +121,7 @@ const TYPES: IncidentType[] = [
   },
 ];
 
+// Ids/names match `lib/constants/projects.ts`, the catalog IssueForm.tsx offers.
 const PROJECTS: Project[] = [
   { id: '51ae14076884e5134d3afcde', name: 'Edificio Cedro Real - Etapa 1' },
   { id: 'e845fadb72b05dfd164a0f52', name: 'Conjunto Residencial Los Almendros' },
