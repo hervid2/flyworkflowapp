@@ -75,9 +75,8 @@ function toUserRef(u: (typeof MOCK_USERS)[number]): UserRef {
 }
 
 // ── Fixed catalogs ──────────────────────────────────────────────────────────
-// Ids/keys/names for the 11 already-selectable types match
-// `lib/constants/incident-types.ts` exactly; the other 4 exist only in this
-// dataset until F2.3 adds them to the selector.
+// Ids/keys/names match `lib/constants/incident-types.ts` exactly — same 15
+// types, kept in sync since F2.3 completed the selectable catalog.
 const TYPES: IncidentType[] = [
   { id: 'e05995817a9a9bf5c0298f7d', key: 'plumbing', name: 'Hidrosanitario', name_en: 'Plumbing' },
   {
