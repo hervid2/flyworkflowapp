@@ -10,7 +10,17 @@ import CreateIssueModal from '@/components/modals/create-issue/CreateIssueModal'
 import { createIssuesStore, IssuesStoreContext } from '@/store/useIssuesStore';
 import { useModalStore } from '@/store/useModalStore';
 import { useCategoriesStore } from '@/store/useCategoriesStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import type { ReactNode } from 'react';
+
+const TEST_USER = {
+  id: 'a3f7c1d8e6b94025f8a1c7d2',
+  name: 'Diego Salazar',
+  email: 'diego.salazar@constructoradelvalle.com',
+  avatarUrl: 'https://i.pravatar.cc/150?u=diego.salazar',
+  role: 'Ingeniero Civil',
+  company: 'CONSTRUCTORA DEL VALLE',
+};
 
 // ── Mapbox GL mock ────────────────────────────────────────────────────────────
 // Required because LocationPicker imports mapbox-gl and runs it inside useEffect.
@@ -118,11 +128,14 @@ function renderWithProviders(ui: ReactNode) {
 beforeEach(() => {
   // Open the create-issue modal so CreateIssueModal renders
   useModalStore.setState({ activeModal: 'create-issue' });
+  // IssueForm resolves the incident owner from the session
+  useAuthStore.setState({ user: TEST_USER, token: 'test-token', isAuthenticated: true });
 });
 
 afterEach(() => {
   useModalStore.setState({ activeModal: null });
   useCategoriesStore.setState({ customTypes: [] });
+  useAuthStore.setState({ user: null, token: null, isAuthenticated: false });
   vi.clearAllMocks();
 });
 
@@ -182,6 +195,9 @@ describe('CreateIssueModal — flujo de creación completo', () => {
     fireEvent.change(screen.getByLabelText(/categoría/i), {
       target: { value: 'e05995817a9a9bf5c0298f7d' }, // Hidrosanitario
     });
+    fireEvent.change(screen.getByLabelText(/proyecto/i), {
+      target: { value: '51ae14076884e5134d3afcde' }, // Edificio Cedro Real - Etapa 1
+    });
     // Priority already defaults to "media"
 
     await act(async () => {
@@ -196,6 +212,9 @@ describe('CreateIssueModal — flujo de creación completo', () => {
       expect(incidents).toHaveLength(1);
       expect(incidents[0].title).toBe('Fisura en muro sur');
       expect(incidents[0].status).toBe('open');
+      // Owner and project come from the session, not a hardcoded stand-in
+      expect(incidents[0].owner.id).toBe(TEST_USER.id);
+      expect(incidents[0].project.id).toBe('51ae14076884e5134d3afcde');
     });
   });
 
@@ -213,6 +232,9 @@ describe('CreateIssueModal — flujo de creación completo', () => {
     });
     fireEvent.change(screen.getByLabelText(/categoría/i), {
       target: { value: '074cf498175293d292634177' }, // Eléctrico
+    });
+    fireEvent.change(screen.getByLabelText(/proyecto/i), {
+      target: { value: 'e845fadb72b05dfd164a0f52' }, // Conjunto Residencial Los Almendros
     });
     fireEvent.change(screen.getByLabelText(/prioridad/i), {
       target: { value: 'high' },
@@ -276,6 +298,9 @@ describe('CreateIssueModal — gestor de categorías', () => {
     });
     fireEvent.change(screen.getByLabelText(/fecha de vencimiento/i), {
       target: { value: tomorrow() },
+    });
+    fireEvent.change(screen.getByLabelText(/proyecto/i), {
+      target: { value: '51ae14076884e5134d3afcde' }, // Edificio Cedro Real - Etapa 1
     });
 
     const select = screen.getByLabelText(/categoría/i) as HTMLSelectElement;

@@ -12,9 +12,11 @@ import { format } from 'date-fns';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useModalStore } from '@/store/useModalStore';
 import { useCategoriesStore } from '@/store/useCategoriesStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { createIncident } from '@/services/create-incident.service';
 import { issueFormSchema, type IssueFormValues } from '@/lib/validators/issue-form.schema';
 import { INCIDENT_TYPES } from '@/lib/constants/incident-types';
+import { PROJECTS } from '@/lib/constants/projects';
 import { MOCK_USERS } from '@/lib/constants/mock-users';
 import TagTreeSelect from './TagTreeSelect';
 import UserMultiSelect from './UserMultiSelect';
@@ -24,7 +26,7 @@ import FileUploader from './FileUploader';
 import type { Tag } from '@/domain/models';
 import styles from './IssueForm.module.scss';
 
-// Static demo data standing in for catalogs/session that a backend would supply.
+// Static demo data standing in for catalogs a backend would supply.
 const MOCK_TAGS: Tag[] = [
   { id: '4bf3f690ae021229ec15f203', name: 'Reproceso', color: '#EF4444' },
   { id: '2a544044d7c705a56d0cf6c5', name: 'Acabados', color: '#6366F1' },
@@ -36,15 +38,6 @@ const MOCK_TAGS: Tag[] = [
   { id: 'd1fa90ad0559f69ec34319e1', name: 'Garantía', color: '#14B8A6' },
 ];
 
-const MOCK_OWNER = {
-  id: 'spybee_u1',
-  name: 'Julian Lozano',
-  email: 'julian.lozano@spybee.io',
-  avatarUrl: 'https://i.pravatar.cc/150?u=julian.lozano',
-};
-
-const MOCK_PROJECT = { id: 'proj_onboarding', name: 'Proyecto Onboarding' };
-
 const TODAY = format(new Date(), 'yyyy-MM-dd');
 
 interface Props {
@@ -55,6 +48,7 @@ export default function IssueForm({ onClose }: Props) {
   const addIncident = useIssuesStore((s) => s.addIncident);
   const openModal = useModalStore((s) => s.open);
   const customTypes = useCategoriesStore((s) => s.customTypes);
+  const authUser = useAuthStore((s) => s.user);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
 
   const typeCatalog = [...INCIDENT_TYPES, ...customTypes];
@@ -74,6 +68,7 @@ export default function IssueForm({ onClose }: Props) {
       description: '',
       dueDate: '',
       typeId: '',
+      projectId: '',
       priority: 'medium',
       tagIds: [],
       assigneeIds: [],
@@ -89,6 +84,7 @@ export default function IssueForm({ onClose }: Props) {
   // Resolve selected ids back to full objects, build the DTO, persist, reset.
   const onSubmit = async (data: IssueFormValues) => {
     const type = typeCatalog.find((t) => t.id === data.typeId)!;
+    const project = PROJECTS.find((p) => p.id === data.projectId)!;
     const assignees = MOCK_USERS.filter((u) => (data.assigneeIds ?? []).includes(u.id));
     const observers = MOCK_USERS.filter((u) => (data.observerIds ?? []).includes(u.id));
     const tags = MOCK_TAGS.filter((t) => (data.tagIds ?? []).includes(t.id));
@@ -107,8 +103,8 @@ export default function IssueForm({ onClose }: Props) {
         locationDescription: data.locationDescription ?? null,
         media: mediaFiles,
       },
-      MOCK_OWNER,
-      MOCK_PROJECT,
+      authUser!,
+      project,
     );
 
     addIncident(incident);
@@ -230,6 +226,32 @@ export default function IssueForm({ onClose }: Props) {
               Gestionar categorías
             </button>
           </div>
+        </div>
+
+        {/* ── Proyecto ────────────────────────────────────────────────────────── */}
+        <div className={styles.field}>
+          <label htmlFor="issue-project" className={`${styles.label} ${styles['label--required']}`}>
+            Proyecto
+          </label>
+          <select
+            id="issue-project"
+            className={`${styles.select} ${errors.projectId ? styles['select--error'] : ''}`}
+            aria-describedby={errors.projectId ? 'issue-project-error' : undefined}
+            aria-invalid={!!errors.projectId}
+            {...register('projectId')}
+          >
+            <option value="">Seleccionar proyecto...</option>
+            {PROJECTS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          {errors.projectId && (
+            <p id="issue-project-error" className={styles.error} role="alert">
+              {errors.projectId.message}
+            </p>
+          )}
         </div>
 
         {/* ── Prioridad ───────────────────────────────────────────────────────── */}
