@@ -42,7 +42,7 @@ Commit: `feat: generate fictional mock dataset for the FlyWorkFlow domain`
 
 ---
 
-## Phase 2 — Technical debt and quick wins (frontend-only)
+## Phase 2 — Technical debt and quick wins (frontend-only) _(complete)_
 
 Parallelizable with Phase 3 (there's no real dependency between frontend fixes and backend scaffolding); listed in this order purely for reading clarity. See `frontend-architecture.md` for the layers and files these tasks operate on.
 
