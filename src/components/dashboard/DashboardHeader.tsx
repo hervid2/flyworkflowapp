@@ -4,6 +4,7 @@
  * "Filters" / "Create incident" actions. Reads/writes the active period in the
  * filters store and opens modals via the modal store.
  */
+import { useTranslations } from 'next-intl';
 import { Filter, Plus, ChevronRight } from 'lucide-react';
 import { format, subDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -13,12 +14,12 @@ import type { DashboardPeriod } from '@/domain/models/filters.model';
 import styles from './DashboardHeader.module.scss';
 
 // Selectable period presets shown as the quick-switch buttons.
-const PERIODS: { value: DashboardPeriod; label: string }[] = [
-  { value: '7d', label: 'Últ. 7 días' },
-  { value: '15d', label: 'Últ. 15 días' },
-  { value: '30d', label: 'Últ. 30 días' },
-  { value: '90d', label: 'Últ. 90 días' },
-  { value: '6m', label: 'Últ. 6 meses' },
+const PERIODS: { value: DashboardPeriod; labelKey: string }[] = [
+  { value: '7d', labelKey: 'headerPeriod7d' },
+  { value: '15d', labelKey: 'headerPeriod15d' },
+  { value: '30d', labelKey: 'headerPeriod30d' },
+  { value: '90d', labelKey: 'headerPeriod90d' },
+  { value: '6m', labelKey: 'headerPeriod6m' },
 ];
 
 /** Maps a period preset to a concrete date range (for the header label only). */
@@ -44,6 +45,7 @@ function formatDateRange(period: DashboardPeriod): string {
 }
 
 export default function DashboardHeader() {
+  const t = useTranslations('dashboard');
   const period = useFiltersStore((s) => s.dashboardFilters.period);
   const setDashboardFilters = useFiltersStore((s) => s.setDashboardFilters);
   const openModal = useModalStore((s) => s.open);
@@ -51,24 +53,24 @@ export default function DashboardHeader() {
   return (
     <header className={styles.header}>
       <div className={styles.top}>
-        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
-          <span className={styles.breadcrumb__item}>Mis Proyectos</span>
+        <nav className={styles.breadcrumb} aria-label={t('headerBreadcrumbAriaLabel')}>
+          <span className={styles.breadcrumb__item}>{t('headerMyProjects')}</span>
           <ChevronRight size={14} className={styles.breadcrumb__sep} aria-hidden />
           <span className={styles.breadcrumb__item}>Proyecto Onboarding</span>
           <ChevronRight size={14} className={styles.breadcrumb__sep} aria-hidden />
-          <span className={styles['breadcrumb__item--active']}>Incidencias</span>
+          <span className={styles['breadcrumb__item--active']}>{t('headerIncidents')}</span>
         </nav>
 
         <div className={styles.actions}>
           <div className={styles.period}>
-            {PERIODS.map(({ value, label }) => (
+            {PERIODS.map(({ value, labelKey }) => (
               <button
                 key={value}
                 className={`${styles.period__btn} ${period === value ? styles['period__btn--active'] : ''}`}
                 onClick={() => setDashboardFilters({ period: value })}
                 aria-pressed={period === value}
               >
-                {label}
+                {t(labelKey)}
               </button>
             ))}
           </div>
@@ -76,30 +78,27 @@ export default function DashboardHeader() {
           <button
             className={styles.btn}
             onClick={() => openModal('dashboard-filters')}
-            aria-label="Abrir filtros avanzados"
+            aria-label={t('headerOpenFiltersAriaLabel')}
           >
             <Filter size={16} />
-            <span>Filtros</span>
+            <span>{t('headerFilters')}</span>
           </button>
 
           <button
             className={`${styles.btn} ${styles['btn--primary']}`}
             onClick={() => openModal('create-issue')}
-            aria-label="Crear nueva incidencia"
+            aria-label={t('headerCreateIncidentAriaLabel')}
           >
             <Plus size={16} />
-            <span>Crear Incidencia</span>
+            <span>{t('headerCreateIncident')}</span>
           </button>
         </div>
       </div>
 
       <div className={styles.meta}>
-        <h1 className={styles.meta__title}>Incidencias</h1>
+        <h1 className={styles.meta__title}>{t('headerIncidents')}</h1>
         {period !== 'custom' && (
-          <span
-            className={styles.meta__range}
-            aria-label="Rango de fechas del período seleccionado"
-          >
+          <span className={styles.meta__range} aria-label={t('headerDateRangeAriaLabel')}>
             {formatDateRange(period)}
           </span>
         )}

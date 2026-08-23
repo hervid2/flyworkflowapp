@@ -4,6 +4,7 @@
  * counts. Acts as a controlled segmented filter: selecting a chip lifts the
  * choice to {@link DashboardView}, which narrows the critical-issues table.
  */
+import { useTranslations } from 'next-intl';
 import { AlertTriangle, Clock, Flame, CalendarClock } from 'lucide-react';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import styles from './RiskIndicators.module.scss';
@@ -19,25 +20,25 @@ export type RiskFilter =
 const CHIPS = [
   {
     key: 'overdueToday' as const,
-    label: 'Vencidas hoy',
+    labelKey: 'riskChipOverdueToday',
     icon: AlertTriangle,
     color: '#E5484D',
   },
   {
     key: 'staleSince7d' as const,
-    label: 'Sin actualizar 7d+',
+    labelKey: 'riskChipStaleSince7d',
     icon: Clock,
     color: '#F5A623',
   },
   {
     key: 'highPriorityOpen' as const,
-    label: 'Alta prioridad abiertas',
+    labelKey: 'riskChipHighPriorityOpen',
     icon: Flame,
     color: '#E5484D',
   },
   {
     key: 'dueWithin7d' as const,
-    label: 'Próximas a vencer (7d)',
+    labelKey: 'riskChipDueWithin7d',
     icon: CalendarClock,
     color: '#3B82F6',
   },
@@ -49,13 +50,14 @@ interface Props {
 }
 
 export default function RiskIndicators({ activeFilter, onFilterChange }: Props) {
+  const t = useTranslations('dashboard');
   const { risk } = useDashboardMetrics();
 
   return (
-    <section className={styles.section} aria-label="Indicadores de riesgo">
-      <h2 className={styles.title}>Indicadores de riesgo</h2>
+    <section className={styles.section} aria-label={t('riskTitle')}>
+      <h2 className={styles.title}>{t('riskTitle')}</h2>
       <div className={styles.chips}>
-        {CHIPS.map(({ key, label, icon: Icon, color }) => {
+        {CHIPS.map(({ key, labelKey, icon: Icon, color }) => {
           const count = risk[key];
           const isActive = activeFilter === key;
           return (
@@ -67,7 +69,7 @@ export default function RiskIndicators({ activeFilter, onFilterChange }: Props) 
               aria-pressed={isActive}
             >
               <Icon size={14} className={styles.chip__icon} aria-hidden />
-              <span className={styles.chip__label}>{label}</span>
+              <span className={styles.chip__label}>{t(labelKey)}</span>
               <span className={styles.chip__count}>{count}</span>
             </button>
           );

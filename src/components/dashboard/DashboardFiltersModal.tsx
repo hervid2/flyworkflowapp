@@ -5,6 +5,7 @@
  * store on "Apply", so the dashboard doesn't re-render on every keystroke.
  */
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { useModalStore } from '@/store/useModalStore';
 import { useFiltersStore } from '@/store/useFiltersStore';
@@ -13,24 +14,24 @@ import type { IncidentStatus, IncidentPriority } from '@/domain/models/incident.
 import { MOCK_USERS } from '@/lib/constants/mock-users';
 import styles from './DashboardFiltersModal.module.scss';
 
-const PERIODS: { value: DashboardPeriod; label: string }[] = [
-  { value: '7d', label: 'Últimos 7 días' },
-  { value: '15d', label: 'Últimos 15 días' },
-  { value: '30d', label: 'Últimos 30 días' },
-  { value: '90d', label: 'Últimos 90 días' },
-  { value: '6m', label: 'Últimos 6 meses' },
+const PERIODS: { value: DashboardPeriod; labelKey: string }[] = [
+  { value: '7d', labelKey: 'filtersModalPeriod7d' },
+  { value: '15d', labelKey: 'filtersModalPeriod15d' },
+  { value: '30d', labelKey: 'filtersModalPeriod30d' },
+  { value: '90d', labelKey: 'filtersModalPeriod90d' },
+  { value: '6m', labelKey: 'filtersModalPeriod6m' },
 ];
 
-const STATUSES: { value: IncidentStatus; label: string }[] = [
-  { value: 'open', label: 'Abierta' },
-  { value: 'on_pause', label: 'Pausada' },
-  { value: 'closed', label: 'Cerrada' },
+const STATUSES: { value: IncidentStatus; labelKey: string }[] = [
+  { value: 'open', labelKey: 'statusOpen' },
+  { value: 'on_pause', labelKey: 'statusOnPause' },
+  { value: 'closed', labelKey: 'statusClosed' },
 ];
 
-const PRIORITIES: { value: IncidentPriority; label: string }[] = [
-  { value: 'high', label: 'Alta' },
-  { value: 'medium', label: 'Media' },
-  { value: 'low', label: 'Baja' },
+const PRIORITIES: { value: IncidentPriority; labelKey: string }[] = [
+  { value: 'high', labelKey: 'priorityHigh' },
+  { value: 'medium', labelKey: 'priorityMedium' },
+  { value: 'low', labelKey: 'priorityLow' },
 ];
 
 const COMPANIES = Array.from(new Set(MOCK_USERS.map((u) => u.company)));
@@ -68,6 +69,7 @@ function ChipGroup<T extends string>({
 }
 
 export default function DashboardFiltersModal() {
+  const t = useTranslations('dashboard');
   const activeModal = useModalStore((s) => s.activeModal);
   const closeModal = useModalStore((s) => s.close);
   const dashboardFilters = useFiltersStore((s) => s.dashboardFilters);
@@ -95,45 +97,56 @@ export default function DashboardFiltersModal() {
   }
 
   return (
-    <div className={styles.overlay} role="dialog" aria-modal aria-label="Filtros del dashboard">
+    <div
+      className={styles.overlay}
+      role="dialog"
+      aria-modal
+      aria-label={t('filtersModalOverlayAriaLabel')}
+    >
       <div className={styles.modal}>
         <div className={styles.modal__header}>
-          <h2 className={styles.modal__title}>Filtros del dashboard</h2>
-          <button className={styles.modal__close} onClick={closeModal} aria-label="Cerrar filtros">
+          <h2 className={styles.modal__title}>{t('filtersModalTitle')}</h2>
+          <button
+            className={styles.modal__close}
+            onClick={closeModal}
+            aria-label={t('filtersModalCloseAriaLabel')}
+          >
             <X size={18} />
           </button>
         </div>
 
         <div className={styles.modal__body}>
           <fieldset className={styles.field}>
-            <legend className={styles.field__label}>Período</legend>
+            <legend className={styles.field__label}>{t('filtersModalLegendPeriod')}</legend>
             <ChipGroup
-              options={PERIODS}
+              options={PERIODS.map((p) => ({ value: p.value, label: t(p.labelKey) }))}
               selected={[draft.period]}
               onToggle={(v) => setDraft((d) => ({ ...d, period: v }))}
             />
           </fieldset>
 
           <fieldset className={styles.field}>
-            <legend className={styles.field__label}>Estado</legend>
+            <legend className={styles.field__label}>{t('filtersModalLegendStatus')}</legend>
             <ChipGroup
-              options={STATUSES}
+              options={STATUSES.map((s) => ({ value: s.value, label: t(s.labelKey) }))}
               selected={draft.status}
               onToggle={(v) => setDraft((d) => ({ ...d, status: toggle(d.status, v) }))}
             />
           </fieldset>
 
           <fieldset className={styles.field}>
-            <legend className={styles.field__label}>Prioridad</legend>
+            <legend className={styles.field__label}>{t('filtersModalLegendPriority')}</legend>
             <ChipGroup
-              options={PRIORITIES}
+              options={PRIORITIES.map((p) => ({ value: p.value, label: t(p.labelKey) }))}
               selected={draft.priority}
               onToggle={(v) => setDraft((d) => ({ ...d, priority: toggle(d.priority, v) }))}
             />
           </fieldset>
 
           <fieldset className={styles.field}>
-            <legend className={styles.field__label}>Creado por (compañía)</legend>
+            <legend className={styles.field__label}>
+              {t('filtersModalLegendCreatedByCompany')}
+            </legend>
             <ChipGroup
               options={COMPANIES.map((c) => ({ value: c, label: c }))}
               selected={draft.createdByCompany}
@@ -144,7 +157,7 @@ export default function DashboardFiltersModal() {
           </fieldset>
 
           <fieldset className={styles.field}>
-            <legend className={styles.field__label}>Creado por (usuario)</legend>
+            <legend className={styles.field__label}>{t('filtersModalLegendCreatedByUser')}</legend>
             <div className={styles.userList}>
               {MOCK_USERS.map((u) => {
                 const active = draft.createdByUser?.includes(u.id);
@@ -168,7 +181,9 @@ export default function DashboardFiltersModal() {
           </fieldset>
 
           <fieldset className={styles.field}>
-            <legend className={styles.field__label}>Responsable por (compañía)</legend>
+            <legend className={styles.field__label}>
+              {t('filtersModalLegendResponsibleByCompany')}
+            </legend>
             <ChipGroup
               options={COMPANIES.map((c) => ({ value: c, label: c }))}
               selected={draft.responsibleByCompany}
@@ -182,7 +197,9 @@ export default function DashboardFiltersModal() {
           </fieldset>
 
           <fieldset className={styles.field}>
-            <legend className={styles.field__label}>Responsable (usuario)</legend>
+            <legend className={styles.field__label}>
+              {t('filtersModalLegendResponsibleByUser')}
+            </legend>
             <div className={styles.userList}>
               {MOCK_USERS.map((u) => {
                 const active = draft.responsibleUser?.includes(u.id);
@@ -211,10 +228,10 @@ export default function DashboardFiltersModal() {
 
         <div className={styles.modal__footer}>
           <button type="button" className={styles.btnSecondary} onClick={handleReset}>
-            Limpiar filtros
+            {t('filtersModalClearFilters')}
           </button>
           <button type="button" className={styles.btnPrimary} onClick={handleApply}>
-            Aplicar
+            {t('filtersModalApply')}
           </button>
         </div>
       </div>

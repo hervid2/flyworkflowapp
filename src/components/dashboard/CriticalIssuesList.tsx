@@ -7,6 +7,7 @@
  */
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { ChevronLeft, ChevronRight, ArrowUpDown, SlidersHorizontal, X } from 'lucide-react';
 import { formatDistanceToNow, parseISO, isBefore, isAfter, startOfDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -19,18 +20,6 @@ import styles from './CriticalIssuesList.module.scss';
 
 const PAGE_SIZE = 10;
 const TODAY = startOfDay(new Date());
-
-const PRIORITY_LABELS: Record<string, string> = {
-  high: 'Alta',
-  medium: 'Media',
-  low: 'Baja',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  open: 'Abierta',
-  on_pause: 'Pausada',
-  closed: 'Cerrada',
-};
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
@@ -56,12 +45,12 @@ function toggle<T>(arr: T[], item: T): T[] {
 }
 
 /** Localized relative due-date label, flagged when the date is in the past. */
-function dueDateText(dueDate: string | null): string {
+function dueDateText(dueDate: string | null, t: ReturnType<typeof useTranslations>): string {
   if (!dueDate) return '—';
   const due = parseISO(dueDate);
   const isOverdue = isBefore(due, TODAY);
   const distance = formatDistanceToNow(due, { locale: es, addSuffix: true });
-  return isOverdue ? `Vencida ${distance}` : `Vence ${distance}`;
+  return isOverdue ? t('criticalDueOverdue', { distance }) : t('criticalDueUpcoming', { distance });
 }
 
 /** Avatar image with a graceful initials fallback when the URL fails to load. */
@@ -98,23 +87,24 @@ function TableFiltersModal({
   onChange: (f: TableFilters) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations('dashboard');
   const [draft, setDraft] = useState<TableFilters>(filters);
 
   const priorities: { value: IncidentPriority; label: string }[] = [
-    { value: 'high', label: 'Alta' },
-    { value: 'medium', label: 'Media' },
-    { value: 'low', label: 'Baja' },
+    { value: 'high', label: t('priorityHigh') },
+    { value: 'medium', label: t('priorityMedium') },
+    { value: 'low', label: t('priorityLow') },
   ];
   const statuses: { value: IncidentStatus; label: string }[] = [
-    { value: 'open', label: 'Abierta' },
-    { value: 'on_pause', label: 'Pausada' },
-    { value: 'closed', label: 'Cerrada' },
+    { value: 'open', label: t('statusOpen') },
+    { value: 'on_pause', label: t('statusOnPause') },
+    { value: 'closed', label: t('statusClosed') },
   ];
   const dueOptions: { value: DueFilter; label: string }[] = [
-    { value: 'all', label: 'Todas' },
-    { value: 'overdue', label: 'Vencidas' },
-    { value: 'dueSoon', label: 'Próximas (7d)' },
-    { value: 'noDate', label: 'Sin fecha' },
+    { value: 'all', label: t('criticalDueOptionAll') },
+    { value: 'overdue', label: t('criticalDueOptionOverdue') },
+    { value: 'dueSoon', label: t('criticalDueOptionDueSoon') },
+    { value: 'noDate', label: t('criticalDueOptionNoDate') },
   ];
 
   const activeCount =
@@ -124,14 +114,19 @@ function TableFiltersModal({
     (draft.due !== 'all' ? 1 : 0);
 
   return (
-    <div className={styles.filterOverlay} role="dialog" aria-modal aria-label="Filtrar incidencias">
+    <div
+      className={styles.filterOverlay}
+      role="dialog"
+      aria-modal
+      aria-label={t('criticalFilterModalAriaLabel')}
+    >
       <div className={styles.filterModal}>
         <div className={styles.filterModal__header}>
-          <h3 className={styles.filterModal__title}>Filtrar incidencias</h3>
+          <h3 className={styles.filterModal__title}>{t('criticalFilterModalTitle')}</h3>
           <button
             className={styles.filterModal__close}
             onClick={onClose}
-            aria-label="Cerrar filtros"
+            aria-label={t('criticalCloseFiltersAriaLabel')}
           >
             <X size={16} />
           </button>
@@ -139,7 +134,7 @@ function TableFiltersModal({
 
         <div className={styles.filterModal__body}>
           <fieldset className={styles.filterField}>
-            <legend className={styles.filterField__label}>Prioridad</legend>
+            <legend className={styles.filterField__label}>{t('criticalLegendPriority')}</legend>
             <div className={styles.chipRow}>
               {priorities.map(({ value, label }) => (
                 <button
@@ -156,7 +151,7 @@ function TableFiltersModal({
           </fieldset>
 
           <fieldset className={styles.filterField}>
-            <legend className={styles.filterField__label}>Estado</legend>
+            <legend className={styles.filterField__label}>{t('criticalLegendStatus')}</legend>
             <div className={styles.chipRow}>
               {statuses.map(({ value, label }) => (
                 <button
@@ -173,7 +168,7 @@ function TableFiltersModal({
           </fieldset>
 
           <fieldset className={styles.filterField}>
-            <legend className={styles.filterField__label}>Creado por</legend>
+            <legend className={styles.filterField__label}>{t('criticalLegendCreatedBy')}</legend>
             <div className={styles.userFilterList}>
               {MOCK_USERS.map((u) => {
                 const active = draft.createdBy.includes(u.id);
@@ -197,7 +192,7 @@ function TableFiltersModal({
           </fieldset>
 
           <fieldset className={styles.filterField}>
-            <legend className={styles.filterField__label}>Vencimiento</legend>
+            <legend className={styles.filterField__label}>{t('criticalLegendDue')}</legend>
             <div className={styles.chipRow}>
               {dueOptions.map(({ value, label }) => (
                 <button
@@ -225,7 +220,7 @@ function TableFiltersModal({
               onClose();
             }}
           >
-            Limpiar
+            {t('criticalClear')}
           </button>
           <button
             type="button"
@@ -235,7 +230,8 @@ function TableFiltersModal({
               onClose();
             }}
           >
-            Aplicar{activeCount > 0 && ` (${activeCount})`}
+            {t('criticalApply')}
+            {activeCount > 0 && ` (${activeCount})`}
           </button>
         </div>
       </div>
@@ -248,12 +244,25 @@ interface Props {
 }
 
 export default function CriticalIssuesList({ riskFilter }: Props) {
+  const t = useTranslations('dashboard');
   const incidents = useIssuesStore((s) => s.incidents);
   const dashboardFilters = useFiltersStore((s) => s.dashboardFilters);
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<'priority' | 'dueDate'>('priority');
   const [tableFilters, setTableFilters] = useState<TableFilters>(DEFAULT_TABLE_FILTERS);
   const [showFilterModal, setShowFilterModal] = useState(false);
+
+  const PRIORITY_LABELS: Record<string, string> = {
+    high: t('priorityHigh'),
+    medium: t('priorityMedium'),
+    low: t('priorityLow'),
+  };
+
+  const STATUS_LABELS: Record<string, string> = {
+    open: t('statusOpen'),
+    on_pause: t('statusOnPause'),
+    closed: t('statusClosed'),
+  };
 
   const activeFilterCount =
     tableFilters.priority.length +
@@ -359,25 +368,31 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
   }
 
   return (
-    <section className={styles.section} aria-label="Lista de incidencias">
+    <section className={styles.section} aria-label={t('criticalSectionAriaLabel')}>
       <div className={styles.header}>
         <h2 className={styles.header__title}>
-          Incidencias
-          {riskFilter && <span className={styles.header__badge}> (filtrado por riesgo)</span>}
+          {t('criticalTitle')}
+          {riskFilter && (
+            <span className={styles.header__badge}>{t('criticalFilteredByRiskBadge')}</span>
+          )}
         </h2>
         <div className={styles.header__right}>
           <p className={styles.header__count}>
             {filtered.length === 0
-              ? '0 resultados'
-              : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} de ${filtered.length}`}
+              ? t('criticalResultsEmpty')
+              : t('criticalResultsRange', {
+                  from: (page - 1) * PAGE_SIZE + 1,
+                  to: Math.min(page * PAGE_SIZE, filtered.length),
+                  total: filtered.length,
+                })}
           </p>
           <button
             className={`${styles.filterBtn} ${activeFilterCount > 0 ? styles['filterBtn--active'] : ''}`}
             onClick={() => setShowFilterModal(true)}
-            aria-label="Filtrar tabla de incidencias"
+            aria-label={t('criticalFilterTableAriaLabel')}
           >
             <SlidersHorizontal size={14} />
-            <span>Filtrar</span>
+            <span>{t('criticalFilter')}</span>
             {activeFilterCount > 0 && (
               <span className={styles.filterBtn__badge}>{activeFilterCount}</span>
             )}
@@ -389,22 +404,22 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th className={styles.th}>ID</th>
-              <th className={styles.th}>Título</th>
+              <th className={styles.th}>{t('criticalColumnId')}</th>
+              <th className={styles.th}>{t('criticalColumnTitle')}</th>
               <th
                 className={`${styles.th} ${styles['th--sortable']}`}
                 onClick={() => handleSort('priority')}
               >
-                Prioridad <ArrowUpDown size={12} aria-hidden />
+                {t('criticalColumnPriority')} <ArrowUpDown size={12} aria-hidden />
               </th>
-              <th className={styles.th}>Estado</th>
-              <th className={styles.th}>Creado por</th>
-              <th className={styles.th}>Asignados</th>
+              <th className={styles.th}>{t('criticalColumnStatus')}</th>
+              <th className={styles.th}>{t('criticalColumnCreatedBy')}</th>
+              <th className={styles.th}>{t('criticalColumnAssignees')}</th>
               <th
                 className={`${styles.th} ${styles['th--sortable']}`}
                 onClick={() => handleSort('dueDate')}
               >
-                Vencimiento <ArrowUpDown size={12} aria-hidden />
+                {t('criticalColumnDue')} <ArrowUpDown size={12} aria-hidden />
               </th>
             </tr>
           </thead>
@@ -412,7 +427,7 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
             {pageItems.length === 0 ? (
               <tr>
                 <td colSpan={7} className={styles.empty}>
-                  No hay incidencias para mostrar.
+                  {t('criticalEmptyTable')}
                 </td>
               </tr>
             ) : (
@@ -444,11 +459,11 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
                     <td className={styles.td}>
                       <div className={styles.ownerCell}>
                         <UserAvatar
-                          name={incident.owner?.name ?? 'Sin asignar'}
+                          name={incident.owner?.name ?? t('criticalUnassigned')}
                           avatarUrl={incident.owner?.avatarUrl}
                         />
                         <span className={styles.ownerCell__name}>
-                          {incident.owner?.name ?? 'Sin asignar'}
+                          {incident.owner?.name ?? t('criticalUnassigned')}
                         </span>
                       </div>
                     </td>
@@ -468,7 +483,7 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
                       </div>
                     </td>
                     <td className={`${styles.td} ${overdue ? styles['td--overdue'] : ''}`}>
-                      {dueDateText(incident.dueDate)}
+                      {dueDateText(incident.dueDate, t)}
                     </td>
                   </tr>
                 );
@@ -478,12 +493,16 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
         </table>
       </div>
 
-      <div className={styles.pagination} role="navigation" aria-label="Paginación">
+      <div
+        className={styles.pagination}
+        role="navigation"
+        aria-label={t('criticalPaginationAriaLabel')}
+      >
         <button
           className={styles.pagination__btn}
           onClick={() => setPage((p) => Math.max(1, p - 1))}
           disabled={page === 1}
-          aria-label="Página anterior"
+          aria-label={t('criticalPrevPageAriaLabel')}
         >
           <ChevronLeft size={16} />
         </button>
@@ -494,7 +513,7 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
           className={styles.pagination__btn}
           onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
           disabled={page === totalPages}
-          aria-label="Página siguiente"
+          aria-label={t('criticalNextPageAriaLabel')}
         >
           <ChevronRight size={16} />
         </button>

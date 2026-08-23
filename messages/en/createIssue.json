@@ -1,0 +1,85 @@
+{
+  "modal": {
+    "title": "Create Incident",
+    "close": "Close modal"
+  },
+  "form": {
+    "ariaLabel": "Create incident form",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Briefly describe the incident",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Detail the incident found",
+    "dueDateLabel": "Due date",
+    "categoryLabel": "Category",
+    "categoryPlaceholder": "Select category...",
+    "manageCategoriesButton": "Manage categories",
+    "priorityLabel": "Priority",
+    "priorityHigh": "High",
+    "priorityMedium": "Medium",
+    "priorityLow": "Low",
+    "tagsLabel": "Tags",
+    "peopleSection": "People",
+    "assigneesLabel": "Assignees",
+    "assigneesPlaceholder": "Search assignee...",
+    "assigneesAriaLabel": "Select assignees",
+    "observersLabel": "Observers",
+    "observersPlaceholder": "Search observer...",
+    "observersAriaLabel": "Select observers",
+    "locationSection": "Location",
+    "attachmentsSection": "Attachments",
+    "cancel": "Cancel",
+    "submit": "Create",
+    "submitting": "Creating..."
+  },
+  "categoryManager": {
+    "ariaLabel": "Manage categories",
+    "title": "Manage categories",
+    "close": "Back to form",
+    "newCategoryPlaceholder": "New category...",
+    "newCategoryAriaLabel": "New category name",
+    "add": "Add",
+    "listAriaLabel": "Custom categories",
+    "empty": "No custom categories",
+    "deleteCategory": "Delete category {name}"
+  },
+  "tagTree": {
+    "selectedAriaLabel": "Selected tags",
+    "removeTag": "Remove tag {name}",
+    "searchPlaceholder": "Search tag...",
+    "searchAriaLabel": "Search tag",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "noResults": "No results"
+  },
+  "userMultiSelect": {
+    "defaultPlaceholder": "Search user...",
+    "selectedAriaLabel": "Selected users",
+    "remove": "Remove {name}",
+    "noResults": "No results"
+  },
+  "location": {
+    "mapAriaLabel": "Location mini-map. Click to pin the incident location.",
+    "mapFallback": "Map unavailable. Enter coordinates manually.",
+    "latitudeLabel": "Latitude",
+    "latitudeHint": "−90 to 90",
+    "longitudeLabel": "Longitude",
+    "longitudeHint": "−180 to 180",
+    "coordPlaceholder": "0.00000000",
+    "detailLabel": "Location details",
+    "detailPlaceholder": "E.g. Floor 3, Room 301, axis C"
+  },
+  "fileUploader": {
+    "tabsAriaLabel": "Attachment type",
+    "mediaTab": "Images and Videos",
+    "documentsTab": "Documents",
+    "dropzoneMediaAriaLabel": "Zone to upload images and videos",
+    "dropzoneDocumentsAriaLabel": "Zone to upload documents",
+    "dropHint": "Drop the files here…",
+    "dragHint": "Drag files or click to select",
+    "mediaFormats": "JPG, PNG, GIF, SVG, MP4, MOV, AVI, WEBM",
+    "documentFormats": "PDF, DOC, DOCX, XLS, XLSX",
+    "empty": "No media available",
+    "previewAriaLabel": "Attachment preview",
+    "remove": "Remove {name}"
+  }
+}

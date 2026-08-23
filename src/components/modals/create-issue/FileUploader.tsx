@@ -5,6 +5,7 @@
  * images as thumbnails, and lifts the chosen `File[]` to the parent form.
  */
 import { useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { useDropzone } from 'react-dropzone';
 import { UploadCloud, X, FileText, Video } from 'lucide-react';
 import styles from './FileUploader.module.scss';
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export default function FileUploader({ value, onChange }: Props) {
+  const t = useTranslations('createIssue');
   const [activeTab, setActiveTab] = useState<FileTab>('media');
 
   const displayedFiles =
@@ -58,7 +60,11 @@ export default function FileUploader({ value, onChange }: Props) {
   return (
     <div className={styles.uploader}>
       {/* ── Tabs ──────────────────────────────────────────────────────────── */}
-      <div className={styles.uploader__tabs} role="tablist" aria-label="Tipo de archivos adjuntos">
+      <div
+        className={styles.uploader__tabs}
+        role="tablist"
+        aria-label={t('fileUploader.tabsAriaLabel')}
+      >
         {(['media', 'documents'] as FileTab[]).map((tab) => (
           <button
             key={tab}
@@ -68,7 +74,7 @@ export default function FileUploader({ value, onChange }: Props) {
             className={`${styles.uploader__tab} ${activeTab === tab ? styles['uploader__tab--active'] : ''}`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab === 'media' ? 'Imágenes y Videos' : 'Documentos'}
+            {tab === 'media' ? t('fileUploader.mediaTab') : t('fileUploader.documentsTab')}
           </button>
         ))}
       </div>
@@ -78,33 +84,33 @@ export default function FileUploader({ value, onChange }: Props) {
         {...getRootProps()}
         className={`${styles.uploader__dropzone} ${isDragActive ? styles['uploader__dropzone--active'] : ''}`}
         aria-label={
-          activeTab === 'media' ? 'Zona para subir imágenes y videos' : 'Zona para subir documentos'
+          activeTab === 'media'
+            ? t('fileUploader.dropzoneMediaAriaLabel')
+            : t('fileUploader.dropzoneDocumentsAriaLabel')
         }
       >
         <input {...getInputProps()} />
         <UploadCloud size={24} className={styles.uploader__upload_icon} aria-hidden />
         <p className={styles.uploader__hint}>
-          {isDragActive
-            ? 'Suelta los archivos aquí…'
-            : 'Arrastra archivos o haz clic para seleccionar'}
+          {isDragActive ? t('fileUploader.dropHint') : t('fileUploader.dragHint')}
         </p>
         <p className={styles.uploader__formats}>
           {activeTab === 'media'
-            ? 'JPG, PNG, GIF, SVG, MP4, MOV, AVI, WEBM'
-            : 'PDF, DOC, DOCX, XLS, XLSX'}
+            ? t('fileUploader.mediaFormats')
+            : t('fileUploader.documentFormats')}
         </p>
       </div>
 
       {/* ── Preview grid / empty state ────────────────────────────────────── */}
       {displayedFiles.length === 0 ? (
         <p className={styles.uploader__empty} aria-live="polite">
-          No hay medios disponibles
+          {t('fileUploader.empty')}
         </p>
       ) : (
         <ul
           className={styles.uploader__grid}
           role="list"
-          aria-label="Vista previa de archivos adjuntos"
+          aria-label={t('fileUploader.previewAriaLabel')}
         >
           {displayedFiles.map((file, i) => (
             <li key={`${file.name}-${i}`} className={styles.uploader__item}>
@@ -127,7 +133,7 @@ export default function FileUploader({ value, onChange }: Props) {
                 type="button"
                 className={styles.uploader__remove}
                 onClick={() => removeFile(file)}
-                aria-label={`Eliminar ${file.name}`}
+                aria-label={t('fileUploader.remove', { name: file.name })}
               >
                 <X size={12} />
               </button>

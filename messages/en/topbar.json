@@ -1,0 +1,10 @@
+{
+  "selectLanguage": "Select language",
+  "spanish": "Español",
+  "english": "English",
+  "user": "User: {name} — {role}",
+  "logout": "Log out",
+  "help": "Help",
+  "home": "FlyWorkFlow - Home",
+  "defaultUser": "User"
+}

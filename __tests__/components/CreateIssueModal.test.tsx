@@ -6,9 +6,11 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import CreateIssueModal from '@/components/modals/create-issue/CreateIssueModal';
 import { createIssuesStore, IssuesStoreContext } from '@/store/useIssuesStore';
 import { useModalStore } from '@/store/useModalStore';
+import { MESSAGES } from '@/i18n/messages';
 import type { ReactNode } from 'react';
 
 // ── Mapbox GL mock ────────────────────────────────────────────────────────────
@@ -97,9 +99,11 @@ function renderModal() {
   const store = createIssuesStore([]);
 
   render(
-    <IssuesStoreContext.Provider value={store}>
-      <CreateIssueModal />
-    </IssuesStoreContext.Provider>,
+    <NextIntlClientProvider locale="es" messages={MESSAGES.es}>
+      <IssuesStoreContext.Provider value={store}>
+        <CreateIssueModal />
+      </IssuesStoreContext.Provider>
+    </NextIntlClientProvider>,
   );
 
   return { store };
@@ -108,7 +112,11 @@ function renderModal() {
 // Wrapper for act()-protected renders used with external JSX
 function renderWithProviders(ui: ReactNode) {
   const store = createIssuesStore([]);
-  render(<IssuesStoreContext.Provider value={store}>{ui}</IssuesStoreContext.Provider>);
+  render(
+    <NextIntlClientProvider locale="es" messages={MESSAGES.es}>
+      <IssuesStoreContext.Provider value={store}>{ui}</IssuesStoreContext.Provider>
+    </NextIntlClientProvider>,
+  );
   return { store };
 }
 

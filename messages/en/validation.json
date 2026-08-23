@@ -1,0 +1,20 @@
+{
+  "title": {
+    "required": "Title is required",
+    "max": "Title cannot exceed 120 characters"
+  },
+  "description": {
+    "required": "Description is required",
+    "max": "Description cannot exceed 1000 characters"
+  },
+  "dueDate": {
+    "required": "Due date is required",
+    "pastOrInvalid": "Due date cannot be earlier than today"
+  },
+  "typeId": {
+    "required": "Category is required"
+  },
+  "priority": {
+    "invalid": "Select a priority"
+  }
+}
