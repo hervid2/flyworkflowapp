@@ -5,10 +5,11 @@
  * mocked because the nested LocationPicker would otherwise need WebGL.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
 import CreateIssueModal from '@/components/modals/create-issue/CreateIssueModal';
 import { createIssuesStore, IssuesStoreContext } from '@/store/useIssuesStore';
 import { useModalStore } from '@/store/useModalStore';
+import { useCategoriesStore } from '@/store/useCategoriesStore';
 import type { ReactNode } from 'react';
 
 // ── Mapbox GL mock ────────────────────────────────────────────────────────────
@@ -121,6 +122,7 @@ beforeEach(() => {
 
 afterEach(() => {
   useModalStore.setState({ activeModal: null });
+  useCategoriesStore.setState({ customTypes: [] });
   vi.clearAllMocks();
 });
 
@@ -234,5 +236,60 @@ describe('CreateIssueModal — estado del modal', () => {
     const { store } = renderWithProviders(<CreateIssueModal />);
     expect(store).toBeDefined();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+describe('CreateIssueModal — gestor de categorías', () => {
+  it('una categoría agregada en el gestor aparece en el <select> del formulario', async () => {
+    renderModal();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Gestionar categorías' }));
+    fireEvent.change(screen.getByLabelText('Nombre de la nueva categoría'), {
+      target: { value: 'Impermeabilización' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar' }));
+    const categoryList = screen.getByRole('list', { name: 'Categorías personalizadas' });
+    expect(within(categoryList).getByText('Impermeabilización')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Volver al formulario' }));
+
+    const select = screen.getByLabelText(/categoría/i) as HTMLSelectElement;
+    const option = Array.from(select.options).find((o) => o.text === 'Impermeabilización');
+    expect(option).toBeDefined();
+  });
+
+  it('una incidencia creada con una categoría personalizada guarda su nombre y clave', async () => {
+    const { store } = renderModal();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Gestionar categorías' }));
+    fireEvent.change(screen.getByLabelText('Nombre de la nueva categoría'), {
+      target: { value: 'Impermeabilización' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Volver al formulario' }));
+
+    fireEvent.change(screen.getByLabelText(/título/i), {
+      target: { value: 'Filtración en cubierta' },
+    });
+    fireEvent.change(screen.getByLabelText(/descripción/i), {
+      target: { value: 'Filtración visible tras la última lluvia.' },
+    });
+    fireEvent.change(screen.getByLabelText(/fecha de vencimiento/i), {
+      target: { value: tomorrow() },
+    });
+
+    const select = screen.getByLabelText(/categoría/i) as HTMLSelectElement;
+    const customId = Array.from(select.options).find((o) => o.text === 'Impermeabilización')!.value;
+    fireEvent.change(select, { target: { value: customId } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Crear' }));
+    });
+
+    await waitFor(() => {
+      const inc = store.getState().incidents[0];
+      expect(inc.type.name).toBe('Impermeabilización');
+      expect(inc.type.key).toBe('impermeabilizacion');
+    });
   });
 });
