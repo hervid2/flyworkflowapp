@@ -12,6 +12,7 @@ API REST del módulo de gestión de incidencias de FlyWorkFlow, construida con N
 | Lenguaje      | TypeScript (strict) |
 | Validación    | `class-validator` + `ValidationPipe` global |
 | Configuración | `@nestjs/config`    |
+| ORM           | Prisma (`postgresql`) |
 | Documentación API | `@nestjs/swagger` (`/api/docs`) |
 | Testing       | Jest                |
 
@@ -23,8 +24,14 @@ API REST del módulo de gestión de incidencias de FlyWorkFlow, construida con N
 cd backend
 npm install
 cp .env.example .env   # completa DATABASE_URL con tu Postgres local
+npm run prisma:migrate # crea las tablas (primera vez o tras cambiar el schema)
+npm run prisma:seed    # carga el dataset ficticio de public/mocks/incidents.mock.json
 npm run start:dev
 ```
+
+`npm run prisma:seed` es idempotente (puedes correrlo varias veces sin duplicar datos) y crea 3 organizaciones, 10 usuarios y 200 incidencias. Todos los usuarios sembrados comparten la misma contraseña de prueba: `FlyWorkFlow2026!` (se imprime también al final del seed).
+
+`npm run prisma:studio` abre una UI local para inspeccionar/editar los datos.
 
 El servidor queda en `http://localhost:3001` (puerto distinto al del frontend, que usa `3000`). La documentación OpenAPI interactiva queda en `http://localhost:3001/api/docs`.
 
@@ -46,10 +53,15 @@ Ver `.env.example`. Ninguna variable con secretos se versiona — `.env` está e
 
 ```
 backend/
+├── prisma/
+│   ├── schema.prisma     # fuente de verdad de entidades (ver docs/data-model.md)
+│   ├── migrations/       # migraciones versionadas, nunca editadas a mano
+│   └── seed.ts           # carga public/mocks/incidents.mock.json en el schema relacional
 ├── src/
 │   ├── modules/          # un módulo por responsabilidad (health, y los que se sumen por fase)
 │   │   └── health/
-│   ├── app.module.ts     # módulo raíz — importa ConfigModule y cada módulo de dominio
+│   ├── prisma/           # PrismaService/PrismaModule — inyectable en cualquier módulo
+│   ├── app.module.ts     # módulo raíz — importa ConfigModule, PrismaModule y cada módulo de dominio
 │   └── main.ts           # bootstrap local (dev). lambda.ts (Fase 3) será el handler serverless
 └── test/                 # specs e2e (Jest + Supertest)
 ```
