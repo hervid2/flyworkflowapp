@@ -36,7 +36,7 @@
   // The overlay keeps its padding at every breakpoint, so the modal never
   // actually reaches the screen edges — square corners here just looked like
   // a rendering bug against the backdrop, hence no border-radius override.
-  @media (max-width: $breakpoint-tablet) {
+  @include tablet-down {
     max-width: 100%;
     max-height: 100vh;
     margin: 0;
@@ -85,6 +85,11 @@
     background $transition-fast,
     color $transition-fast;
 
+  @include mobile {
+    width: 44px;
+    height: 44px;
+  }
+
   &:hover {
     background: $color-bg-muted;
     color: $color-text-primary;
@@ -125,6 +130,10 @@
   cursor: pointer;
   transition: background $transition-fast;
 
+  @include mobile {
+    min-height: 44px;
+  }
+
   &:hover {
     background: $color-bg-muted;
   }
@@ -144,6 +153,10 @@
   font-weight: $font-weight-semibold;
   cursor: pointer;
   transition: filter $transition-fast;
+
+  @include mobile {
+    min-height: 44px;
+  }
 
   &:hover {
     filter: brightness(0.93);
