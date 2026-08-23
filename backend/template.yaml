@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  FlyWorkFlow backend — NestJS API packaged as a Lambda container image,
+  fronted by API Gateway (HTTP API). Guided real deploy is Phase 6
+  (roadmap.md); see the owner's personal aws-deploy-guide.md (not
+  versioned) for that walkthrough. This iteration (F3.5) only validates
+  the template locally with `sam build` + `sam local start-api`.
+
+Parameters:
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+    Default: ''
+    Description: PostgreSQL (Railway in production) connection string.
+  JwtSecret:
+    Type: String
+    NoEcho: true
+    Default: ''
+    Description: Secret used to sign JWTs (wired in F4.1).
+
+Globals:
+  Function:
+    # Generous for a cold NestJS+Prisma start (requirements.md §2 accepts
+    # Lambda cold starts for a portfolio project); real AWS cold starts run
+    # well under this, this headroom is mainly for slow local Docker runs.
+    Timeout: 30
+    MemorySize: 512
+
+Resources:
+  BackendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          JWT_SECRET: !Ref JwtSecret
+      Events:
+        RootApi:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+        ProxyApi:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+      DockerTag: latest
+
+Outputs:
+  ApiUrl:
+    Description: Base URL of the HTTP API (dev stage)
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/"
