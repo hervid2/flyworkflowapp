@@ -1,4 +1,5 @@
 @use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
 
 .section {
   background: $color-bg-surface;
@@ -15,6 +16,11 @@
   padding: $space-lg;
   border-bottom: 1px solid $color-border;
   gap: $space-md;
+
+  @include mobile {
+    flex-wrap: wrap;
+    padding: $space-md;
+  }
 
   &__title {
     font-size: $font-size-md;
@@ -256,6 +262,11 @@
     color: $color-text-primary;
     transition: all $transition-fast;
 
+    @include mobile {
+      width: 44px;
+      height: 44px;
+    }
+
     &:hover:not(:disabled) {
       background: $color-bg-muted;
     }
@@ -290,6 +301,10 @@
   cursor: pointer;
   transition: all $transition-fast;
   white-space: nowrap;
+
+  @include mobile {
+    min-height: 44px;
+  }
 
   &:hover {
     background: $color-bg-muted;
@@ -369,6 +384,11 @@
     color: $color-text-secondary;
     transition: background $transition-fast;
 
+    @include mobile {
+      width: 44px;
+      height: 44px;
+    }
+
     &:hover {
       background: $color-bg-muted;
     }
@@ -422,6 +442,10 @@
   cursor: pointer;
   transition: all $transition-fast;
 
+  @include mobile {
+    min-height: 44px;
+  }
+
   &:hover {
     border-color: $color-accent-gold;
     color: $color-text-primary;
@@ -458,6 +482,10 @@
   text-align: left;
   transition: background $transition-fast;
   width: 100%;
+
+  @include mobile {
+    min-height: 44px;
+  }
 
   &:hover {
     background: $color-bg-muted;
@@ -506,6 +534,10 @@
   cursor: pointer;
   transition: background $transition-fast;
 
+  @include mobile {
+    min-height: 44px;
+  }
+
   &:hover {
     background: $color-accent-gold-alt;
   }
@@ -522,8 +554,78 @@
   cursor: pointer;
   transition: all $transition-fast;
 
+  @include mobile {
+    min-height: 44px;
+  }
+
   &:hover {
     background: $color-bg-muted;
     color: $color-text-primary;
+  }
+}
+
+// ── Mobile: stacked cards instead of a scrolling table ──────────────────────
+// Same table markup at every breakpoint (no duplicated JSX) — below
+// $breakpoint-mobile the table/row/cell display roles are overridden into a
+// card list, and each cell's `data-label` (set in the .tsx) becomes its
+// visible label via ::before, replacing the now-hidden <thead>.
+@include mobile {
+  .tableWrapper {
+    overflow-x: visible;
+  }
+
+  .table {
+    display: block;
+    width: 100%;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tbody {
+    display: block;
+  }
+
+  .table tbody tr {
+    display: block;
+  }
+
+  .row {
+    padding: $space-sm $space-md;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid $color-border;
+    }
+  }
+
+  .td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-md;
+    padding: 6px 0;
+    text-align: right;
+
+    &::before {
+      content: attr(data-label);
+      font-size: $font-size-xs;
+      font-weight: $font-weight-semibold;
+      color: $color-text-secondary;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-align: left;
+      flex-shrink: 0;
+    }
+  }
+
+  .title {
+    max-width: none;
+    text-align: right;
+  }
+
+  .ownerCell,
+  .avatars {
+    justify-content: flex-end;
   }
 }

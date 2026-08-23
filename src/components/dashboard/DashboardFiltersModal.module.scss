@@ -1,4 +1,5 @@
 @use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
 
 .overlay {
   position: fixed;
@@ -48,6 +49,11 @@
     cursor: pointer;
     color: $color-text-secondary;
     transition: background $transition-fast;
+
+    @include mobile {
+      width: 44px;
+      height: 44px;
+    }
 
     &:hover {
       background: $color-bg-muted;
@@ -102,6 +108,10 @@
   cursor: pointer;
   transition: all $transition-fast;
 
+  @include mobile {
+    min-height: 44px;
+  }
+
   &:hover {
     border-color: $color-accent-gold;
     color: $color-text-primary;
@@ -138,6 +148,10 @@
   text-align: left;
   transition: background $transition-fast;
   width: 100%;
+
+  @include mobile {
+    min-height: 44px;
+  }
 
   &:hover {
     background: $color-bg-muted;
@@ -186,6 +200,10 @@
   cursor: pointer;
   transition: background $transition-fast;
 
+  @include mobile {
+    min-height: 44px;
+  }
+
   &:hover {
     background: $color-accent-gold-alt;
   }
@@ -202,13 +220,17 @@
   cursor: pointer;
   transition: all $transition-fast;
 
+  @include mobile {
+    min-height: 44px;
+  }
+
   &:hover {
     background: $color-bg-muted;
     color: $color-text-primary;
   }
 }
 
-@media (max-width: #{$breakpoint-tablet}) {
+@include tablet-down {
   .overlay {
     align-items: flex-end;
     justify-content: center;

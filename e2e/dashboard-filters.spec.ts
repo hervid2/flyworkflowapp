@@ -196,4 +196,67 @@ test.describe('Dashboard — mobile (375×812)', () => {
     const kpiCount = await kpis.count();
     expect(kpiCount).toBeGreaterThanOrEqual(6);
   });
+
+  test('el dashboard no produce scroll horizontal en 375px', async ({ page }) => {
+    await loginViaCookie(page);
+    await page.goto('/dashboard');
+    await expect(page.getByRole('region', { name: 'Indicadores clave' })).toBeVisible({
+      timeout: 10_000,
+    });
+    const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+  });
+
+  test('la tabla de incidencias críticas se muestra como tarjetas apiladas', async ({ page }) => {
+    await loginViaCookie(page);
+    await page.goto('/dashboard');
+    const table = page.locator('table');
+    await expect(table).toBeVisible({ timeout: 10_000 });
+
+    // The <thead> row is hidden on mobile — labels come from each cell instead.
+    await expect(table.locator('thead')).toBeHidden();
+
+    const rows = table.locator('tbody tr.row');
+    const rowCount = await rows.count();
+    if (rowCount > 0) {
+      const firstRow = rows.first();
+      // Cards stack full-width, one row per incident — no per-row horizontal scroll needed.
+      const rowBox = await firstRow.boundingBox();
+      const viewport = page.viewportSize();
+      expect(rowBox).not.toBeNull();
+      expect(viewport).not.toBeNull();
+      expect(rowBox!.width).toBeLessThanOrEqual(viewport!.width);
+
+      // Each cell exposes its column label via data-label (used by ::before in CSS).
+      await expect(firstRow.locator('td[data-label="Prioridad"]')).toBeAttached();
+    }
+  });
+
+  test('el modal de filtros avanzados es usable en móvil (bottom sheet, sin recorte)', async ({
+    page,
+  }) => {
+    await loginViaCookie(page);
+    await page.goto('/dashboard');
+    await expect(page.getByRole('region', { name: 'Indicadores clave' })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.getByRole('button', { name: 'Abrir filtros avanzados' }).click();
+    const filterDialog = page.getByRole('dialog', { name: 'Filtros del dashboard' });
+    await expect(filterDialog).toBeVisible();
+
+    const box = await filterDialog.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box).not.toBeNull();
+    expect(viewport).not.toBeNull();
+    // Fills the width (bottom-sheet pattern) and fits inside the viewport height.
+    expect(box!.width).toBeGreaterThanOrEqual(viewport!.width - 2);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height + 1);
+
+    await filterDialog.getByRole('button', { name: 'Cerrar filtros' }).click();
+    await expect(filterDialog).not.toBeVisible();
+  });
 });

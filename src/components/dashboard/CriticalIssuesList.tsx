@@ -423,25 +423,25 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
                   isBefore(parseISO(incident.dueDate), TODAY);
                 return (
                   <tr key={incident.id} className={styles.row}>
-                    <td className={styles.td}>
+                    <td className={styles.td} data-label="ID">
                       <span className={styles.id}>#{incident.sequenceId}</span>
                     </td>
-                    <td className={styles.td}>
+                    <td className={styles.td} data-label="Título">
                       <span className={styles.title}>{incident.title}</span>
                     </td>
-                    <td className={styles.td}>
+                    <td className={styles.td} data-label="Prioridad">
                       <span
                         className={`${styles.priority} ${styles[`priority--${incident.priority}`]}`}
                       >
                         {PRIORITY_LABELS[incident.priority]}
                       </span>
                     </td>
-                    <td className={styles.td}>
+                    <td className={styles.td} data-label="Estado">
                       <span className={`${styles.status} ${styles[`status--${incident.status}`]}`}>
                         {STATUS_LABELS[incident.status]}
                       </span>
                     </td>
-                    <td className={styles.td}>
+                    <td className={styles.td} data-label="Creado por">
                       <div className={styles.ownerCell}>
                         <UserAvatar
                           name={incident.owner?.name ?? 'Sin asignar'}
@@ -452,7 +452,7 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
                         </span>
                       </div>
                     </td>
-                    <td className={styles.td}>
+                    <td className={styles.td} data-label="Asignados">
                       <div className={styles.avatars}>
                         {incident.assignees.slice(0, 3).map((a) => (
                           <UserAvatar key={a.id} name={a.name} avatarUrl={a.avatarUrl} />
@@ -467,7 +467,10 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
                         )}
                       </div>
                     </td>
-                    <td className={`${styles.td} ${overdue ? styles['td--overdue'] : ''}`}>
+                    <td
+                      className={`${styles.td} ${overdue ? styles['td--overdue'] : ''}`}
+                      data-label="Vencimiento"
+                    >
                       {dueDateText(incident.dueDate)}
                     </td>
                   </tr>

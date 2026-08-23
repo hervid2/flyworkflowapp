@@ -11,6 +11,10 @@
   align-items: center;
   justify-content: center;
   padding: $space-lg;
+
+  @include mobile {
+    padding: $space-sm;
+  }
 }
 
 .modal {
@@ -28,6 +32,11 @@
   gap: $space-lg;
   scrollbar-width: thin;
   scrollbar-color: $color-border transparent;
+
+  @include mobile {
+    max-height: 85vh;
+    padding: $space-md $space-md $space-lg;
+  }
 }
 
 // ── Header ──────────────────────────────────────────────
@@ -68,6 +77,11 @@
   transition:
     background $transition-fast,
     color $transition-fast;
+
+  @include mobile {
+    width: 44px;
+    height: 44px;
+  }
 
   &:hover {
     background: $color-bg-muted;
@@ -235,8 +249,9 @@
   grid-template-columns: 1fr 1fr;
   gap: $space-md $space-xl;
 
-  @media (max-width: 420px) {
+  @include mobile {
     grid-template-columns: 1fr;
+    gap: $space-md;
   }
 }
 
