@@ -4,7 +4,7 @@
  * rebuilds markers/popups when incidents change, auto-fits the viewport to
  * them, and toggles the 2D/3D projection from the filters store.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useMapbox } from '@/hooks/useMapbox';
@@ -16,6 +16,7 @@ import {
   getClusterExpansionZoom,
   type IncidentClusterIndex,
 } from '@/domain/selectors/map-clusters.selector';
+import { filterIncidentsByMapWindow } from '@/domain/selectors/map-filters.selector';
 import { createMarkerElement, createClusterElement } from './IncidentMarker';
 import { getPopupHTML } from './IncidentPopup';
 import styles from './MapboxViewer.module.scss';
@@ -29,8 +30,13 @@ export default function MapboxViewer() {
 
   const { mapRef, isLoaded } = useMapbox(containerRef, TOKEN);
 
-  const incidents = useIssuesStore((s) => s.incidents);
+  const allIncidents = useIssuesStore((s) => s.incidents);
   const is3D = useFiltersStore((s) => s.is3D);
+  const mapFilters = useFiltersStore((s) => s.mapFilters);
+  const incidents = useMemo(
+    () => filterIncidentsByMapWindow(allIncidents, mapFilters),
+    [allIncidents, mapFilters],
+  );
 
   // Sync the 2D/3D projection with the toolbar toggle.
   useEffect(() => {
