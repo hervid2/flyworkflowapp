@@ -98,6 +98,16 @@ curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" \
 
 Debe responder `{"statusCode":200,"body":"{\"status\":\"ok\",...}"}`. Detalle completo del flujo de despliegue real (Fase 6) en el `aws-deploy-guide.md` personal del propietario (no versionado).
 
+## AWS SAM (local)
+
+```bash
+sam build
+sam local start-api --port 3002
+curl http://localhost:3002/health
+```
+
+`sam validate --lint` y `sam build` quedaron verificados (el template es válido y produce exactamente la misma imagen probada arriba con `docker run`). En esta máquina, `sam local start-api`/`sam local invoke` no reciben respuesta del contenedor y terminan en 502 tras agotar el timeout — el contenedor sí procesa la invocación (confirmado invocando su puerto RIE directamente con `docker run` + `curl`, igual que la sección anterior), pero el SDK de Docker que trae empaquetado el SAM CLI (vía pip) no negocia correctamente con esta versión de Docker Desktop (API 1.54; el cliente cae a 1.44 y ahí se rompe el streaming de logs que usa `sam local` para leer la respuesta). No es un problema del template ni de la imagen — si te aparece este error, prueba con una versión de Docker Desktop más antigua o revisa si hay una versión más reciente de `aws-sam-cli` que corrija la compatibilidad.
+
 ## Lint y formato
 
 ```bash

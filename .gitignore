@@ -16,6 +16,7 @@ yarn-error.log*
 
 # Build
 dist/
+.aws-sam/
 
 # Env
 .env
