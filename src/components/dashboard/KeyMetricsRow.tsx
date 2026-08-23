@@ -4,6 +4,7 @@
  * resolution, overdue). Reads pre-computed values from the metrics hook and
  * presents them with accent colors and trend arrows — display-only.
  */
+import { useTranslations } from 'next-intl';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import styles from './KeyMetricsRow.module.scss';
@@ -42,20 +43,25 @@ function MetricCard({
 }
 
 export default function KeyMetricsRow() {
+  const t = useTranslations('dashboard');
   const m = useDashboardMetrics();
 
   const resolutionLabel = m.avgResolutionDays === null ? '—' : `${m.avgResolutionDays}d`;
 
   return (
-    <section className={styles.row} aria-label="Indicadores clave">
-      <MetricCard label="Abiertas" value={m.openCount} accent="var(--color-status-open, #34C759)" />
+    <section className={styles.row} aria-label={t('metricsSectionAriaLabel')}>
       <MetricCard
-        label="Creadas en el período"
+        label={t('metricsOpen')}
+        value={m.openCount}
+        accent="var(--color-status-open, #34C759)"
+      />
+      <MetricCard
+        label={t('metricsCreatedInPeriod')}
         value={m.createdInPeriod}
         accent="var(--color-info-blue, #3B82F6)"
       />
       <MetricCard
-        label="Cerradas en el período"
+        label={t('metricsClosedInPeriod')}
         value={m.closedInPeriod}
         accent={
           m.closedInPeriod > 0
@@ -64,22 +70,22 @@ export default function KeyMetricsRow() {
         }
       />
       <MetricCard
-        label="Tasa de cierre"
+        label={t('metricsClosureRate')}
         value={`${m.closureRate}%`}
-        sub={m.closureRate >= 50 ? 'Buen ritmo' : 'Por mejorar'}
+        sub={m.closureRate >= 50 ? t('metricsGoodPace') : t('metricsNeedsImprovement')}
         trend={m.closureRate >= 50 ? 'up' : 'down'}
         accent="var(--color-accent-gold, #F2B705)"
       />
       <MetricCard
-        label="Tiempo medio resolución"
+        label={t('metricsAvgResolutionTime')}
         value={resolutionLabel}
-        sub={m.avgResolutionDays !== null ? 'promedio de cierre' : 'sin datos'}
+        sub={m.avgResolutionDays !== null ? t('metricsAvgResolutionSub') : t('metricsNoDataSub')}
         accent="var(--color-info-blue, #3B82F6)"
       />
       <MetricCard
-        label="Vencidas activas"
+        label={t('metricsOverdueActive')}
         value={m.overdueActiveCount}
-        sub={m.overdueActiveCount > 0 ? 'requieren atención' : 'Al día'}
+        sub={m.overdueActiveCount > 0 ? t('metricsNeedsAttention') : t('metricsUpToDate')}
         trend={m.overdueActiveCount > 0 ? 'down' : 'neutral'}
         accent="var(--color-status-closed, #E5484D)"
       />

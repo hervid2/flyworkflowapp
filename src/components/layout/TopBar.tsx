@@ -4,11 +4,14 @@
  * and the logout action. Reads the session from the auth store and gates
  * user-specific UI behind a mounted flag to keep SSR and client markup in sync.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, Globe, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useLocaleStore } from '@/store/useLocaleStore';
+import type { Locale } from '@/i18n/messages';
 import FlyIcon from '@/components/ui/FlyIcon';
 import styles from './TopBar.module.scss';
 
@@ -17,17 +20,38 @@ interface TopBarProps {
 }
 
 export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarProps) {
+  const t = useTranslations('topbar');
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const locale = useLocaleStore((s) => s.locale);
+  const setLocale = useLocaleStore((s) => s.setLocale);
   const [mounted, setMounted] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
 
   // Avoid SSR hydration mismatch — auth state is cookie-based, only available client-side
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!langMenuOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setLangMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [langMenuOpen]);
 
   const handleLogout = () => {
     logout();
     router.push('/login');
   };
+
+  function selectLocale(next: Locale) {
+    setLocale(next);
+    setLangMenuOpen(false);
+  }
 
   const initials =
     mounted && user
@@ -38,13 +62,13 @@ export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarPr
           .slice(0, 2)
           .toUpperCase()
       : 'U';
-  const displayName = mounted && user ? user.name : 'Usuario';
+  const displayName = mounted && user ? user.name : t('defaultUser');
   const displayRole = mounted && user ? user.role : 'Superadmin';
   const avatarUrl = mounted && user ? user.avatarUrl : undefined;
 
   return (
     <header className={styles.topbar} role="banner">
-      <Link href="/" className={styles.topbar__logo} aria-label="FlyWorkFlow - Inicio">
+      <Link href="/" className={styles.topbar__logo} aria-label={t('home')}>
         <span className={styles['topbar__logo-text']}>FlyWorkFlow</span>
       </Link>
 
@@ -54,19 +78,42 @@ export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarPr
       </div>
 
       <div className={styles.topbar__actions}>
-        <button
-          className={styles['topbar__lang-selector']}
-          aria-label="Seleccionar idioma"
-          type="button"
-        >
-          <Globe size={14} aria-hidden="true" />
-          <span>ES</span>
-          <ChevronDown size={12} aria-hidden="true" />
-        </button>
+        <div className={styles['topbar__lang-wrapper']} ref={langMenuRef}>
+          <button
+            className={styles['topbar__lang-selector']}
+            aria-label={t('selectLanguage')}
+            aria-haspopup="listbox"
+            aria-expanded={langMenuOpen}
+            type="button"
+            onClick={() => setLangMenuOpen((o) => !o)}
+          >
+            <Globe size={14} aria-hidden="true" />
+            <span>{locale.toUpperCase()}</span>
+            <ChevronDown size={12} aria-hidden="true" />
+          </button>
+          {langMenuOpen && (
+            <ul
+              className={styles['topbar__lang-menu']}
+              role="listbox"
+              aria-label={t('selectLanguage')}
+            >
+              <li role="option" aria-selected={locale === 'es'}>
+                <button type="button" onClick={() => selectLocale('es')}>
+                  {t('spanish')}
+                </button>
+              </li>
+              <li role="option" aria-selected={locale === 'en'}>
+                <button type="button" onClick={() => selectLocale('en')}>
+                  {t('english')}
+                </button>
+              </li>
+            </ul>
+          )}
+        </div>
 
         <button
           className={styles.topbar__user}
-          aria-label={`Usuario: ${displayName} — ${displayRole}`}
+          aria-label={t('user', { name: displayName, role: displayRole })}
           type="button"
         >
           <div className={styles['topbar__user-avatar']} aria-hidden="true">
@@ -88,15 +135,15 @@ export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarPr
           <button
             className={styles.topbar__logout}
             onClick={handleLogout}
-            aria-label="Cerrar sesión"
-            title="Cerrar sesión"
+            aria-label={t('logout')}
+            title={t('logout')}
             type="button"
           >
             <LogOut size={16} aria-hidden="true" />
           </button>
         )}
 
-        <button className={styles.topbar__help} aria-label="Ayuda" type="button">
+        <button className={styles.topbar__help} aria-label={t('help')} type="button">
           ?
         </button>
       </div>

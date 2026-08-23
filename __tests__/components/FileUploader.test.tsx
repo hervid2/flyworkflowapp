@@ -5,7 +5,9 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import FileUploader from '@/components/modals/create-issue/FileUploader';
+import { MESSAGES } from '@/i18n/messages';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -13,8 +15,13 @@ function makeFile(name: string, type: string): File {
   return new File(['content'], name, { type });
 }
 
+// FileUploader calls useTranslations(), so it needs a NextIntlClientProvider ancestor.
 function renderUploader(value: File[] = [], onChange = vi.fn()) {
-  return render(<FileUploader value={value} onChange={onChange} />);
+  return render(
+    <NextIntlClientProvider locale="es" messages={MESSAGES.es}>
+      <FileUploader value={value} onChange={onChange} />
+    </NextIntlClientProvider>,
+  );
 }
 
 // ── tests ─────────────────────────────────────────────────────────────────────

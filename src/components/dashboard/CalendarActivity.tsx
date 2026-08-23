@@ -5,6 +5,7 @@
  * controlled (date lifted by {@link HeatmapSection}) and standalone.
  */
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -17,15 +18,6 @@ interface CalendarActivityProps {
   selectedDate?: string | null;
   onSelectDate?: (date: string | null) => void;
 }
-
-const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-
-const PRIORITY_LABELS: Record<string, string> = { high: 'Alta', medium: 'Media', low: 'Baja' };
-const STATUS_LABELS: Record<string, string> = {
-  open: 'Abierta',
-  on_pause: 'Pausada',
-  closed: 'Cerrada',
-};
 
 /** Maps a daily count to a heat-intensity CSS class (none/low/mid/high). */
 function getIntensity(count: number): string {
@@ -41,8 +33,30 @@ export default function CalendarActivity({
   selectedDate: controlledDate,
   onSelectDate,
 }: CalendarActivityProps) {
+  const t = useTranslations('dashboard');
   const [current, setCurrent] = useState(() => new Date()); // visible month
   const [internalDate, setInternalDate] = useState<string | null>(null);
+
+  const DAY_NAMES = [
+    t('calendarDaySun'),
+    t('calendarDayMon'),
+    t('calendarDayTue'),
+    t('calendarDayWed'),
+    t('calendarDayThu'),
+    t('calendarDayFri'),
+    t('calendarDaySat'),
+  ];
+
+  const PRIORITY_LABELS: Record<string, string> = {
+    high: t('priorityHigh'),
+    medium: t('priorityMedium'),
+    low: t('priorityLow'),
+  };
+  const STATUS_LABELS: Record<string, string> = {
+    open: t('statusOpen'),
+    on_pause: t('statusOnPause'),
+    closed: t('statusClosed'),
+  };
 
   // Controlled when a `selectedDate` prop is passed, otherwise self-managed.
   const selectedDate = controlledDate !== undefined ? controlledDate : internalDate;
@@ -85,11 +99,11 @@ export default function CalendarActivity({
   }
 
   return (
-    <div className={styles.calendar} aria-label="Historial de actividad mensual">
+    <div className={styles.calendar} aria-label={t('calendarMainAriaLabel')}>
       <div className={styles.calendar__nav}>
         <button
           onClick={prev}
-          aria-label="Mes anterior"
+          aria-label={t('calendarPrevMonthAriaLabel')}
           type="button"
           className={styles.calendar__nav_btn}
         >
@@ -100,7 +114,7 @@ export default function CalendarActivity({
         </span>
         <button
           onClick={next}
-          aria-label="Mes siguiente"
+          aria-label={t('calendarNextMonthAriaLabel')}
           type="button"
           className={styles.calendar__nav_btn}
         >
@@ -108,7 +122,11 @@ export default function CalendarActivity({
         </button>
       </div>
 
-      <div className={styles.calendar__grid} role="grid" aria-label="Días del mes">
+      <div
+        className={styles.calendar__grid}
+        role="grid"
+        aria-label={t('calendarDaysOfMonthAriaLabel')}
+      >
         {DAY_NAMES.map((d) => (
           <div key={d} className={styles.calendar__col_header} role="columnheader" aria-label={d}>
             {d}
@@ -143,7 +161,7 @@ export default function CalendarActivity({
                 .filter(Boolean)
                 .join(' ')}
               role="gridcell"
-              aria-label={`${format(day, "d 'de' MMMM", { locale: es })}: ${count} incidencia${count !== 1 ? 's' : ''}${isSelected ? ', seleccionado' : ''}`}
+              aria-label={`${format(day, "d 'de' MMMM", { locale: es })}: ${t('calendarIncidentsCount', { count })}${isSelected ? t('calendarSelectedSuffix') : ''}`}
               aria-selected={isSelected}
               onClick={() => handleDayClick(key, count)}
             >
@@ -158,8 +176,8 @@ export default function CalendarActivity({
         })}
       </div>
 
-      <div className={styles.calendar__legend} aria-label="Leyenda de intensidad">
-        <span className={styles.calendar__legend_label}>Menos</span>
+      <div className={styles.calendar__legend} aria-label={t('calendarLegendAriaLabel')}>
+        <span className={styles.calendar__legend_label}>{t('calendarLegendLess')}</span>
         {[
           '',
           styles['calendar__day--low'],
@@ -168,34 +186,32 @@ export default function CalendarActivity({
         ].map((cls, i) => (
           <span key={i} className={`${styles.calendar__legend_dot} ${cls}`} aria-hidden="true" />
         ))}
-        <span className={styles.calendar__legend_label}>Más</span>
+        <span className={styles.calendar__legend_label}>{t('calendarLegendMore')}</span>
       </div>
 
-      <p className={styles.calendar__hint}>Haz clic en un día con actividad para ver el detalle</p>
+      <p className={styles.calendar__hint}>{t('calendarClickHint')}</p>
 
       {selectedDate != null && (
         <div
           className={styles.dayDetail}
-          aria-label={`Detalle de incidencias del ${selectedDateLabel}`}
+          aria-label={t('calendarDayDetailAriaLabel', { date: selectedDateLabel })}
         >
           <div className={styles.dayDetail__header}>
             <span className={styles.dayDetail__date}>{selectedDateLabel}</span>
             <span className={styles.dayDetail__count}>
-              {selectedIncidents.length} incidencia{selectedIncidents.length !== 1 ? 's' : ''}
+              {t('calendarIncidentsCount', { count: selectedIncidents.length })}
             </span>
             <button
               className={styles.dayDetail__close}
               onClick={() => setSelectedDate(null)}
-              aria-label="Cerrar detalle"
+              aria-label={t('calendarCloseDetailAriaLabel')}
             >
               <X size={12} />
             </button>
           </div>
 
           {selectedIncidents.length === 0 ? (
-            <p className={styles.dayDetail__empty}>
-              Sin incidencias para este día en el filtro actual.
-            </p>
+            <p className={styles.dayDetail__empty}>{t('calendarNoIncidentsForDay')}</p>
           ) : (
             <ul className={styles.dayDetail__list}>
               {selectedIncidents.slice(0, 8).map((i) => (
@@ -215,7 +231,9 @@ export default function CalendarActivity({
                 </li>
               ))}
               {selectedIncidents.length > 8 && (
-                <li className={styles.dayDetail__more}>+{selectedIncidents.length - 8} más</li>
+                <li className={styles.dayDetail__more}>
+                  {t('calendarMoreItems', { count: selectedIncidents.length - 8 })}
+                </li>
               )}
             </ul>
           )}

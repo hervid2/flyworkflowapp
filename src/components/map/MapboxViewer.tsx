@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { useTranslations } from 'next-intl';
 import { useMapbox } from '@/hooks/useMapbox';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useFiltersStore } from '@/store/useFiltersStore';
@@ -24,6 +25,7 @@ import styles from './MapboxViewer.module.scss';
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
 
 export default function MapboxViewer() {
+  const t = useTranslations('map');
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const clusterIndexRef = useRef<IncidentClusterIndex | null>(null);
@@ -53,6 +55,16 @@ export default function MapboxViewer() {
 
     const incidentsById = new Map(incidents.map((i) => [i.id, i]));
     clusterIndexRef.current = buildClusterIndex(incidents);
+
+    const popupLabels = {
+      statusOpen: t('statusOpen'),
+      statusOnPause: t('statusOnPause'),
+      statusClosed: t('statusClosed'),
+      priorityHigh: t('priorityHigh'),
+      priorityMedium: t('priorityMedium'),
+      priorityLow: t('priorityLow'),
+      viewDetails: t('popupViewDetails'),
+    };
 
     function renderLayer() {
       const index = clusterIndexRef.current;
@@ -93,7 +105,7 @@ export default function MapboxViewer() {
           closeOnClick: false,
           maxWidth: '280px',
           offset: 20,
-        }).setHTML(getPopupHTML(incident));
+        }).setHTML(getPopupHTML(incident, popupLabels));
 
         const marker = new mapboxgl.Marker({ element: createMarkerElement(incident) })
           .setLngLat([point.lng, point.lat])
@@ -123,7 +135,7 @@ export default function MapboxViewer() {
     return () => {
       map.off('moveend', renderLayer);
     };
-  }, [incidents, isLoaded, mapRef]);
+  }, [incidents, isLoaded, mapRef, t]);
 
   return (
     <div className={styles['mapbox-viewer']}>
@@ -131,11 +143,11 @@ export default function MapboxViewer() {
         ref={containerRef}
         className={styles['mapbox-viewer__canvas']}
         role="application"
-        aria-label="Mapa de incidencias"
+        aria-label={t('mapCanvasAriaLabel')}
       />
       {!isLoaded && (
         <div className={styles['mapbox-viewer__loading']} aria-live="polite">
-          <span>Cargando mapa…</span>
+          <span>{t('loadingMap')}</span>
         </div>
       )}
     </div>

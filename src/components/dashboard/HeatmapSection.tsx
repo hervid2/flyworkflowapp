@@ -5,6 +5,7 @@
  * heatmap for that day's individual markers, linking the two views.
  */
 import { useRef, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { format, parseISO } from 'date-fns';
@@ -18,6 +19,8 @@ import styles from './HeatmapSection.module.scss';
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
 
 export default function HeatmapSection() {
+  const t = useTranslations('dashboard');
+  const tMap = useTranslations('map');
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -107,6 +110,16 @@ export default function HeatmapSection() {
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
+    const popupLabels = {
+      statusOpen: tMap('statusOpen'),
+      statusOnPause: tMap('statusOnPause'),
+      statusClosed: tMap('statusClosed'),
+      priorityHigh: tMap('priorityHigh'),
+      priorityMedium: tMap('priorityMedium'),
+      priorityLow: tMap('priorityLow'),
+      viewDetails: tMap('popupViewDetails'),
+    };
+
     const toShow = selectedDate
       ? incidents.filter((i) => {
           try {
@@ -126,7 +139,7 @@ export default function HeatmapSection() {
           closeOnClick: false,
           maxWidth: '280px',
           offset: 20,
-        }).setHTML(getPopupHTML(incident));
+        }).setHTML(getPopupHTML(incident, popupLabels));
 
         const marker = new mapboxgl.Marker({ element: el })
           .setLngLat([incident.coordinates!.lng, incident.coordinates!.lat])
@@ -144,26 +157,24 @@ export default function HeatmapSection() {
         selectedDate ? 'none' : 'visible',
       );
     }
-  }, [incidents, selectedDate, isLoaded]);
+  }, [incidents, selectedDate, isLoaded, tMap]);
 
   return (
     <section className={styles.heatmap} aria-labelledby="heatmap-title">
       <h2 id="heatmap-title" className={styles.heatmap__title}>
-        Mapa de incidencias — Distribución geográfica y temporal
+        {t('heatmapTitle')}
       </h2>
       <div className={styles.heatmap__body}>
         <div
           ref={containerRef}
           className={styles.heatmap__map}
           role="img"
-          aria-label="Mapa de incidencias"
+          aria-label={t('heatmapMapAriaLabel')}
         >
-          {!TOKEN && (
-            <p className={styles.heatmap__fallback}>Mapa no disponible (sin token de Mapbox).</p>
-          )}
+          {!TOKEN && <p className={styles.heatmap__fallback}>{t('heatmapMapUnavailable')}</p>}
         </div>
-        <aside className={styles.heatmap__calendar} aria-label="Actividad por día">
-          <h3 className={styles.heatmap__calendar_title}>Actividad diaria</h3>
+        <aside className={styles.heatmap__calendar} aria-label={t('heatmapCalendarAsideAriaLabel')}>
+          <h3 className={styles.heatmap__calendar_title}>{t('heatmapDailyActivityTitle')}</h3>
           <CalendarActivity
             activity={metrics.calendarActivity}
             incidents={incidents}

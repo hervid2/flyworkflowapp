@@ -5,6 +5,7 @@
  * selected user ids to the form. Selected users surface as removable chips.
  */
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Check, X } from 'lucide-react';
 import type { MockUserWithCompany } from '@/lib/constants/mock-users';
 import styles from './UserMultiSelect.module.scss';
@@ -21,9 +22,11 @@ export default function UserMultiSelect({
   users,
   selectedIds,
   onChange,
-  placeholder = 'Buscar usuario...',
+  placeholder,
   'aria-label': ariaLabel,
 }: Props) {
+  const t = useTranslations('createIssue');
+  const effectivePlaceholder = placeholder ?? t('userMultiSelect.defaultPlaceholder');
   const [search, setSearch] = useState('');
 
   const toggle = (id: string) => {
@@ -58,14 +61,18 @@ export default function UserMultiSelect({
   return (
     <div className={styles.root} aria-label={ariaLabel}>
       {selectedUsers.length > 0 && (
-        <div className={styles.chips} role="list" aria-label="Usuarios seleccionados">
+        <div
+          className={styles.chips}
+          role="list"
+          aria-label={t('userMultiSelect.selectedAriaLabel')}
+        >
           {selectedUsers.map((u) => (
             <span key={u.id} className={styles.chip} role="listitem">
               {u.name}
               <button
                 type="button"
                 className={styles.chip__remove}
-                aria-label={`Quitar ${u.name}`}
+                aria-label={t('userMultiSelect.remove', { name: u.name })}
                 onClick={() => toggle(u.id)}
               >
                 <X size={10} />
@@ -79,16 +86,16 @@ export default function UserMultiSelect({
         <div className={styles.search}>
           <input
             type="text"
-            placeholder={placeholder}
+            placeholder={effectivePlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label={placeholder}
+            aria-label={effectivePlaceholder}
           />
         </div>
 
         <div className={styles.list} role="listbox" aria-multiselectable="true">
           {companies.length === 0 ? (
-            <p className={styles.empty}>Sin resultados</p>
+            <p className={styles.empty}>{t('userMultiSelect.noResults')}</p>
           ) : (
             companies.map((company) => (
               <div key={company}>

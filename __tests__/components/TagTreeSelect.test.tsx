@@ -5,8 +5,11 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import TagTreeSelect from '@/components/modals/create-issue/TagTreeSelect';
+import { MESSAGES } from '@/i18n/messages';
 import type { Tag } from '@/domain/models';
+import type { ReactElement } from 'react';
 
 const TAGS: Tag[] = [
   { id: 'tag-1', name: 'Urgente', color: '#F59E0B' },
@@ -14,9 +17,18 @@ const TAGS: Tag[] = [
   { id: 'tag-3', name: 'Seguridad', color: '#10B981' },
 ];
 
+// TagTreeSelect calls useTranslations(), so it needs a NextIntlClientProvider ancestor.
+function withIntl(ui: ReactElement) {
+  return (
+    <NextIntlClientProvider locale="es" messages={MESSAGES.es}>
+      {ui}
+    </NextIntlClientProvider>
+  );
+}
+
 describe('TagTreeSelect', () => {
   it('renderiza las etiquetas disponibles', () => {
-    render(<TagTreeSelect tags={TAGS} selectedIds={[]} onChange={vi.fn()} />);
+    render(withIntl(<TagTreeSelect tags={TAGS} selectedIds={[]} onChange={vi.fn()} />));
     expect(screen.getByText('Urgente')).toBeInTheDocument();
     expect(screen.getByText('Calidad')).toBeInTheDocument();
     expect(screen.getByText('Seguridad')).toBeInTheDocument();
@@ -24,21 +36,23 @@ describe('TagTreeSelect', () => {
 
   it('llama a onChange al seleccionar una etiqueta', () => {
     const onChange = vi.fn();
-    render(<TagTreeSelect tags={TAGS} selectedIds={[]} onChange={onChange} />);
+    render(withIntl(<TagTreeSelect tags={TAGS} selectedIds={[]} onChange={onChange} />));
     fireEvent.click(screen.getByText('Urgente'));
     expect(onChange).toHaveBeenCalledWith(['tag-1']);
   });
 
   it('llama a onChange al deseleccionar una etiqueta ya seleccionada', () => {
     const onChange = vi.fn();
-    render(<TagTreeSelect tags={TAGS} selectedIds={['tag-1']} onChange={onChange} />);
+    render(withIntl(<TagTreeSelect tags={TAGS} selectedIds={['tag-1']} onChange={onChange} />));
     // deselect via chip remove button
     fireEvent.click(screen.getByLabelText('Quitar etiqueta Urgente'));
     expect(onChange).toHaveBeenCalledWith([]);
   });
 
   it('muestra chip removible para cada etiqueta seleccionada', () => {
-    render(<TagTreeSelect tags={TAGS} selectedIds={['tag-1', 'tag-2']} onChange={vi.fn()} />);
+    render(
+      withIntl(<TagTreeSelect tags={TAGS} selectedIds={['tag-1', 'tag-2']} onChange={vi.fn()} />),
+    );
     // Chips appear in the chips list (role="list") and also in the tree, so we check by aria-label
     expect(screen.getByLabelText('Quitar etiqueta Urgente')).toBeInTheDocument();
     expect(screen.getByLabelText('Quitar etiqueta Calidad')).toBeInTheDocument();
@@ -48,7 +62,7 @@ describe('TagTreeSelect', () => {
   });
 
   it('filtra etiquetas al escribir en el buscador', () => {
-    render(<TagTreeSelect tags={TAGS} selectedIds={[]} onChange={vi.fn()} />);
+    render(withIntl(<TagTreeSelect tags={TAGS} selectedIds={[]} onChange={vi.fn()} />));
     fireEvent.change(screen.getByPlaceholderText('Buscar etiqueta...'), {
       target: { value: 'urg' },
     });
@@ -59,7 +73,7 @@ describe('TagTreeSelect', () => {
   });
 
   it('muestra "Sin resultados" cuando el filtro no coincide con ninguna etiqueta', () => {
-    render(<TagTreeSelect tags={TAGS} selectedIds={[]} onChange={vi.fn()} />);
+    render(withIntl(<TagTreeSelect tags={TAGS} selectedIds={[]} onChange={vi.fn()} />));
     fireEvent.change(screen.getByPlaceholderText('Buscar etiqueta...'), {
       target: { value: 'zzznomatch' },
     });
@@ -68,18 +82,20 @@ describe('TagTreeSelect', () => {
 
   it('selecciona múltiples etiquetas acumulando los IDs', () => {
     const onChange = vi.fn();
-    const { rerender } = render(<TagTreeSelect tags={TAGS} selectedIds={[]} onChange={onChange} />);
+    const { rerender } = render(
+      withIntl(<TagTreeSelect tags={TAGS} selectedIds={[]} onChange={onChange} />),
+    );
 
     fireEvent.click(screen.getByText('Urgente'));
     expect(onChange).toHaveBeenLastCalledWith(['tag-1']);
 
-    rerender(<TagTreeSelect tags={TAGS} selectedIds={['tag-1']} onChange={onChange} />);
+    rerender(withIntl(<TagTreeSelect tags={TAGS} selectedIds={['tag-1']} onChange={onChange} />));
     fireEvent.click(screen.getByText('Calidad'));
     expect(onChange).toHaveBeenLastCalledWith(['tag-1', 'tag-2']);
   });
 
   it('renderiza checkbox con estado "checked" para etiquetas seleccionadas', () => {
-    render(<TagTreeSelect tags={TAGS} selectedIds={['tag-2']} onChange={vi.fn()} />);
+    render(withIntl(<TagTreeSelect tags={TAGS} selectedIds={['tag-2']} onChange={vi.fn()} />));
     const checkboxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
     const calidad = checkboxes.find((cb) =>
       cb.closest('[role="treeitem"]')?.textContent?.includes('Calidad'),

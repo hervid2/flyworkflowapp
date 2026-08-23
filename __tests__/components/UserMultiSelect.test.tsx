@@ -5,8 +5,20 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import UserMultiSelect from '@/components/modals/create-issue/UserMultiSelect';
+import { MESSAGES } from '@/i18n/messages';
 import type { MockUserWithCompany } from '@/lib/constants/mock-users';
+import type { ReactElement } from 'react';
+
+// UserMultiSelect calls useTranslations(), so it needs a NextIntlClientProvider ancestor.
+function withIntl(ui: ReactElement) {
+  return (
+    <NextIntlClientProvider locale="es" messages={MESSAGES.es}>
+      {ui}
+    </NextIntlClientProvider>
+  );
+}
 
 const USERS: MockUserWithCompany[] = [
   { id: 'u1', name: 'Ana Gómez', email: 'ana@example.com', company: 'ACME', role: 'QA' },
@@ -28,7 +40,7 @@ const USERS: MockUserWithCompany[] = [
 
 describe('UserMultiSelect', () => {
   it('renderiza los usuarios agrupados por compañía', () => {
-    render(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />);
+    render(withIntl(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />));
     expect(screen.getByText('ACME')).toBeInTheDocument();
     expect(screen.getByText('CONSTRUCTORA')).toBeInTheDocument();
     expect(screen.getByText('Ana Gómez')).toBeInTheDocument();
@@ -37,20 +49,22 @@ describe('UserMultiSelect', () => {
 
   it('llama a onChange al seleccionar un usuario', () => {
     const onChange = vi.fn();
-    render(<UserMultiSelect users={USERS} selectedIds={[]} onChange={onChange} />);
+    render(withIntl(<UserMultiSelect users={USERS} selectedIds={[]} onChange={onChange} />));
     fireEvent.click(screen.getByText('Ana Gómez'));
     expect(onChange).toHaveBeenCalledWith(['u1']);
   });
 
   it('llama a onChange al deseleccionar un usuario ya seleccionado', () => {
     const onChange = vi.fn();
-    render(<UserMultiSelect users={USERS} selectedIds={['u1']} onChange={onChange} />);
+    render(withIntl(<UserMultiSelect users={USERS} selectedIds={['u1']} onChange={onChange} />));
     fireEvent.click(screen.getByLabelText('Quitar Ana Gómez'));
     expect(onChange).toHaveBeenCalledWith([]);
   });
 
   it('muestra chip para cada usuario seleccionado', () => {
-    render(<UserMultiSelect users={USERS} selectedIds={['u1', 'u2']} onChange={vi.fn()} />);
+    render(
+      withIntl(<UserMultiSelect users={USERS} selectedIds={['u1', 'u2']} onChange={vi.fn()} />),
+    );
     // Names appear in both chip and list option, so use getAllByText
     expect(screen.getAllByText('Ana Gómez').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Carlos López').length).toBeGreaterThanOrEqual(1);
@@ -58,7 +72,7 @@ describe('UserMultiSelect', () => {
   });
 
   it('filtra usuarios por nombre al escribir en el buscador', () => {
-    render(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />);
+    render(withIntl(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />));
     fireEvent.change(screen.getByPlaceholderText('Buscar usuario...'), {
       target: { value: 'ana' },
     });
@@ -67,7 +81,7 @@ describe('UserMultiSelect', () => {
   });
 
   it('filtra usuarios por compañía', () => {
-    render(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />);
+    render(withIntl(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />));
     fireEvent.change(screen.getByPlaceholderText('Buscar usuario...'), {
       target: { value: 'ACME' },
     });
@@ -76,7 +90,7 @@ describe('UserMultiSelect', () => {
   });
 
   it('muestra "Sin resultados" cuando no hay coincidencias', () => {
-    render(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />);
+    render(withIntl(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />));
     fireEvent.change(screen.getByPlaceholderText('Buscar usuario...'), {
       target: { value: 'zzznomatch' },
     });
@@ -84,7 +98,7 @@ describe('UserMultiSelect', () => {
   });
 
   it('marca como aria-selected=true el usuario seleccionado', () => {
-    render(<UserMultiSelect users={USERS} selectedIds={['u2']} onChange={vi.fn()} />);
+    render(withIntl(<UserMultiSelect users={USERS} selectedIds={['u2']} onChange={vi.fn()} />));
     const option = screen
       .getAllByRole('option')
       .find((el) => el.textContent?.includes('Carlos López'));
@@ -93,12 +107,14 @@ describe('UserMultiSelect', () => {
 
   it('acepta placeholder personalizado', () => {
     render(
-      <UserMultiSelect
-        users={USERS}
-        selectedIds={[]}
-        onChange={vi.fn()}
-        placeholder="Buscar asignado..."
-      />,
+      withIntl(
+        <UserMultiSelect
+          users={USERS}
+          selectedIds={[]}
+          onChange={vi.fn()}
+          placeholder="Buscar asignado..."
+        />,
+      ),
     );
     expect(screen.getByPlaceholderText('Buscar asignado...')).toBeInTheDocument();
   });

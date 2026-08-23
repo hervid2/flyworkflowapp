@@ -5,6 +5,7 @@
  * field. Emits coordinates and description back to the form.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Coordinates } from '@/domain/models';
@@ -28,6 +29,7 @@ export default function LocationPicker({
   onChangeCoords,
   onChangeDescription,
 }: Props) {
+  const t = useTranslations('createIssue');
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
@@ -133,19 +135,15 @@ export default function LocationPicker({
         ref={containerRef}
         className={styles.picker__map}
         role="application"
-        aria-label="Mini-mapa de ubicación. Haz clic para fijar la ubicación de la incidencia."
+        aria-label={t('location.mapAriaLabel')}
       >
-        {!TOKEN && (
-          <p className={styles.picker__fallback}>
-            Mapa no disponible. Ingresa las coordenadas manualmente.
-          </p>
-        )}
+        {!TOKEN && <p className={styles.picker__fallback}>{t('location.mapFallback')}</p>}
       </div>
 
       <div className={styles.picker__coords}>
         <div className={styles.picker__coord_field}>
           <label htmlFor="loc-lat" className={styles.picker__label}>
-            Latitud
+            {t('location.latitudeLabel')}
           </label>
           <input
             id="loc-lat"
@@ -154,17 +152,17 @@ export default function LocationPicker({
             className={styles.picker__coord_input}
             value={latInput}
             onChange={handleLatChange}
-            placeholder="0.00000000"
+            placeholder={t('location.coordPlaceholder')}
             aria-describedby="loc-lat-hint"
           />
           <span id="loc-lat-hint" className={styles.picker__hint}>
-            −90 a 90
+            {t('location.latitudeHint')}
           </span>
         </div>
 
         <div className={styles.picker__coord_field}>
           <label htmlFor="loc-lng" className={styles.picker__label}>
-            Longitud
+            {t('location.longitudeLabel')}
           </label>
           <input
             id="loc-lng"
@@ -173,24 +171,24 @@ export default function LocationPicker({
             className={styles.picker__coord_input}
             value={lngInput}
             onChange={handleLngChange}
-            placeholder="0.00000000"
+            placeholder={t('location.coordPlaceholder')}
             aria-describedby="loc-lng-hint"
           />
           <span id="loc-lng-hint" className={styles.picker__hint}>
-            −180 a 180
+            {t('location.longitudeHint')}
           </span>
         </div>
       </div>
 
       <div className={styles.picker__detail_field}>
         <label htmlFor="loc-detail" className={styles.picker__label}>
-          Detalles de localización
+          {t('location.detailLabel')}
         </label>
         <input
           id="loc-detail"
           type="text"
           className={styles.picker__detail_input}
-          placeholder="Ej. Piso 3, Sala 301, eje C"
+          placeholder={t('location.detailPlaceholder')}
           value={locationDescription ?? ''}
           onChange={(e) => onChangeDescription(e.target.value || null)}
           maxLength={500}

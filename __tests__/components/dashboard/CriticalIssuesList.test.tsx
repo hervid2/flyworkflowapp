@@ -6,9 +6,11 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import CriticalIssuesList from '@/components/dashboard/CriticalIssuesList';
 import { IssuesStoreProvider } from '@/store/useIssuesStore';
 import { useFiltersStore } from '@/store/useFiltersStore';
+import { MESSAGES } from '@/i18n/messages';
 import type { Incident, UserRef } from '@/domain/models';
 
 const VALLE_OWNER: UserRef = {
@@ -58,9 +60,11 @@ const INCIDENTS: Incident[] = [
 
 function renderWithIncidents(incidents: Incident[]) {
   return render(
-    <IssuesStoreProvider initialIncidents={incidents}>
-      <CriticalIssuesList riskFilter={null} />
-    </IssuesStoreProvider>,
+    <NextIntlClientProvider locale="es" messages={MESSAGES.es}>
+      <IssuesStoreProvider initialIncidents={incidents}>
+        <CriticalIssuesList riskFilter={null} />
+      </IssuesStoreProvider>
+    </NextIntlClientProvider>,
   );
 }
 
