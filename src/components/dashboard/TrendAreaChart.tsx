@@ -5,6 +5,7 @@
  * granularity client-side, so no extra data fetch is needed.
  */
 import { useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   AreaChart,
   Area,
@@ -26,6 +27,7 @@ type Granularity = 'day' | 'week' | 'month';
 function aggregateTrend(
   trend: { date: string; created: number; closed: number; backlog: number }[],
   granularity: Granularity,
+  weekLabel: (formattedDate: string) => string,
 ) {
   if (trend.length === 0) return [];
 
@@ -54,44 +56,52 @@ function aggregateTrend(
         granularity === 'month'
           ? format(parseISO(date + '-01'), 'MMM yyyy', { locale: es })
           : granularity === 'week'
-            ? `Sem ${format(parseISO(date), 'd MMM', { locale: es })}`
+            ? weekLabel(format(parseISO(date), 'd MMM', { locale: es }))
             : format(parseISO(date), 'd MMM', { locale: es });
       return { date: label, created, closed, backlog };
     });
 }
 
-const GRANULARITY_OPTIONS: { value: Granularity; label: string }[] = [
-  { value: 'day', label: 'Día' },
-  { value: 'week', label: 'Semana' },
-  { value: 'month', label: 'Mes' },
+const GRANULARITY_OPTIONS: { value: Granularity; labelKey: string }[] = [
+  { value: 'day', labelKey: 'trendGranularityDay' },
+  { value: 'week', labelKey: 'trendGranularityWeek' },
+  { value: 'month', labelKey: 'trendGranularityMonth' },
 ];
 
 export default function TrendAreaChart() {
+  const t = useTranslations('dashboard');
   const { trend } = useDashboardMetrics();
   const [granularity, setGranularity] = useState<Granularity>('day');
 
-  const data = useMemo(() => aggregateTrend(trend, granularity), [trend, granularity]);
+  const data = useMemo(
+    () => aggregateTrend(trend, granularity, (date) => t('trendWeekPrefix', { date })),
+    [trend, granularity, t],
+  );
 
   return (
-    <section className={styles.section} aria-label="Tendencia de incidencias">
+    <section className={styles.section} aria-label={t('trendSectionAriaLabel')}>
       <div className={styles.header}>
-        <h2 className={styles.header__title}>Tendencia: Creadas vs Cerradas</h2>
-        <div className={styles.toggle} role="group" aria-label="Granularidad de la tendencia">
-          {GRANULARITY_OPTIONS.map(({ value, label }) => (
+        <h2 className={styles.header__title}>{t('trendTitle')}</h2>
+        <div
+          className={styles.toggle}
+          role="group"
+          aria-label={t('trendGranularityGroupAriaLabel')}
+        >
+          {GRANULARITY_OPTIONS.map(({ value, labelKey }) => (
             <button
               key={value}
               className={`${styles.toggle__btn} ${granularity === value ? styles['toggle__btn--active'] : ''}`}
               onClick={() => setGranularity(value)}
               aria-pressed={granularity === value}
             >
-              {label}
+              {t(labelKey)}
             </button>
           ))}
         </div>
       </div>
 
       {data.length === 0 ? (
-        <p className={styles.empty}>Sin datos para el período seleccionado.</p>
+        <p className={styles.empty}>{t('trendEmpty')}</p>
       ) : (
         <div className={styles.chart}>
           <ResponsiveContainer width="100%" height={260}>
@@ -139,7 +149,7 @@ export default function TrendAreaChart() {
               <Area
                 type="monotone"
                 dataKey="created"
-                name="Creadas"
+                name={t('trendCreatedSeries')}
                 stroke="#3B82F6"
                 strokeWidth={2}
                 fill="url(#gradCreated)"
@@ -147,7 +157,7 @@ export default function TrendAreaChart() {
               <Area
                 type="monotone"
                 dataKey="closed"
-                name="Cerradas"
+                name={t('trendClosedSeries')}
                 stroke="#34C759"
                 strokeWidth={2}
                 fill="url(#gradClosed)"
@@ -155,7 +165,7 @@ export default function TrendAreaChart() {
               <Area
                 type="monotone"
                 dataKey="backlog"
-                name="Backlog acumulado"
+                name={t('trendBacklogSeries')}
                 stroke="#F5A623"
                 strokeWidth={1.5}
                 strokeDasharray="4 4"

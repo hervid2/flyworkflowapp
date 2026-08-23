@@ -11,12 +11,12 @@ function buildAuthCookieValue() {
   const payload = {
     state: {
       user: {
-        id: 'spybee_u1',
-        name: 'Julian Lozano',
-        email: 'julian.lozano@spybee.io',
-        avatarUrl: 'https://i.pravatar.cc/150?u=julian.lozano',
+        id: 'flyworkflow_u1',
+        name: 'Camila Rojas',
+        email: 'camila.rojas@flyworkflow.io',
+        avatarUrl: 'https://i.pravatar.cc/150?u=camila.rojas',
         role: 'Superadmin',
-        company: 'SPYBEE',
+        company: 'FLYWORKFLOW',
       },
       token: 'e2e-test-token-abc123',
       isAuthenticated: true,
@@ -34,13 +34,13 @@ function buildAuthCookieValue() {
 export async function loginViaCookie(page: Page) {
   await page.context().addCookies([
     {
-      name: 'spybee-session',
+      name: 'flyworkflow-session',
       value: '1',
       url: 'http://localhost:3000',
       sameSite: 'Lax',
     },
     {
-      name: 'spybee-auth',
+      name: 'flyworkflow-auth',
       value: buildAuthCookieValue(),
       url: 'http://localhost:3000',
       sameSite: 'Lax',
@@ -53,8 +53,8 @@ export async function loginViaCookie(page: Page) {
  */
 export async function loginViaUI(
   page: Page,
-  email = 'julian.lozano@spybee.io',
-  password = 'spybee123',
+  email = 'camila.rojas@flyworkflow.io',
+  password = 'flyworkflow123',
 ) {
   await page.goto('/login');
   await page.getByLabel('Email', { exact: true }).fill(email);

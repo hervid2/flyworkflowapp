@@ -4,6 +4,7 @@
  * a treemap of incidents per tag. Both read the top-N aggregates from the
  * metrics hook and degrade gracefully to an empty state when there is no data.
  */
+import { useTranslations } from 'next-intl';
 import {
   RadarChart,
   PolarGrid,
@@ -69,6 +70,7 @@ function TreemapContent({
 }
 
 export default function DistributionCharts() {
+  const t = useTranslations('dashboard');
   const metrics = useDashboardMetrics();
 
   const radarData = metrics.byType.slice(0, 8).map((t) => ({
@@ -86,11 +88,11 @@ export default function DistributionCharts() {
   return (
     <section className={styles.distribution} aria-labelledby="distribution-title">
       <h2 id="distribution-title" className={styles.distribution__title}>
-        Distribución detallada — Por tipo y etiqueta
+        {t('distributionTitle')}
       </h2>
       <div className={styles.distribution__charts}>
         <div className={styles.distribution__chart}>
-          <h3 className={styles.distribution__chart_title}>Por categoría de incidencia</h3>
+          <h3 className={styles.distribution__chart_title}>{t('distributionByCategoryTitle')}</h3>
           {radarData.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
@@ -103,7 +105,7 @@ export default function DistributionCharts() {
                   tickCount={4}
                 />
                 <Radar
-                  name="Incidencias"
+                  name={t('distributionSeriesName')}
                   dataKey="count"
                   stroke="#f2b705"
                   fill="#f2b705"
@@ -111,17 +113,17 @@ export default function DistributionCharts() {
                 />
                 <Tooltip
                   contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e4e8' }}
-                  formatter={(v) => [v, 'Incidencias']}
+                  formatter={(v) => [v, t('distributionSeriesName')]}
                 />
               </RadarChart>
             </ResponsiveContainer>
           ) : (
-            <p className={styles.distribution__empty}>Sin datos para el período seleccionado</p>
+            <p className={styles.distribution__empty}>{t('distributionEmptyCategory')}</p>
           )}
         </div>
 
         <div className={styles.distribution__chart}>
-          <h3 className={styles.distribution__chart_title}>Por etiqueta</h3>
+          <h3 className={styles.distribution__chart_title}>{t('distributionByTagTitle')}</h3>
           {treemapData.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <Treemap
@@ -132,7 +134,7 @@ export default function DistributionCharts() {
               />
             </ResponsiveContainer>
           ) : (
-            <p className={styles.distribution__empty}>Sin etiquetas registradas</p>
+            <p className={styles.distribution__empty}>{t('distributionEmptyTags')}</p>
           )}
         </div>
       </div>

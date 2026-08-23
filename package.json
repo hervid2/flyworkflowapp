@@ -1,5 +1,6 @@
 {
-  "name": "spybee-incidencias",
+  "name": "flyworkflow-incidencias",
+  "description": "Frontend de gestión de incidencias para proyectos de construcción.",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,14 +15,22 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "generate-mock-data": "tsx scripts/generate-mock-data.ts",
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "./*.{ts,tsx}": [
       "eslint --fix",
       "prettier --write"
     ],
-    "*.{json,scss,md}": [
+    "!(backend)/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "./*.{json,scss,md}": [
+      "prettier --write"
+    ],
+    "!(backend)/**/*.{json,scss,md}": [
       "prettier --write"
     ]
   },
@@ -31,6 +40,7 @@
     "lucide-react": "^1.18.0",
     "mapbox-gl": "^3.24.1",
     "next": "14.2.35",
+    "next-intl": "^4.13.7",
     "react": "^18",
     "react-dom": "^18",
     "react-dropzone": "^15.0.0",
@@ -58,6 +68,7 @@
     "jsdom": "^29.1.1",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.4",
+    "tsx": "^4.23.12",
     "typescript": "^5",
     "vitest": "^4.1.8"
   }

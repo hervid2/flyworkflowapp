@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { login } from '@/services/auth.service';
 import { useAuthStore } from '@/store/useAuthStore';
+import FlyIcon from '@/components/ui/FlyIcon';
 import styles from './Login.module.scss';
 
 // Local schema — only shape-validates the inputs; real auth happens in the service.
@@ -50,8 +51,9 @@ export default function LoginPage() {
     <div className={styles.login} role="main">
       <div className={styles.login__card}>
         <div className={styles.login__header}>
-          <span className={styles.login__logo} aria-label="Spybee">
-            Spybee
+          <span className={styles.login__logo} aria-label="FlyWorkFlow">
+            <FlyIcon size={28} />
+            FlyWorkFlow
           </span>
           <h1 className={styles.login__title}>Gestión de Incidencias</h1>
           <p className={styles.login__subtitle}>Inicia sesión para continuar</p>
@@ -134,13 +136,15 @@ export default function LoginPage() {
         <div className={styles.login__demo} aria-label="Credenciales de demostración">
           <p className={styles.login__demo_title}>Credenciales de demo</p>
           <div className={styles.login__demo_item}>
-            <span className={styles.login__demo_label}>Spybee</span>
-            <code className={styles.login__demo_code}>julian.lozano@spybee.io / spybee123</code>
+            <span className={styles.login__demo_label}>FlyWorkFlow</span>
+            <code className={styles.login__demo_code}>
+              camila.rojas@flyworkflow.io / flyworkflow123
+            </code>
           </div>
           <div className={styles.login__demo_item}>
-            <span className={styles.login__demo_label}>Constructora</span>
+            <span className={styles.login__demo_label}>Constructora del Valle</span>
             <code className={styles.login__demo_code}>
-              mateo.soto@constructora.com / constructora123
+              diego.salazar@constructoradelvalle.com / constructora123
             </code>
           </div>
         </div>

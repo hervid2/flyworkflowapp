@@ -4,6 +4,7 @@
  * and current workload (with an overdue badge). Bars are normalized against the
  * column max so each list reads as a relative leaderboard.
  */
+import { useTranslations } from 'next-intl';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import styles from './TeamPerformance.module.scss';
 
@@ -33,6 +34,7 @@ interface BarRowProps {
 
 /** One leaderboard entry: avatar, accessible progress bar and count. */
 function BarRow({ name, value, max, label, variant = 'gold', badge }: BarRowProps) {
+  const t = useTranslations('dashboard');
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div className={styles.team__row} role="listitem">
@@ -58,7 +60,10 @@ function BarRow({ name, value, max, label, variant = 'gold', badge }: BarRowProp
       <div className={styles.team__count_wrap}>
         <span className={styles.team__count}>{value}</span>
         {badge !== undefined && badge > 0 && (
-          <span className={styles.team__overdue_badge} aria-label={`${badge} vencidas`}>
+          <span
+            className={styles.team__overdue_badge}
+            aria-label={t('teamOverdueBadgeAriaLabel', { count: badge })}
+          >
             {badge}
           </span>
         )}
@@ -68,6 +73,7 @@ function BarRow({ name, value, max, label, variant = 'gold', badge }: BarRowProp
 }
 
 export default function TeamPerformance() {
+  const t = useTranslations('dashboard');
   const { team } = useDashboardMetrics();
 
   const maxClosed = Math.max(...team.resolvers.map((r) => r.closedCount), 1);
@@ -77,14 +83,14 @@ export default function TeamPerformance() {
   return (
     <section className={styles.team} aria-labelledby="team-title">
       <h2 id="team-title" className={styles.team__title}>
-        Desempeño del equipo
+        {t('teamTitle')}
       </h2>
 
       <div className={styles.team__columns}>
-        <div className={styles.team__col} aria-label="Quién resuelve más incidencias">
-          <h3 className={styles.team__col_title}>Quién resuelve más</h3>
+        <div className={styles.team__col} aria-label={t('teamTopResolversAriaLabel')}>
+          <h3 className={styles.team__col_title}>{t('teamTopResolversTitle')}</h3>
           {team.resolvers.length === 0 ? (
-            <p className={styles.team__empty}>Sin datos</p>
+            <p className={styles.team__empty}>{t('teamNoData')}</p>
           ) : (
             <div role="list">
               {team.resolvers.slice(0, 5).map((r) => (
@@ -93,7 +99,7 @@ export default function TeamPerformance() {
                   name={r.user.name}
                   value={r.closedCount}
                   max={maxClosed}
-                  label="cerradas"
+                  label={t('teamClosedLabel')}
                   variant="gold"
                 />
               ))}
@@ -101,10 +107,10 @@ export default function TeamPerformance() {
           )}
         </div>
 
-        <div className={styles.team__col} aria-label="Quién reporta más incidencias">
-          <h3 className={styles.team__col_title}>Quién reporta más</h3>
+        <div className={styles.team__col} aria-label={t('teamTopReportersAriaLabel')}>
+          <h3 className={styles.team__col_title}>{t('teamTopReportersTitle')}</h3>
           {team.reporters.length === 0 ? (
-            <p className={styles.team__empty}>Sin datos</p>
+            <p className={styles.team__empty}>{t('teamNoData')}</p>
           ) : (
             <div role="list">
               {team.reporters.slice(0, 5).map((r) => (
@@ -113,7 +119,7 @@ export default function TeamPerformance() {
                   name={r.user.name}
                   value={r.createdCount}
                   max={maxCreated}
-                  label="creadas"
+                  label={t('teamCreatedLabel')}
                   variant="blue"
                 />
               ))}
@@ -121,10 +127,10 @@ export default function TeamPerformance() {
           )}
         </div>
 
-        <div className={styles.team__col} aria-label="Carga actual de trabajo por usuario">
-          <h3 className={styles.team__col_title}>Carga actual</h3>
+        <div className={styles.team__col} aria-label={t('teamCurrentWorkloadAriaLabel')}>
+          <h3 className={styles.team__col_title}>{t('teamCurrentWorkloadTitle')}</h3>
           {team.workload.length === 0 ? (
-            <p className={styles.team__empty}>Sin datos</p>
+            <p className={styles.team__empty}>{t('teamNoData')}</p>
           ) : (
             <div role="list">
               {team.workload.slice(0, 5).map((r) => (
@@ -133,7 +139,7 @@ export default function TeamPerformance() {
                   name={r.user.name}
                   value={r.openCount}
                   max={maxOpen}
-                  label="abiertas"
+                  label={t('teamOpenLabel')}
                   variant="red"
                   badge={r.overdueCount}
                 />

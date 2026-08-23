@@ -9,7 +9,7 @@ const baseDate = '2026-05-01T10:00:00.000Z';
 const owner = {
   id: 'user_1',
   name: 'Ana Gómez',
-  email: 'ana@spybee.io',
+  email: 'ana@example.com',
   avatarUrl: undefined,
 };
 const assignee = {

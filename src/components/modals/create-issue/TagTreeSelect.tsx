@@ -5,6 +5,7 @@
  * the flat list of selected ids back to React Hook Form.
  */
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronRight, X } from 'lucide-react';
 import type { Tag } from '@/domain/models';
 import styles from './TagTreeSelect.module.scss';
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function TagTreeSelect({ tags, selectedIds, onChange }: Props) {
+  const t = useTranslations('createIssue');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -85,7 +87,7 @@ export default function TagTreeSelect({ tags, selectedIds, onChange }: Props) {
   return (
     <div className={styles.root}>
       {selectedTags.length > 0 && (
-        <div className={styles.chips} role="list" aria-label="Etiquetas seleccionadas">
+        <div className={styles.chips} role="list" aria-label={t('tagTree.selectedAriaLabel')}>
           {selectedTags.map((tag) => (
             <span
               key={tag.id}
@@ -97,7 +99,7 @@ export default function TagTreeSelect({ tags, selectedIds, onChange }: Props) {
               <button
                 type="button"
                 className={styles.chip__remove}
-                aria-label={`Quitar etiqueta ${tag.name}`}
+                aria-label={t('tagTree.removeTag', { name: tag.name })}
                 onClick={() => toggle(tag.id)}
               >
                 <X size={10} />
@@ -111,10 +113,10 @@ export default function TagTreeSelect({ tags, selectedIds, onChange }: Props) {
         <div className={styles.search}>
           <input
             type="text"
-            placeholder="Buscar etiqueta..."
+            placeholder={t('tagTree.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Buscar etiqueta"
+            aria-label={t('tagTree.searchAriaLabel')}
           />
         </div>
 
@@ -141,7 +143,7 @@ export default function TagTreeSelect({ tags, selectedIds, onChange }: Props) {
                         styles.node__expand,
                         isExpanded ? styles['node__expand--open'] : '',
                       ].join(' ')}
-                      aria-label={isExpanded ? 'Colapsar' : 'Expandir'}
+                      aria-label={isExpanded ? t('tagTree.collapse') : t('tagTree.expand')}
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleExpand(node.id);
@@ -202,7 +204,7 @@ export default function TagTreeSelect({ tags, selectedIds, onChange }: Props) {
 
           {filtered.length === 0 && (
             <p style={{ padding: '12px 16px', fontSize: 14, color: '#8a8f98', margin: 0 }}>
-              Sin resultados
+              {t('tagTree.noResults')}
             </p>
           )}
         </div>

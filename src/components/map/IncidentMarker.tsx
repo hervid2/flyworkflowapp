@@ -37,3 +37,14 @@ export function createMarkerElement(incident: Incident): HTMLElement {
   el.appendChild(ring);
   return el;
 }
+
+/** Builds the marker element for a cluster of `count` nearby incidents. */
+export function createClusterElement(count: number): HTMLElement {
+  const el = document.createElement('div');
+  el.className = 'incident-cluster';
+  el.setAttribute('role', 'button');
+  el.setAttribute('tabindex', '0');
+  el.setAttribute('aria-label', `Grupo de ${count} incidencias, hacer clic para expandir`);
+  el.textContent = String(count);
+  return el;
+}

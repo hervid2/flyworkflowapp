@@ -5,15 +5,19 @@
  * form values to a {@link CreateIncidentDto}, calls the service and pushes the
  * resulting incident into the issues store.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
+import { useTranslations } from 'next-intl';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useModalStore } from '@/store/useModalStore';
-import { createIncident } from '@/services/incidents.service';
-import { issueFormSchema, type IssueFormValues } from '@/lib/validators/issue-form.schema';
+import { useCategoriesStore } from '@/store/useCategoriesStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { createIncident } from '@/services/create-incident.service';
+import { createIssueFormSchema, type IssueFormValues } from '@/lib/validators/issue-form.schema';
 import { INCIDENT_TYPES } from '@/lib/constants/incident-types';
+import { PROJECTS } from '@/lib/constants/projects';
 import { MOCK_USERS } from '@/lib/constants/mock-users';
 import TagTreeSelect from './TagTreeSelect';
 import UserMultiSelect from './UserMultiSelect';
@@ -23,7 +27,7 @@ import FileUploader from './FileUploader';
 import type { Tag } from '@/domain/models';
 import styles from './IssueForm.module.scss';
 
-// Static demo data standing in for catalogs/session that a backend would supply.
+// Static demo data standing in for catalogs a backend would supply.
 const MOCK_TAGS: Tag[] = [
   { id: '4bf3f690ae021229ec15f203', name: 'Reproceso', color: '#EF4444' },
   { id: '2a544044d7c705a56d0cf6c5', name: 'Acabados', color: '#6366F1' },
@@ -35,15 +39,6 @@ const MOCK_TAGS: Tag[] = [
   { id: 'd1fa90ad0559f69ec34319e1', name: 'Garantía', color: '#14B8A6' },
 ];
 
-const MOCK_OWNER = {
-  id: 'spybee_u1',
-  name: 'Julian Lozano',
-  email: 'julian.lozano@spybee.io',
-  avatarUrl: 'https://i.pravatar.cc/150?u=julian.lozano',
-};
-
-const MOCK_PROJECT = { id: 'proj_onboarding', name: 'Proyecto Onboarding' };
-
 const TODAY = format(new Date(), 'yyyy-MM-dd');
 
 interface Props {
@@ -51,9 +46,16 @@ interface Props {
 }
 
 export default function IssueForm({ onClose }: Props) {
+  const t = useTranslations('createIssue');
+  const tValidation = useTranslations('validation');
+  const schema = useMemo(() => createIssueFormSchema(tValidation), [tValidation]);
   const addIncident = useIssuesStore((s) => s.addIncident);
   const openModal = useModalStore((s) => s.open);
+  const customTypes = useCategoriesStore((s) => s.customTypes);
+  const authUser = useAuthStore((s) => s.user);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+
+  const typeCatalog = [...INCIDENT_TYPES, ...customTypes];
 
   const {
     register,
@@ -64,12 +66,13 @@ export default function IssueForm({ onClose }: Props) {
     formState: { errors, isSubmitting },
     reset,
   } = useForm<IssueFormValues>({
-    resolver: zodResolver(issueFormSchema) as Resolver<IssueFormValues>,
+    resolver: zodResolver(schema) as Resolver<IssueFormValues>,
     defaultValues: {
       title: '',
       description: '',
       dueDate: '',
       typeId: '',
+      projectId: '',
       priority: 'medium',
       tagIds: [],
       assigneeIds: [],
@@ -84,7 +87,8 @@ export default function IssueForm({ onClose }: Props) {
 
   // Resolve selected ids back to full objects, build the DTO, persist, reset.
   const onSubmit = async (data: IssueFormValues) => {
-    const type = INCIDENT_TYPES.find((t) => t.id === data.typeId)!;
+    const type = typeCatalog.find((t) => t.id === data.typeId)!;
+    const project = PROJECTS.find((p) => p.id === data.projectId)!;
     const assignees = MOCK_USERS.filter((u) => (data.assigneeIds ?? []).includes(u.id));
     const observers = MOCK_USERS.filter((u) => (data.observerIds ?? []).includes(u.id));
     const tags = MOCK_TAGS.filter((t) => (data.tagIds ?? []).includes(t.id));
@@ -103,8 +107,8 @@ export default function IssueForm({ onClose }: Props) {
         locationDescription: data.locationDescription ?? null,
         media: mediaFiles,
       },
-      MOCK_OWNER,
-      MOCK_PROJECT,
+      authUser!,
+      project,
     );
 
     addIncident(incident);
@@ -118,19 +122,19 @@ export default function IssueForm({ onClose }: Props) {
       className={styles.form}
       onSubmit={handleSubmit(onSubmit)}
       noValidate
-      aria-label="Formulario de creación de incidencia"
+      aria-label={t('form.ariaLabel')}
     >
       <div className={styles.body}>
         {/* ── Título ──────────────────────────────────────────────────────────── */}
         <div className={styles.field}>
           <label htmlFor="issue-title" className={`${styles.label} ${styles['label--required']}`}>
-            Título
+            {t('form.titleLabel')}
           </label>
           <input
             id="issue-title"
             type="text"
             className={`${styles.input} ${errors.title ? styles['input--error'] : ''}`}
-            placeholder="Describe brevemente la incidencia"
+            placeholder={t('form.titlePlaceholder')}
             aria-describedby={errors.title ? 'issue-title-error' : undefined}
             aria-invalid={!!errors.title}
             maxLength={120}
@@ -149,12 +153,12 @@ export default function IssueForm({ onClose }: Props) {
             htmlFor="issue-description"
             className={`${styles.label} ${styles['label--required']}`}
           >
-            Descripción
+            {t('form.descriptionLabel')}
           </label>
           <textarea
             id="issue-description"
             className={`${styles.textarea} ${errors.description ? styles['textarea--error'] : ''}`}
-            placeholder="Detalla la incidencia encontrada"
+            placeholder={t('form.descriptionPlaceholder')}
             aria-describedby={errors.description ? 'issue-desc-error' : undefined}
             aria-invalid={!!errors.description}
             maxLength={1000}
@@ -173,7 +177,7 @@ export default function IssueForm({ onClose }: Props) {
             htmlFor="issue-due-date"
             className={`${styles.label} ${styles['label--required']}`}
           >
-            Fecha de vencimiento
+            {t('form.dueDateLabel')}
           </label>
           <input
             id="issue-due-date"
@@ -194,7 +198,7 @@ export default function IssueForm({ onClose }: Props) {
         {/* ── Categoría ───────────────────────────────────────────────────────── */}
         <div className={styles.field}>
           <label htmlFor="issue-type" className={`${styles.label} ${styles['label--required']}`}>
-            Categoría
+            {t('form.categoryLabel')}
           </label>
           <div className={styles['field-row']}>
             <div className={styles.field}>
@@ -205,8 +209,8 @@ export default function IssueForm({ onClose }: Props) {
                 aria-invalid={!!errors.typeId}
                 {...register('typeId')}
               >
-                <option value="">Seleccionar categoría...</option>
-                {INCIDENT_TYPES.map((t) => (
+                <option value="">{t('form.categoryPlaceholder')}</option>
+                {typeCatalog.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
@@ -223,9 +227,35 @@ export default function IssueForm({ onClose }: Props) {
               className={styles['manage-btn']}
               onClick={() => openModal('category-manager')}
             >
-              Gestionar categorías
+              {t('form.manageCategoriesButton')}
             </button>
           </div>
+        </div>
+
+        {/* ── Proyecto ────────────────────────────────────────────────────────── */}
+        <div className={styles.field}>
+          <label htmlFor="issue-project" className={`${styles.label} ${styles['label--required']}`}>
+            {t('form.projectLabel')}
+          </label>
+          <select
+            id="issue-project"
+            className={`${styles.select} ${errors.projectId ? styles['select--error'] : ''}`}
+            aria-describedby={errors.projectId ? 'issue-project-error' : undefined}
+            aria-invalid={!!errors.projectId}
+            {...register('projectId')}
+          >
+            <option value="">{t('form.projectPlaceholder')}</option>
+            {PROJECTS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          {errors.projectId && (
+            <p id="issue-project-error" className={styles.error} role="alert">
+              {errors.projectId.message}
+            </p>
+          )}
         </div>
 
         {/* ── Prioridad ───────────────────────────────────────────────────────── */}
@@ -234,7 +264,7 @@ export default function IssueForm({ onClose }: Props) {
             htmlFor="issue-priority"
             className={`${styles.label} ${styles['label--required']}`}
           >
-            Prioridad
+            {t('form.priorityLabel')}
           </label>
           <select
             id="issue-priority"
@@ -242,15 +272,15 @@ export default function IssueForm({ onClose }: Props) {
             aria-invalid={!!errors.priority}
             {...register('priority')}
           >
-            <option value="high">Alta</option>
-            <option value="medium">Media</option>
-            <option value="low">Baja</option>
+            <option value="high">{t('form.priorityHigh')}</option>
+            <option value="medium">{t('form.priorityMedium')}</option>
+            <option value="low">{t('form.priorityLow')}</option>
           </select>
         </div>
 
         {/* ── Etiquetas ───────────────────────────────────────────────────────── */}
         <div className={styles.field}>
-          <span className={styles.label}>Etiquetas</span>
+          <span className={styles.label}>{t('form.tagsLabel')}</span>
           <Controller
             name="tagIds"
             control={control}
@@ -265,10 +295,10 @@ export default function IssueForm({ onClose }: Props) {
         </div>
 
         {/* ── Personas ────────────────────────────────────────────────────────── */}
-        <p className={styles['section-label']}>Personas</p>
+        <p className={styles['section-label']}>{t('form.peopleSection')}</p>
 
         <div className={styles.field}>
-          <span className={styles.label}>Asignados</span>
+          <span className={styles.label}>{t('form.assigneesLabel')}</span>
           <Controller
             name="assigneeIds"
             control={control}
@@ -277,15 +307,15 @@ export default function IssueForm({ onClose }: Props) {
                 users={MOCK_USERS}
                 selectedIds={field.value ?? []}
                 onChange={field.onChange}
-                placeholder="Buscar asignado..."
-                aria-label="Seleccionar asignados"
+                placeholder={t('form.assigneesPlaceholder')}
+                aria-label={t('form.assigneesAriaLabel')}
               />
             )}
           />
         </div>
 
         <div className={styles.field}>
-          <span className={styles.label}>Observadores</span>
+          <span className={styles.label}>{t('form.observersLabel')}</span>
           <Controller
             name="observerIds"
             control={control}
@@ -294,15 +324,15 @@ export default function IssueForm({ onClose }: Props) {
                 users={MOCK_USERS}
                 selectedIds={field.value ?? []}
                 onChange={field.onChange}
-                placeholder="Buscar observador..."
-                aria-label="Seleccionar observadores"
+                placeholder={t('form.observersPlaceholder')}
+                aria-label={t('form.observersAriaLabel')}
               />
             )}
           />
         </div>
 
         {/* ── Ubicación ───────────────────────────────────────────────────────── */}
-        <p className={styles['section-label']}>Ubicación</p>
+        <p className={styles['section-label']}>{t('form.locationSection')}</p>
 
         <div className={styles.field}>
           <LocationPicker
@@ -318,7 +348,7 @@ export default function IssueForm({ onClose }: Props) {
         </div>
 
         {/* ── Archivos adjuntos ────────────────────────────────────────────────── */}
-        <p className={styles['section-label']}>Archivos adjuntos</p>
+        <p className={styles['section-label']}>{t('form.attachmentsSection')}</p>
 
         <div className={styles.field}>
           <FileUploader value={mediaFiles} onChange={setMediaFiles} />
@@ -328,10 +358,10 @@ export default function IssueForm({ onClose }: Props) {
       {/* ── Footer ──────────────────────────────────────────────────────────────── */}
       <div className={styles.footer}>
         <button type="button" className={styles['btn-cancel']} onClick={onClose}>
-          Cancelar
+          {t('form.cancel')}
         </button>
         <button type="submit" className={styles['btn-submit']} disabled={isSubmitting}>
-          {isSubmitting ? 'Creando...' : 'Crear'}
+          {isSubmitting ? t('form.submitting') : t('form.submit')}
         </button>
       </div>
 

@@ -9,7 +9,7 @@ import MapaView from '@/components/map/MapaView';
 import IncidentDetailModal from '@/components/modals/incident-detail/IncidentDetailModal';
 
 export const metadata = {
-  title: 'Mapa de Incidencias — Spybee',
+  title: 'Mapa de Incidencias — FlyWorkFlow',
 };
 
 export default async function MapaPage() {

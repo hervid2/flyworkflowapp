@@ -4,33 +4,22 @@
  * metric counts to Recharts data and a fixed color/label scheme so both charts
  * share one reusable {@link DonutChart} renderer.
  */
+import { useTranslations } from 'next-intl';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import styles from './StatusChartsRow.module.scss';
 
-// Fixed color/label maps keep chart semantics consistent across the app.
+// Fixed color maps keep chart semantics consistent across the app.
 const STATUS_COLORS: Record<string, string> = {
   open: '#34C759',
   on_pause: '#F5A623',
   closed: '#E5484D',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  open: 'Abierta',
-  on_pause: 'Pausada',
-  closed: 'Cerrada',
-};
-
 const PRIORITY_COLORS: Record<string, string> = {
   high: '#E5484D',
   medium: '#F5A623',
   low: '#34C759',
-};
-
-const PRIORITY_LABELS: Record<string, string> = {
-  high: 'Alta',
-  medium: 'Media',
-  low: 'Baja',
 };
 
 /** Reusable donut + legend; renders one distribution (status or priority). */
@@ -45,6 +34,7 @@ function DonutChart({
   colorMap: Record<string, string>;
   labelMap: Record<string, string>;
 }) {
+  const t = useTranslations('dashboard');
   const chartData = data.map((d) => ({ name: labelMap[d.key] ?? d.key, value: d.count }));
   const total = chartData.reduce((acc, d) => acc + d.value, 0);
   const colors = data.map((d) => colorMap[d.key] ?? '#8A8F98');
@@ -88,7 +78,7 @@ function DonutChart({
             </div>
           ))}
           <div className={styles.legend__total}>
-            <span>Total</span>
+            <span>{t('statusChartsTotal')}</span>
             <span>{total}</span>
           </div>
         </div>
@@ -98,21 +88,34 @@ function DonutChart({
 }
 
 export default function StatusChartsRow() {
+  const t = useTranslations('dashboard');
   const { byStatus, byPriority } = useDashboardMetrics();
+
+  const STATUS_LABELS: Record<string, string> = {
+    open: t('statusOpen'),
+    on_pause: t('statusOnPause'),
+    closed: t('statusClosed'),
+  };
+
+  const PRIORITY_LABELS: Record<string, string> = {
+    high: t('priorityHigh'),
+    medium: t('priorityMedium'),
+    low: t('priorityLow'),
+  };
 
   const statusData = byStatus.map((s) => ({ key: s.status, count: s.count }));
   const priorityData = byPriority.map((p) => ({ key: p.priority, count: p.count }));
 
   return (
-    <section className={styles.row} aria-label="Distribución por estado y prioridad">
+    <section className={styles.row} aria-label={t('statusChartsSectionAriaLabel')}>
       <DonutChart
-        title="Por estado"
+        title={t('statusChartsByStatusTitle')}
         data={statusData}
         colorMap={STATUS_COLORS}
         labelMap={STATUS_LABELS}
       />
       <DonutChart
-        title="Por prioridad"
+        title={t('statusChartsByPriorityTitle')}
         data={priorityData}
         colorMap={PRIORITY_COLORS}
         labelMap={PRIORITY_LABELS}

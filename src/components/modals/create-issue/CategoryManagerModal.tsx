@@ -2,27 +2,25 @@
 /**
  * Nested sub-modal for managing custom incident categories. Opened from within
  * {@link IssueForm}; closing it reopens the create-issue modal rather than
- * dismissing the whole flow. Added categories persist for the browser session.
+ * dismissing the whole flow. Categories added here go into {@link useCategoriesStore}
+ * and become immediately selectable in the form's real category catalog.
  */
 import { useState, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { X, Trash2 } from 'lucide-react';
 import { useModalStore } from '@/store/useModalStore';
+import { useCategoriesStore } from '@/store/useCategoriesStore';
 import styles from './CategoryManagerModal.module.scss';
 
-interface Category {
-  id: string;
-  name: string;
-}
-
-// Module-scoped list so custom categories survive remounts within a session.
-const sessionCategories: Category[] = [];
-
 export default function CategoryManagerModal() {
+  const t = useTranslations('createIssue');
   const activeModal = useModalStore((s) => s.activeModal);
   const open = useModalStore((s) => s.open);
   const isOpen = activeModal === 'category-manager';
 
-  const [categories, setCategories] = useState<Category[]>(sessionCategories);
+  const categories = useCategoriesStore((s) => s.customTypes);
+  const addCategory = useCategoriesStore((s) => s.addCategory);
+  const removeCategory = useCategoriesStore((s) => s.removeCategory);
   const [newName, setNewName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -44,21 +42,12 @@ export default function CategoryManagerModal() {
   const handleAdd = () => {
     const trimmed = newName.trim();
     if (!trimmed) return;
-    const cat: Category = { id: crypto.randomUUID(), name: trimmed };
-    const next = [...categories, cat];
-    setCategories(next);
-    sessionCategories.length = 0;
-    sessionCategories.push(...next);
+    addCategory(trimmed);
     setNewName('');
     inputRef.current?.focus();
   };
 
-  const handleDelete = (id: string) => {
-    const next = categories.filter((c) => c.id !== id);
-    setCategories(next);
-    sessionCategories.length = 0;
-    sessionCategories.push(...next);
-  };
+  const handleDelete = (id: string) => removeCategory(id);
 
   const handleClose = () => open('create-issue');
 
@@ -69,19 +58,19 @@ export default function CategoryManagerModal() {
       className={styles.overlay}
       role="dialog"
       aria-modal="true"
-      aria-label="Gestionar categorías"
+      aria-label={t('categoryManager.ariaLabel')}
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
     >
       <div className={styles.modal}>
         <div className={styles.header}>
-          <h3>Gestionar categorías</h3>
+          <h3>{t('categoryManager.title')}</h3>
           <button
             type="button"
             className={styles.close}
             onClick={handleClose}
-            aria-label="Volver al formulario"
+            aria-label={t('categoryManager.close')}
           >
             <X size={16} />
           </button>
@@ -92,7 +81,7 @@ export default function CategoryManagerModal() {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Nueva categoría..."
+              placeholder={t('categoryManager.newCategoryPlaceholder')}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
@@ -101,16 +90,16 @@ export default function CategoryManagerModal() {
                   handleAdd();
                 }
               }}
-              aria-label="Nombre de la nueva categoría"
+              aria-label={t('categoryManager.newCategoryAriaLabel')}
             />
             <button type="button" onClick={handleAdd} disabled={!newName.trim()}>
-              Agregar
+              {t('categoryManager.add')}
             </button>
           </div>
 
-          <div className={styles.list} role="list" aria-label="Categorías personalizadas">
+          <div className={styles.list} role="list" aria-label={t('categoryManager.listAriaLabel')}>
             {categories.length === 0 ? (
-              <p className={styles.empty}>Sin categorías personalizadas</p>
+              <p className={styles.empty}>{t('categoryManager.empty')}</p>
             ) : (
               categories.map((cat) => (
                 <div key={cat.id} className={styles.item} role="listitem">
@@ -119,7 +108,7 @@ export default function CategoryManagerModal() {
                     type="button"
                     className={styles.item__delete}
                     onClick={() => handleDelete(cat.id)}
-                    aria-label={`Eliminar categoría ${cat.name}`}
+                    aria-label={t('categoryManager.deleteCategory', { name: cat.name })}
                   >
                     <Trash2 size={14} />
                   </button>

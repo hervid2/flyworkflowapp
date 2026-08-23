@@ -5,12 +5,14 @@
  * the actual fields to {@link IssueForm}. Driven by the modal store.
  */
 import { useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { useModalStore } from '@/store/useModalStore';
 import IssueForm from './IssueForm';
 import styles from './CreateIssueModal.module.scss';
 
 export default function CreateIssueModal() {
+  const t = useTranslations('createIssue');
   const activeModal = useModalStore((s) => s.activeModal);
   const close = useModalStore((s) => s.close);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -84,13 +86,13 @@ export default function CreateIssueModal() {
       <div className={styles.modal} ref={dialogRef}>
         <div className={styles.header}>
           <h2 id="create-issue-title" className={styles.header__title}>
-            Crear Incidencia
+            {t('modal.title')}
           </h2>
           <button
             className={styles.header__close}
             type="button"
             onClick={close}
-            aria-label="Cerrar modal"
+            aria-label={t('modal.close')}
           >
             <X size={18} />
           </button>

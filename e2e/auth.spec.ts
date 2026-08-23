@@ -12,12 +12,12 @@ test.describe('Autenticación', () => {
     await expect(page).toHaveURL(/\/mapa/, { timeout: 10_000 });
     // TopBar shows the logged-in user's name on desktop; on mobile only the avatar is shown
     if (!isMobile) {
-      await expect(page.getByText('Julian Lozano')).toBeVisible();
+      await expect(page.getByText('Camila Rojas')).toBeVisible();
     }
   });
 
   test('credenciales inválidas muestran error y permanecen en /login', async ({ page }) => {
-    await loginViaUI(page, 'julian.lozano@spybee.io', 'wrongpassword');
+    await loginViaUI(page, 'camila.rojas@flyworkflow.io', 'wrongpassword');
     // Server error alert should appear
     await expect(
       page
@@ -32,7 +32,7 @@ test.describe('Autenticación', () => {
   }) => {
     await page.goto('/login');
     await page.getByLabel('Email', { exact: true }).fill('no-es-un-email');
-    await page.getByLabel('Contraseña', { exact: true }).fill('spybee123');
+    await page.getByLabel('Contraseña', { exact: true }).fill('flyworkflow123');
     await page.getByRole('button', { name: 'Iniciar sesión' }).click();
     await expect(page.getByText('Introduce un email válido')).toBeVisible();
     await expect(page).toHaveURL(/\/login/);

@@ -37,4 +37,13 @@ export const INCIDENT_TYPES: IncidentType[] = [
     name: 'Observación General',
     name_en: 'General Observation',
   },
+  { id: 'exc_001', key: 'excavation', name: 'Excavación', name_en: 'Excavation' },
+  { id: 'fnd_001', key: 'foundation', name: 'Cimentación', name_en: 'Foundation' },
+  { id: 'soil_001', key: 'soil-study', name: 'Estudio de Suelos', name_en: 'Soil Study' },
+  {
+    id: 'urb_001',
+    key: 'urban_planning',
+    name: 'Planeación Urbana',
+    name_en: 'Urban Planning',
+  },
 ];

@@ -1,0 +1,87 @@
+{
+  "modal": {
+    "title": "Crear Incidencia",
+    "close": "Cerrar modal"
+  },
+  "form": {
+    "ariaLabel": "Formulario de creación de incidencia",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Describe brevemente la incidencia",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Detalla la incidencia encontrada",
+    "dueDateLabel": "Fecha de vencimiento",
+    "categoryLabel": "Categoría",
+    "categoryPlaceholder": "Seleccionar categoría...",
+    "manageCategoriesButton": "Gestionar categorías",
+    "projectLabel": "Proyecto",
+    "projectPlaceholder": "Seleccionar proyecto...",
+    "priorityLabel": "Prioridad",
+    "priorityHigh": "Alta",
+    "priorityMedium": "Media",
+    "priorityLow": "Baja",
+    "tagsLabel": "Etiquetas",
+    "peopleSection": "Personas",
+    "assigneesLabel": "Asignados",
+    "assigneesPlaceholder": "Buscar asignado...",
+    "assigneesAriaLabel": "Seleccionar asignados",
+    "observersLabel": "Observadores",
+    "observersPlaceholder": "Buscar observador...",
+    "observersAriaLabel": "Seleccionar observadores",
+    "locationSection": "Ubicación",
+    "attachmentsSection": "Archivos adjuntos",
+    "cancel": "Cancelar",
+    "submit": "Crear",
+    "submitting": "Creando..."
+  },
+  "categoryManager": {
+    "ariaLabel": "Gestionar categorías",
+    "title": "Gestionar categorías",
+    "close": "Volver al formulario",
+    "newCategoryPlaceholder": "Nueva categoría...",
+    "newCategoryAriaLabel": "Nombre de la nueva categoría",
+    "add": "Agregar",
+    "listAriaLabel": "Categorías personalizadas",
+    "empty": "Sin categorías personalizadas",
+    "deleteCategory": "Eliminar categoría {name}"
+  },
+  "tagTree": {
+    "selectedAriaLabel": "Etiquetas seleccionadas",
+    "removeTag": "Quitar etiqueta {name}",
+    "searchPlaceholder": "Buscar etiqueta...",
+    "searchAriaLabel": "Buscar etiqueta",
+    "collapse": "Colapsar",
+    "expand": "Expandir",
+    "noResults": "Sin resultados"
+  },
+  "userMultiSelect": {
+    "defaultPlaceholder": "Buscar usuario...",
+    "selectedAriaLabel": "Usuarios seleccionados",
+    "remove": "Quitar {name}",
+    "noResults": "Sin resultados"
+  },
+  "location": {
+    "mapAriaLabel": "Mini-mapa de ubicación. Haz clic para fijar la ubicación de la incidencia.",
+    "mapFallback": "Mapa no disponible. Ingresa las coordenadas manualmente.",
+    "latitudeLabel": "Latitud",
+    "latitudeHint": "−90 a 90",
+    "longitudeLabel": "Longitud",
+    "longitudeHint": "−180 a 180",
+    "coordPlaceholder": "0.00000000",
+    "detailLabel": "Detalles de localización",
+    "detailPlaceholder": "Ej. Piso 3, Sala 301, eje C"
+  },
+  "fileUploader": {
+    "tabsAriaLabel": "Tipo de archivos adjuntos",
+    "mediaTab": "Imágenes y Videos",
+    "documentsTab": "Documentos",
+    "dropzoneMediaAriaLabel": "Zona para subir imágenes y videos",
+    "dropzoneDocumentsAriaLabel": "Zona para subir documentos",
+    "dropHint": "Suelta los archivos aquí…",
+    "dragHint": "Arrastra archivos o haz clic para seleccionar",
+    "mediaFormats": "JPG, PNG, GIF, SVG, MP4, MOV, AVI, WEBM",
+    "documentFormats": "PDF, DOC, DOCX, XLS, XLSX",
+    "empty": "No hay medios disponibles",
+    "previewAriaLabel": "Vista previa de archivos adjuntos",
+    "remove": "Eliminar {name}"
+  }
+}

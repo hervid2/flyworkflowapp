@@ -5,17 +5,16 @@
  */
 import type { Incident } from '@/domain/models';
 
-const STATUS_LABELS: Record<Incident['status'], string> = {
-  open: 'Abierta',
-  on_pause: 'Pausada',
-  closed: 'Cerrada',
-};
-
-const PRIORITY_LABELS: Record<Incident['priority'], string> = {
-  high: 'Alta',
-  medium: 'Media',
-  low: 'Baja',
-};
+/** Resolved i18n labels the caller must supply — see `getPopupHTML` below. */
+export interface PopupLabels {
+  statusOpen: string;
+  statusOnPause: string;
+  statusClosed: string;
+  priorityHigh: string;
+  priorityMedium: string;
+  priorityLow: string;
+  viewDetails: string;
+}
 
 const PRIORITY_COLORS: Record<Incident['priority'], string> = {
   high: '#e5484d',
@@ -33,7 +32,18 @@ function esc(str: string): string {
 }
 
 /** Returns the popup markup for an incident (code, title, badges, assignees). */
-export function getPopupHTML(incident: Incident): string {
+export function getPopupHTML(incident: Incident, labels: PopupLabels): string {
+  const statusLabels: Record<Incident['status'], string> = {
+    open: labels.statusOpen,
+    on_pause: labels.statusOnPause,
+    closed: labels.statusClosed,
+  };
+  const priorityLabels: Record<Incident['priority'], string> = {
+    high: labels.priorityHigh,
+    medium: labels.priorityMedium,
+    low: labels.priorityLow,
+  };
+
   const priorityColor = PRIORITY_COLORS[incident.priority];
   const visibleAssignees = incident.assignees.slice(0, 2);
   const extraCount = Math.max(0, incident.assignees.length - 2);
@@ -49,15 +59,15 @@ export function getPopupHTML(incident: Incident): string {
       <h3 class="incident-popup__title">${esc(incident.title)}</h3>
       <div class="incident-popup__badges">
         <span class="incident-popup__badge" style="background:${priorityColor}22;color:${priorityColor}">
-          ${PRIORITY_LABELS[incident.priority]}
+          ${priorityLabels[incident.priority]}
         </span>
         <span class="incident-popup__badge incident-popup__badge--status">
-          ${STATUS_LABELS[incident.status]}
+          ${statusLabels[incident.status]}
         </span>
       </div>
       ${assigneeText ? `<p class="incident-popup__assignees">${assigneeText}</p>` : ''}
       <a class="incident-popup__link" href="#" data-id="${esc(incident.id)}">
-        Ver detalles →
+        ${labels.viewDetails}
       </a>
     </div>
   `;

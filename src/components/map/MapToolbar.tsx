@@ -15,68 +15,76 @@ import {
   Plus,
   FileStack,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useFiltersStore } from '@/store/useFiltersStore';
 import { useModalStore } from '@/store/useModalStore';
 import styles from './MapToolbar.module.scss';
 
 /**
- * Floating map toolbar replicating the Spybee chrome. Two controls are wired:
- * the 2D/3D projection toggle (filters store) and the "create incident" action
- * (modal store); the remaining icon buttons are presentational placeholders.
+ * Floating map toolbar. Two controls are wired: the 2D/3D projection toggle
+ * (filters store) and the "create incident" action (modal store); the
+ * remaining icon buttons are presentational placeholders.
  */
 export default function MapToolbar() {
+  const t = useTranslations('map');
   const is3D = useFiltersStore((s) => s.is3D);
   const toggle3D = useFiltersStore((s) => s.toggle3D);
   const openModal = useModalStore((s) => s.open);
 
+  const secondaryGroup = [
+    { icon: FileStack, label: t('bimPlans') },
+    { icon: Star, label: t('favorites') },
+    { icon: MapPin, label: t('location') },
+    { icon: Layers, label: t('layers') },
+    { icon: Map, label: t('heatmap') },
+    { icon: Brush, label: t('annotations') },
+    { icon: Share2, label: t('share') },
+  ];
+
   return (
     <>
       {/* Bottom-left group: navigation controls */}
-      <div
-        className={styles['toolbar-left']}
-        role="toolbar"
-        aria-label="Controles de navegación del mapa"
-      >
+      <div className={styles['toolbar-left']} role="toolbar" aria-label={t('mapNavControls')}>
         <button
           className={styles['toolbar__btn']}
           type="button"
-          aria-label="Recentrar mapa"
-          title="Recentrar"
+          aria-label={t('recenter')}
+          title={t('recenter')}
         >
           <Navigation size={17} />
         </button>
         <button
           className={styles['toolbar__btn']}
           type="button"
-          aria-label="Vista de planta o sección"
-          title="Planta / Sección"
+          aria-label={t('planSection')}
+          title={t('planSection')}
         >
           <Box size={17} />
         </button>
         <button
           className={styles['toolbar__btn']}
           type="button"
-          aria-label="Capas del mapa"
-          title="Capas"
+          aria-label={t('mapLayers')}
+          title={t('mapLayers')}
         >
           <Layers size={17} />
         </button>
         <button
           className={styles['toolbar__btn']}
           type="button"
-          aria-label="Terreno y elevación"
-          title="Terreno / Elevación"
+          aria-label={t('terrainElevation')}
+          title={t('terrainElevation')}
         >
           <Mountain size={17} />
         </button>
       </div>
 
       {/* Bottom-center group: view mode (2D/3D + capture tools) */}
-      <div className={styles['toolbar-center']} role="toolbar" aria-label="Modo de visualización">
+      <div className={styles['toolbar-center']} role="toolbar" aria-label={t('viewMode')}>
         <div
           className={styles['toolbar__toggle-group']}
           role="group"
-          aria-label="Proyección 2D o 3D"
+          aria-label={t('projection2d3d')}
         >
           <button
             className={[styles['toolbar__toggle'], !is3D ? styles['toolbar__toggle--active'] : '']
@@ -105,51 +113,43 @@ export default function MapToolbar() {
         <button
           className={styles['toolbar__btn']}
           type="button"
-          aria-label="Histórico / Timelapse"
-          title="Timelapse"
+          aria-label={t('timelapse')}
+          title={t('timelapse')}
         >
           <Clock size={17} />
         </button>
         <button
           className={styles['toolbar__btn']}
           type="button"
-          aria-label="Captura o recorrido"
-          title="Captura"
+          aria-label={t('capture')}
+          title={t('capture')}
         >
           <Camera size={17} />
         </button>
         <button
           className={styles['toolbar__btn']}
           type="button"
-          aria-label="Vista 360°"
-          title="360°"
+          aria-label={t('view360')}
+          title={t('view360')}
         >
           <Rotate3d size={17} />
         </button>
       </div>
 
       {/* Right group: primary action (create) and tool shortcuts */}
-      <div className={styles['toolbar-right']} role="toolbar" aria-label="Herramientas y acciones">
+      <div className={styles['toolbar-right']} role="toolbar" aria-label={t('toolsActions')}>
         <button
           className={styles['toolbar__primary-btn']}
           type="button"
           onClick={() => openModal('create-issue')}
-          aria-label="Crear nueva incidencia"
-          title="Crear incidencia"
+          aria-label={t('createIncident')}
+          title={t('createIncident')}
         >
           <Plus size={22} strokeWidth={2.5} />
         </button>
 
         <div className={styles['toolbar__secondary-group']}>
-          {[
-            { icon: FileStack, label: 'Planos BIM' },
-            { icon: Star, label: 'Favoritos' },
-            { icon: MapPin, label: 'Ubicación' },
-            { icon: Layers, label: 'Capas' },
-            { icon: Map, label: 'Mapa de calor' },
-            { icon: Brush, label: 'Anotaciones' },
-            { icon: Share2, label: 'Compartir' },
-          ].map(({ icon: Icon, label }) => (
+          {secondaryGroup.map(({ icon: Icon, label }) => (
             <button
               key={label}
               className={styles['toolbar__btn']}

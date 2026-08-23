@@ -4,6 +4,7 @@
  */
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import IntlProvider from '@/components/providers/IntlProvider';
 import './globals.scss';
 
 const inter = Inter({
@@ -13,14 +14,16 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Spybee — Gestión de Incidencias',
+  title: 'FlyWorkFlow — Gestión de Incidencias',
   description: 'Módulo de gestión de incidencias para proyectos de construcción.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={inter.variable}>
-      <body>{children}</body>
+      <body>
+        <IntlProvider>{children}</IntlProvider>
+      </body>
     </html>
   );
 }

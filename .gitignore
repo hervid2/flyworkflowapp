@@ -1,6 +1,9 @@
 # spec file (internal)
 especificacion_incidencias.md
 
+# Personal AWS deployment checklist (Spanish, operator-only — see docs/aws-deploy-guide.md header)
+docs/aws-deploy-guide.md
+
 # Next.js
 .next/
 out/
@@ -13,6 +16,7 @@ yarn-error.log*
 
 # Build
 dist/
+.aws-sam/
 
 # Env
 .env

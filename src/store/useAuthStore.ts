@@ -24,7 +24,7 @@ interface AuthState {
 
 /**
  * Custom persist storage backed by `document.cookie`. Also writes a companion
- * `spybee-session` flag cookie that the middleware checks to authorize routes.
+ * `flyworkflow-session` flag cookie that the middleware checks to authorize routes.
  * SSR-safe: every accessor no-ops when `document` is unavailable.
  */
 function cookieStorage() {
@@ -37,12 +37,12 @@ function cookieStorage() {
     setItem(name, value) {
       if (typeof document === 'undefined') return;
       document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=86400; SameSite=Lax`;
-      document.cookie = `spybee-session=1; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `flyworkflow-session=1; path=/; max-age=86400; SameSite=Lax`;
     },
     removeItem(name) {
       if (typeof document === 'undefined') return;
       document.cookie = `${name}=; path=/; max-age=0`;
-      document.cookie = `spybee-session=; path=/; max-age=0`;
+      document.cookie = `flyworkflow-session=; path=/; max-age=0`;
     },
   }));
 }
@@ -57,7 +57,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
     }),
     {
-      name: 'spybee-auth',
+      name: 'flyworkflow-auth',
       storage: cookieStorage(),
     },
   ),

@@ -74,6 +74,10 @@
   flex-shrink: 0;
 }
 
+.topbar__lang-wrapper {
+  position: relative;
+}
+
 .topbar__lang-selector {
   @include flex-center;
   gap: $space-xs;
@@ -87,6 +91,42 @@
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.topbar__lang-menu {
+  position: absolute;
+  top: calc(100% + #{$space-xs});
+  left: 0;
+  min-width: 120px;
+  background-color: $color-bg-dark;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: $radius-sm;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  padding: $space-xs 0;
+  z-index: $z-topbar + 1;
+
+  li {
+    list-style: none;
+  }
+
+  button {
+    width: 100%;
+    text-align: left;
+    padding: $space-xs $space-sm;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: $font-size-xs;
+    cursor: pointer;
+    @include focus-ring;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  li[aria-selected='true'] button {
+    color: $color-accent-gold;
+    font-weight: $font-weight-semibold;
   }
 }
 
@@ -105,9 +145,9 @@
 }
 
 .topbar__user-avatar {
-  width: 42px;
+  width: 34px;
   height: 34px;
-  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  border-radius: $radius-full;
   background-color: $color-accent-gold;
   @include flex-center;
   font-size: $font-size-xs;

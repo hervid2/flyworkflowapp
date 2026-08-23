@@ -5,11 +5,24 @@
  * mocked because the nested LocationPicker would otherwise need WebGL.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
 import CreateIssueModal from '@/components/modals/create-issue/CreateIssueModal';
 import { createIssuesStore, IssuesStoreContext } from '@/store/useIssuesStore';
 import { useModalStore } from '@/store/useModalStore';
+import { useCategoriesStore } from '@/store/useCategoriesStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { MESSAGES } from '@/i18n/messages';
 import type { ReactNode } from 'react';
+
+const TEST_USER = {
+  id: 'a3f7c1d8e6b94025f8a1c7d2',
+  name: 'Diego Salazar',
+  email: 'diego.salazar@constructoradelvalle.com',
+  avatarUrl: 'https://i.pravatar.cc/150?u=diego.salazar',
+  role: 'Ingeniero Civil',
+  company: 'CONSTRUCTORA DEL VALLE',
+};
 
 // ── Mapbox GL mock ────────────────────────────────────────────────────────────
 // Required because LocationPicker imports mapbox-gl and runs it inside useEffect.
@@ -97,9 +110,11 @@ function renderModal() {
   const store = createIssuesStore([]);
 
   render(
-    <IssuesStoreContext.Provider value={store}>
-      <CreateIssueModal />
-    </IssuesStoreContext.Provider>,
+    <NextIntlClientProvider locale="es" messages={MESSAGES.es}>
+      <IssuesStoreContext.Provider value={store}>
+        <CreateIssueModal />
+      </IssuesStoreContext.Provider>
+    </NextIntlClientProvider>,
   );
 
   return { store };
@@ -108,7 +123,11 @@ function renderModal() {
 // Wrapper for act()-protected renders used with external JSX
 function renderWithProviders(ui: ReactNode) {
   const store = createIssuesStore([]);
-  render(<IssuesStoreContext.Provider value={store}>{ui}</IssuesStoreContext.Provider>);
+  render(
+    <NextIntlClientProvider locale="es" messages={MESSAGES.es}>
+      <IssuesStoreContext.Provider value={store}>{ui}</IssuesStoreContext.Provider>
+    </NextIntlClientProvider>,
+  );
   return { store };
 }
 
@@ -117,10 +136,14 @@ function renderWithProviders(ui: ReactNode) {
 beforeEach(() => {
   // Open the create-issue modal so CreateIssueModal renders
   useModalStore.setState({ activeModal: 'create-issue' });
+  // IssueForm resolves the incident owner from the session
+  useAuthStore.setState({ user: TEST_USER, token: 'test-token', isAuthenticated: true });
 });
 
 afterEach(() => {
   useModalStore.setState({ activeModal: null });
+  useCategoriesStore.setState({ customTypes: [] });
+  useAuthStore.setState({ user: null, token: null, isAuthenticated: false });
   vi.clearAllMocks();
 });
 
@@ -180,6 +203,9 @@ describe('CreateIssueModal — flujo de creación completo', () => {
     fireEvent.change(screen.getByLabelText(/categoría/i), {
       target: { value: 'e05995817a9a9bf5c0298f7d' }, // Hidrosanitario
     });
+    fireEvent.change(screen.getByLabelText(/proyecto/i), {
+      target: { value: '51ae14076884e5134d3afcde' }, // Edificio Cedro Real - Etapa 1
+    });
     // Priority already defaults to "media"
 
     await act(async () => {
@@ -194,6 +220,9 @@ describe('CreateIssueModal — flujo de creación completo', () => {
       expect(incidents).toHaveLength(1);
       expect(incidents[0].title).toBe('Fisura en muro sur');
       expect(incidents[0].status).toBe('open');
+      // Owner and project come from the session, not a hardcoded stand-in
+      expect(incidents[0].owner.id).toBe(TEST_USER.id);
+      expect(incidents[0].project.id).toBe('51ae14076884e5134d3afcde');
     });
   });
 
@@ -211,6 +240,9 @@ describe('CreateIssueModal — flujo de creación completo', () => {
     });
     fireEvent.change(screen.getByLabelText(/categoría/i), {
       target: { value: '074cf498175293d292634177' }, // Eléctrico
+    });
+    fireEvent.change(screen.getByLabelText(/proyecto/i), {
+      target: { value: 'e845fadb72b05dfd164a0f52' }, // Conjunto Residencial Los Almendros
     });
     fireEvent.change(screen.getByLabelText(/prioridad/i), {
       target: { value: 'high' },
@@ -234,5 +266,63 @@ describe('CreateIssueModal — estado del modal', () => {
     const { store } = renderWithProviders(<CreateIssueModal />);
     expect(store).toBeDefined();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+describe('CreateIssueModal — gestor de categorías', () => {
+  it('una categoría agregada en el gestor aparece en el <select> del formulario', async () => {
+    renderModal();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Gestionar categorías' }));
+    fireEvent.change(screen.getByLabelText('Nombre de la nueva categoría'), {
+      target: { value: 'Impermeabilización' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar' }));
+    const categoryList = screen.getByRole('list', { name: 'Categorías personalizadas' });
+    expect(within(categoryList).getByText('Impermeabilización')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Volver al formulario' }));
+
+    const select = screen.getByLabelText(/categoría/i) as HTMLSelectElement;
+    const option = Array.from(select.options).find((o) => o.text === 'Impermeabilización');
+    expect(option).toBeDefined();
+  });
+
+  it('una incidencia creada con una categoría personalizada guarda su nombre y clave', async () => {
+    const { store } = renderModal();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Gestionar categorías' }));
+    fireEvent.change(screen.getByLabelText('Nombre de la nueva categoría'), {
+      target: { value: 'Impermeabilización' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Volver al formulario' }));
+
+    fireEvent.change(screen.getByLabelText(/título/i), {
+      target: { value: 'Filtración en cubierta' },
+    });
+    fireEvent.change(screen.getByLabelText(/descripción/i), {
+      target: { value: 'Filtración visible tras la última lluvia.' },
+    });
+    fireEvent.change(screen.getByLabelText(/fecha de vencimiento/i), {
+      target: { value: tomorrow() },
+    });
+    fireEvent.change(screen.getByLabelText(/proyecto/i), {
+      target: { value: '51ae14076884e5134d3afcde' }, // Edificio Cedro Real - Etapa 1
+    });
+
+    const select = screen.getByLabelText(/categoría/i) as HTMLSelectElement;
+    const customId = Array.from(select.options).find((o) => o.text === 'Impermeabilización')!.value;
+    fireEvent.change(select, { target: { value: customId } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Crear' }));
+    });
+
+    await waitFor(() => {
+      const inc = store.getState().incidents[0];
+      expect(inc.type.name).toBe('Impermeabilización');
+      expect(inc.type.key).toBe('impermeabilizacion');
+    });
   });
 });

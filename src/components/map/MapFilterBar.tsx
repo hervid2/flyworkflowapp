@@ -1,12 +1,13 @@
 'use client';
 /**
- * Top filter bar of the map view, recreating the Spybee toolbar: a date picker
- * and a "last visits" slider bound to the map filters store. The Compare/BIM
- * buttons are presentational placeholders matching the reference UI.
+ * Top filter bar of the map view: a date picker and a "last visits" slider
+ * bound to the map filters store. The Compare/BIM buttons are presentational
+ * placeholders.
  */
 import { PanelLeft, Filter } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useTranslations } from 'next-intl';
 import { useFiltersStore } from '@/store/useFiltersStore';
 import styles from './MapFilterBar.module.scss';
 
@@ -22,21 +23,22 @@ function formatDisplayDate(isoDate: string): string {
 }
 
 export default function MapFilterBar() {
+  const t = useTranslations('map');
   const date = useFiltersStore((s) => s.mapFilters.date);
   const lastVisits = useFiltersStore((s) => s.mapFilters.lastVisits);
   const setMapDate = useFiltersStore((s) => s.setMapDate);
   const setLastVisits = useFiltersStore((s) => s.setLastVisits);
 
   return (
-    <div className={styles['map-filter-bar']} role="toolbar" aria-label="Filtros de mapa">
+    <div className={styles['map-filter-bar']} role="toolbar" aria-label={t('filterBarLabel')}>
       <div className={styles['map-filter-bar__left']}>
         <button
           className={styles['map-filter-bar__icon-btn']}
           type="button"
-          aria-label="Ver detalles del panel"
+          aria-label={t('viewDetailsPanel')}
         >
           <PanelLeft size={15} />
-          <span className={styles['map-filter-bar__btn-label']}>Ver detalles</span>
+          <span className={styles['map-filter-bar__btn-label']}>{t('viewDetails')}</span>
         </button>
 
         <span className={styles['map-filter-bar__divider']} aria-hidden="true" />
@@ -44,26 +46,26 @@ export default function MapFilterBar() {
         <button
           className={styles['map-filter-bar__icon-btn']}
           type="button"
-          aria-label="Abrir filtros"
+          aria-label={t('openFilters')}
         >
           <Filter size={15} />
         </button>
 
         <label className={styles['map-filter-bar__date-wrapper']}>
-          <span className={styles['map-filter-bar__visually-hidden']}>Seleccionar fecha</span>
+          <span className={styles['map-filter-bar__visually-hidden']}>{t('selectDate')}</span>
           <span className={styles['map-filter-bar__date-display']}>{formatDisplayDate(date)}</span>
           <input
             type="date"
             className={styles['map-filter-bar__date-input']}
             value={date}
             onChange={(e) => setMapDate(e.target.value)}
-            aria-label="Fecha del mapa"
+            aria-label={t('mapDate')}
           />
         </label>
 
         <div className={styles['map-filter-bar__slider-section']}>
           <span className={styles['map-filter-bar__slider-label']}>
-            Últimas {lastVisits} visita{lastVisits !== 1 ? 's' : ''}
+            {t('visitsLabel', { n: lastVisits })}
           </span>
           <div className={styles['map-filter-bar__slider-track']}>
             <input
@@ -74,7 +76,7 @@ export default function MapFilterBar() {
               step={1}
               value={lastVisits}
               onChange={(e) => setLastVisits(Number(e.target.value))}
-              aria-label="Número de últimas visitas"
+              aria-label={t('visitsCount')}
               aria-valuenow={lastVisits}
               aria-valuemin={1}
               aria-valuemax={5}
@@ -98,10 +100,10 @@ export default function MapFilterBar() {
 
       <div className={styles['map-filter-bar__right']}>
         <button className={styles['map-filter-bar__action-btn']} type="button">
-          Comparar
+          {t('compare')}
         </button>
         <button className={styles['map-filter-bar__action-btn']} type="button">
-          Comparar BIM
+          {t('compareBim')}
         </button>
       </div>
     </div>
