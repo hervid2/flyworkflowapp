@@ -64,7 +64,7 @@ Parallelizable with Phase 3 (there's no real dependency between frontend fixes a
 
 ---
 
-## Phase 3 — Backend: foundations and local infrastructure (no AWS)
+## Phase 3 — Backend: foundations and local infrastructure (no AWS) _(complete)_
 
 **F3.1 — `chore/backend-scaffold-nestjs`** — Bootstraps NestJS in `backend/` (modular structure, see `requirements.md §3.2` for the stack rationale). `HealthModule` (`GET /health`). Docs: `best-practices.md §NestJS, §TypeScript`. Commit: `chore(backend): scaffold NestJS project structure and tooling`
 
