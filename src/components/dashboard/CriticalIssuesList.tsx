@@ -12,7 +12,7 @@ import { formatDistanceToNow, parseISO, isBefore, isAfter, startOfDay, addDays }
 import { es } from 'date-fns/locale';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useFiltersStore } from '@/store/useFiltersStore';
-import { MOCK_USERS } from '@/lib/constants/mock-users';
+import { MOCK_USERS, USER_COMPANY_MAP } from '@/lib/constants/mock-users';
 import type { Incident, IncidentPriority, IncidentStatus } from '@/domain/models/incident.model';
 import type { RiskFilter } from './RiskIndicators';
 import styles from './CriticalIssuesList.module.scss';
@@ -283,6 +283,18 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
           .some((a) => dashboardFilters.responsibleUser!.includes(a.id))
       )
         return false;
+      if (dashboardFilters.createdByCompany?.length) {
+        const company = USER_COMPANY_MAP.get(i.owner?.id ?? '');
+        if (company === undefined || !dashboardFilters.createdByCompany.includes(company))
+          return false;
+      }
+      if (dashboardFilters.responsibleByCompany?.length) {
+        const matches = (i.assignees ?? []).filter(Boolean).some((a) => {
+          const company = USER_COMPANY_MAP.get(a.id);
+          return company !== undefined && dashboardFilters.responsibleByCompany!.includes(company);
+        });
+        if (!matches) return false;
+      }
       return true;
     });
 

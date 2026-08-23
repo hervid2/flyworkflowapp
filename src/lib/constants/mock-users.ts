@@ -90,3 +90,7 @@ export const MOCK_USERS: MockUserWithCompany[] = [
     role: 'Directora',
   },
 ];
+
+// Shared lookup so any filter needing "which company does this user belong
+// to" (dashboard metrics, critical-issues table…) resolves in O(1).
+export const USER_COMPANY_MAP = new Map(MOCK_USERS.map((u) => [u.id, u.company]));
