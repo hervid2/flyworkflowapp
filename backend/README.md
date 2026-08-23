@@ -80,6 +80,24 @@ npm run test:cov    # cobertura
 
 ---
 
+## Docker (imagen compatible con Lambda)
+
+Build multi-stage: una etapa de instalación/build con devDependencies, y una etapa final mínima basada en la imagen oficial de Lambda para Node.js (`public.ecr.aws/lambda/nodejs:22`), que ya incluye el Runtime Interface Emulator (RIE) para pruebas locales.
+
+```bash
+docker build -t flyworkflow-backend .
+docker run --rm -p 9000:8080 flyworkflow-backend
+```
+
+En otra terminal, invoca el handler simulando un evento de API Gateway:
+
+```bash
+curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" \
+  -d '{"httpMethod":"GET","path":"/health","headers":{},"requestContext":{"http":{"method":"GET","path":"/health"}}}'
+```
+
+Debe responder `{"statusCode":200,"body":"{\"status\":\"ok\",...}"}`. Detalle completo del flujo de despliegue real (Fase 6) en el `aws-deploy-guide.md` personal del propietario (no versionado).
+
 ## Lint y formato
 
 ```bash
