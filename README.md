@@ -4,7 +4,7 @@ Frontend para el módulo de gestión de incidencias de FlyWorkFlow.
 
 > **Demo en producción →** _enlace de Vercel a añadir tras el primer deploy a `main`_
 >
-> **Repositorio →** `https://github.com/hervid2/PruebaSpyBee`
+> **Repositorio →** `https://github.com/hervid2/flyworkflowapp`
 
 ---
 
