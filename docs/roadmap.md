@@ -78,7 +78,7 @@ Parallelizable with Phase 3 (there's no real dependency between frontend fixes a
 
 ---
 
-## Phase 4 — Backend: real auth and multi-tenancy
+## Phase 4 — Backend: real auth and multi-tenancy _(complete)_
 
 **F4.1 — `feat/backend-auth-jwt`** — `AuthModule` (Passport local + JWT strategies), `/auth/login`, `/auth/refresh`, `/auth/logout` with revocation. Docs: `requirements.md §1.1`, `best-practices.md §Security`. Commit: `feat(backend): implement JWT auth with bcrypt and refresh rotation`
 
