@@ -16,6 +16,12 @@ defaults:
   run:
     working-directory: backend
 
+env:
+  # Test-only value — JwtStrategy/JwtModule need it at module-init time even
+  # though these jobs never touch a real database. Never the real secret,
+  # which only ever lives as a SAM NoEcho parameter (F6.2).
+  JWT_ACCESS_SECRET: ci-test-only-secret-do-not-use-in-prod
+
 jobs:
   quality:
     runs-on: ubuntu-latest
