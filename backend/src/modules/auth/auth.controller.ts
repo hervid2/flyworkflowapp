@@ -35,7 +35,11 @@ export class AuthController {
   ) {}
 
   @Public()
-  @UseGuards(DtoValidationGuard(LoginDto), LocalAuthGuard, ThrottlerGuard)
+  // ThrottlerGuard must run before LocalAuthGuard: failed-password attempts
+  // are exactly what needs to count toward the limit, and Nest evaluates
+  // guards in the order listed — reversing this would let LocalAuthGuard's
+  // 401 short-circuit every failed attempt before it's ever throttled.
+  @UseGuards(DtoValidationGuard(LoginDto), ThrottlerGuard, LocalAuthGuard)
   @Throttle({
     default: { limit: LOGIN_THROTTLE_LIMIT, ttl: LOGIN_THROTTLE_TTL_MS },
   })
