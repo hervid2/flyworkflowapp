@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IncidentsService } from './incidents.service';
@@ -25,6 +26,8 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { Audit } from '../../common/decorators/audit.decorator';
+import { AuditLogInterceptor } from '../../common/interceptors/audit-log.interceptor';
 
 @ApiTags('incidents')
 @ApiBearerAuth()
@@ -67,6 +70,8 @@ export class IncidentsController {
   }
 
   @Post()
+  @Audit('created')
+  @UseInterceptors(AuditLogInterceptor)
   @ApiOperation({
     summary: 'Create an incident owned by the authenticated user',
   })
@@ -78,6 +83,8 @@ export class IncidentsController {
   }
 
   @Patch(':id')
+  @Audit('updated')
+  @UseInterceptors(AuditLogInterceptor)
   @ApiOperation({
     summary: 'Update editable fields (author, assignee or admin+)',
   })
@@ -90,6 +97,8 @@ export class IncidentsController {
   }
 
   @Patch(':id/status')
+  @Audit('status_changed')
+  @UseInterceptors(AuditLogInterceptor)
   @ApiOperation({
     summary: 'Change status following the allowed transition graph',
   })
@@ -104,6 +113,8 @@ export class IncidentsController {
   @Patch(':id/approval')
   @Roles('admin')
   @UseGuards(RolesGuard)
+  @Audit('dynamic-approval')
+  @UseInterceptors(AuditLogInterceptor)
   @ApiOperation({ summary: 'Approve or reject a pending incident (admin+)' })
   updateApproval(
     @Param('id') id: string,
@@ -115,6 +126,8 @@ export class IncidentsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Audit('deleted')
+  @UseInterceptors(AuditLogInterceptor)
   @ApiOperation({ summary: 'Soft delete (author or admin+)' })
   remove(
     @Param('id') id: string,
@@ -127,6 +140,8 @@ export class IncidentsController {
   @HttpCode(HttpStatus.OK)
   @Roles('admin')
   @UseGuards(RolesGuard)
+  @Audit('restored')
+  @UseInterceptors(AuditLogInterceptor)
   @ApiOperation({
     summary: 'Restore a soft-deleted incident out of the trash (admin+)',
   })

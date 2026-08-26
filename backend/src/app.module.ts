@@ -8,6 +8,8 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
 import { ProjectsModule } from './modules/projects/projects.module';
 import { IncidentsModule } from './modules/incidents/incidents.module';
 import { MediaModule } from './modules/media/media.module';
+import { TagsModule } from './modules/tags/tags.module';
+import { AuditModule } from './modules/audit/audit.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { MediaModule } from './modules/media/media.module';
     ProjectsModule,
     IncidentsModule,
     MediaModule,
+    TagsModule,
+    AuditModule,
   ],
 })
 export class AppModule {}
