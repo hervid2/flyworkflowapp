@@ -5,6 +5,8 @@ import {
   type ApprovalStatus,
   type IncidentPriority,
   type IncidentStatus,
+  type MediaStatus,
+  type MediaType,
   type Role,
 } from '@prisma/client';
 
@@ -82,6 +84,18 @@ export interface FakeIncident {
   tagIds: string[];
 }
 
+export interface FakeMedia {
+  id: string;
+  incidentId: string;
+  name: string;
+  type: MediaType;
+  format: string;
+  size: number;
+  status: MediaStatus;
+  url: string;
+  createdAt: Date;
+}
+
 interface FakeIncidentWhere {
   orgId?: string;
   deleted?: boolean;
@@ -100,6 +114,7 @@ export class FakePrismaService {
   readonly incidentTypes: FakeIncidentType[] = [];
   readonly tags: FakeTag[] = [];
   readonly incidents: FakeIncident[] = [];
+  readonly medias: FakeMedia[] = [];
   // Real (v4-shaped) uuids so `@IsUUID()`-validated DTO fields (e.g.
   // projectId/typeId/assigneeIds on incidents) accept seeded fixture ids.
   private nextId(): string {
@@ -177,6 +192,28 @@ export class FakePrismaService {
     };
     this.incidents.push(incident);
     return Promise.resolve(incident);
+  }
+
+  async seedMedia(
+    params: Partial<Omit<FakeMedia, 'id' | 'incidentId'>> & {
+      incidentId: string;
+    },
+  ): Promise<FakeMedia> {
+    const media: FakeMedia = {
+      id: this.nextId(),
+      incidentId: params.incidentId,
+      name: params.name ?? 'test-file.jpg',
+      type: params.type ?? 'image',
+      format: params.format ?? 'jpg',
+      size: params.size ?? 1024,
+      status: params.status ?? 'uploaded',
+      url:
+        params.url ??
+        'https://fake-bucket.s3.fake-region.amazonaws.com/incidents/test/test-file.jpg',
+      createdAt: params.createdAt ?? new Date(),
+    };
+    this.medias.push(media);
+    return Promise.resolve(media);
   }
 
   async seedUser(params: {
@@ -567,6 +604,41 @@ export class FakePrismaService {
       if (tags) incident.tagIds = tags.create.map((t) => t.tagId);
       incident.updatedAt = new Date();
       return Promise.resolve(this.hydrateIncident(incident));
+    },
+  };
+
+  readonly media = {
+    create: ({
+      data,
+    }: {
+      data: {
+        incidentId: string;
+        name: string;
+        type: MediaType;
+        format: string;
+        size: number;
+        status: MediaStatus;
+        url: string;
+      };
+    }): Promise<FakeMedia> => {
+      const media: FakeMedia = {
+        id: this.nextId(),
+        createdAt: new Date(),
+        ...data,
+      };
+      this.medias.push(media);
+      return Promise.resolve(media);
+    },
+    findUnique: ({ where }: { where: { id: string } }) => {
+      const media = this.medias.find((m) => m.id === where.id);
+      if (!media) return Promise.resolve(null);
+      const incident = this.incidents.find((i) => i.id === media.incidentId);
+      return Promise.resolve({ ...media, incident: incident ?? null });
+    },
+    delete: ({ where }: { where: { id: string } }): Promise<FakeMedia> => {
+      const index = this.medias.findIndex((m) => m.id === where.id);
+      const [removed] = this.medias.splice(index, 1);
+      return Promise.resolve(removed);
     },
   };
 }
