@@ -20,9 +20,13 @@ import { DEFAULT_ACCESS_TOKEN_TTL_SECONDS } from './auth.constants';
       useFactory: (configService: ConfigService) => ({
         secret: configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
         signOptions: {
-          expiresIn: configService.get<number>(
-            'JWT_ACCESS_EXPIRES_IN_SECONDS',
-            DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+          // `ConfigService.get` never coerces the raw env string to a
+          // number — passing that string straight to jsonwebtoken makes it
+          // run the value through the `ms` package instead of treating it as
+          // seconds, so an explicit `Number(...)` conversion here is load-bearing.
+          expiresIn: Number(
+            configService.get<string>('JWT_ACCESS_EXPIRES_IN_SECONDS') ??
+              DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
           ),
         },
       }),

@@ -93,18 +93,21 @@ export class AuthService {
     };
     return this.jwtService.sign(payload, {
       secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
-      expiresIn: this.configService.get<number>(
-        'JWT_ACCESS_EXPIRES_IN_SECONDS',
-        DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+      // See the matching comment in auth.module.ts: the env value arrives as
+      // a string, and jsonwebtoken treats a string `expiresIn` as an `ms`-style
+      // duration (no unit = milliseconds) rather than a count of seconds.
+      expiresIn: Number(
+        this.configService.get<string>('JWT_ACCESS_EXPIRES_IN_SECONDS') ??
+          DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
       ),
     });
   }
 
   private async issueRefreshToken(userId: string): Promise<string> {
     const token = randomBytes(64).toString('hex');
-    const ttlDays = this.configService.get<number>(
-      'JWT_REFRESH_EXPIRES_IN_DAYS',
-      DEFAULT_REFRESH_TOKEN_TTL_DAYS,
+    const ttlDays = Number(
+      this.configService.get<string>('JWT_REFRESH_EXPIRES_IN_DAYS') ??
+        DEFAULT_REFRESH_TOKEN_TTL_DAYS,
     );
     const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
 
