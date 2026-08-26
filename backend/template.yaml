@@ -13,11 +13,24 @@ Parameters:
     NoEcho: true
     Default: ''
     Description: PostgreSQL (Railway in production) connection string.
-  JwtSecret:
+  JwtAccessSecret:
     Type: String
     NoEcho: true
     Default: ''
-    Description: Secret used to sign JWTs (wired in F4.1).
+    # Renamed from the original `JwtSecret`/`JWT_SECRET` (F4.1) to match the
+    # env var the app actually reads (JwtStrategy/AuthModule/AuthService) —
+    # the old name would have silently 401'd every request on a real deploy.
+    Description: Secret used to sign JWT access tokens (wired in F4.1).
+  JwtAccessExpiresInSeconds:
+    Type: String
+    Default: '900'
+  JwtRefreshExpiresInDays:
+    Type: String
+    Default: '7'
+  S3PresignedUrlExpiresInSeconds:
+    Type: String
+    Default: '300'
+    Description: How long a presigned media upload URL stays valid (F5.5).
 
 Globals:
   Function:
@@ -28,6 +41,24 @@ Globals:
     MemorySize: 512
 
 Resources:
+  # Media attachments (F5.5). Access is always via presigned URLs from the
+  # backend, never a public bucket policy — see aws-deploy-guide.md §8.
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [PUT]
+            # Tightened to the real Vercel origin in F6.3, alongside the
+            # backend's own CORS/helmet setup for the API itself.
+            AllowedOrigins: ['*']
+            AllowedHeaders: ['*']
+
   BackendFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -37,7 +68,16 @@ Resources:
       Environment:
         Variables:
           DATABASE_URL: !Ref DatabaseUrl
-          JWT_SECRET: !Ref JwtSecret
+          JWT_ACCESS_SECRET: !Ref JwtAccessSecret
+          JWT_ACCESS_EXPIRES_IN_SECONDS: !Ref JwtAccessExpiresInSeconds
+          JWT_REFRESH_EXPIRES_IN_DAYS: !Ref JwtRefreshExpiresInDays
+          S3_BUCKET_NAME: !Ref MediaBucket
+          S3_PRESIGNED_URL_EXPIRES_IN_SECONDS: !Ref S3PresignedUrlExpiresInSeconds
+          # AWS_REGION is a reserved Lambda runtime variable — it's already
+          # set automatically, SAM would reject an explicit override here.
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref MediaBucket
       Events:
         RootApi:
           Type: HttpApi
@@ -58,3 +98,6 @@ Outputs:
   ApiUrl:
     Description: Base URL of the HTTP API (dev stage)
     Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/"
+  MediaBucketName:
+    Description: SAM-generated S3 bucket name for incident media attachments
+    Value: !Ref MediaBucket
