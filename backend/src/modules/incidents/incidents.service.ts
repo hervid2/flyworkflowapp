@@ -19,6 +19,7 @@ import {
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { UpdateIncidentStatusDto } from './dto/update-incident-status.dto';
+import { UpdateIncidentApprovalDto } from './dto/update-incident-approval.dto';
 import { ListIncidentsQueryDto } from './dto/list-incidents-query.dto';
 import {
   IncidentResponseDto,
@@ -45,6 +46,7 @@ interface ScopedIncident {
   orgId: string;
   ownerId: string;
   status: string;
+  approval: string;
   deleted: boolean;
   assignees: { userId: string }[];
 }
@@ -302,6 +304,32 @@ export class IncidentsService {
     const updated = await this.prisma.incident.update({
       where: { id: incident.id },
       data,
+      include: INCIDENT_INCLUDE,
+    });
+    return toIncidentResponseDto(updated);
+  }
+
+  /**
+   * `@Roles('admin')` at the controller gates who can even reach this
+   * method — unlike edit/status, approval isn't owner/assignee territory.
+   * `reason` is accepted for the audit trail F5.6 adds; there's no column
+   * for it on Incident itself, only the audit interceptor persists it.
+   */
+  async updateApproval(
+    id: string,
+    dto: UpdateIncidentApprovalDto,
+    user: AuthenticatedUser,
+  ): Promise<IncidentResponseDto> {
+    const incident = await this.findScopedOrThrow(id, user);
+    if (incident.approval !== 'pending') {
+      throw new ConflictException(
+        `Incident approval is already ${incident.approval}`,
+      );
+    }
+
+    const updated = await this.prisma.incident.update({
+      where: { id: incident.id },
+      data: { approval: dto.decision },
       include: INCIDENT_INCLUDE,
     });
     return toIncidentResponseDto(updated);

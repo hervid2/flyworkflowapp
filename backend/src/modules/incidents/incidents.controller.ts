@@ -16,6 +16,7 @@ import { IncidentsService } from './incidents.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { UpdateIncidentStatusDto } from './dto/update-incident-status.dto';
+import { UpdateIncidentApprovalDto } from './dto/update-incident-approval.dto';
 import { ListIncidentsQueryDto } from './dto/list-incidents-query.dto';
 import { IncidentResponseDto } from './dto/incident-response.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -98,6 +99,18 @@ export class IncidentsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<IncidentResponseDto> {
     return this.incidentsService.updateStatus(id, dto, user);
+  }
+
+  @Patch(':id/approval')
+  @Roles('admin')
+  @UseGuards(RolesGuard)
+  @ApiOperation({ summary: 'Approve or reject a pending incident (admin+)' })
+  updateApproval(
+    @Param('id') id: string,
+    @Body() dto: UpdateIncidentApprovalDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<IncidentResponseDto> {
+    return this.incidentsService.updateApproval(id, dto, user);
   }
 
   @Delete(':id')
