@@ -1,0 +1,349 @@
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
+import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
+import { DEFAULT_PAGE_SIZE } from '../../common/dto/pagination-query.dto';
+import {
+  PaginatedResponseDto,
+  toPaginatedResponse,
+} from '../../common/dto/paginated-response.dto';
+import { CreateIncidentDto } from './dto/create-incident.dto';
+import { UpdateIncidentDto } from './dto/update-incident.dto';
+import { UpdateIncidentStatusDto } from './dto/update-incident-status.dto';
+import { ListIncidentsQueryDto } from './dto/list-incidents-query.dto';
+import {
+  IncidentResponseDto,
+  toIncidentResponseDto,
+} from './dto/incident-response.dto';
+import {
+  ALLOWED_STATUS_TRANSITIONS,
+  INCIDENT_SEQUENCE_ID_LENGTH,
+} from './incidents.constants';
+
+const INCIDENT_INCLUDE = {
+  project: true,
+  type: true,
+  owner: true,
+  assignees: { include: { user: true } },
+  observers: { include: { user: true } },
+  tags: { include: { tag: true } },
+} as const;
+
+const MAX_SEQUENCE_ID_ATTEMPTS = 3;
+
+interface ScopedIncident {
+  id: string;
+  orgId: string;
+  ownerId: string;
+  status: string;
+  deleted: boolean;
+  assignees: { userId: string }[];
+}
+
+@Injectable()
+export class IncidentsService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findAll(
+    query: ListIncidentsQueryDto,
+    user: AuthenticatedUser,
+  ): Promise<PaginatedResponseDto<IncidentResponseDto>> {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? DEFAULT_PAGE_SIZE;
+
+    const where: Prisma.IncidentWhereInput = {
+      orgId: user.orgId,
+      deleted: false,
+    };
+    if (query.status?.length) where.status = { in: query.status };
+    if (query.priority?.length) where.priority = { in: query.priority };
+    if (query.typeKey?.length) where.type = { key: { in: query.typeKey } };
+    if (query.projectId) where.projectId = query.projectId;
+    if (query.dateFrom || query.dateTo) {
+      where.createdAt = {
+        ...(query.dateFrom ? { gte: new Date(query.dateFrom) } : {}),
+        ...(query.dateTo ? { lte: new Date(query.dateTo) } : {}),
+      };
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.incident.findMany({
+        where,
+        include: INCIDENT_INCLUDE,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.incident.count({ where }),
+    ]);
+
+    return toPaginatedResponse(
+      items.map(toIncidentResponseDto),
+      total,
+      page,
+      pageSize,
+    );
+  }
+
+  async findOne(
+    id: string,
+    user: AuthenticatedUser,
+  ): Promise<IncidentResponseDto> {
+    const incident = await this.prisma.incident.findUnique({
+      where: { id },
+      include: INCIDENT_INCLUDE,
+    });
+    if (!incident || incident.deleted) throw new NotFoundException();
+    if (user.role !== 'superadmin' && incident.orgId !== user.orgId) {
+      throw new NotFoundException();
+    }
+    return toIncidentResponseDto(incident);
+  }
+
+  async create(
+    dto: CreateIncidentDto,
+    user: AuthenticatedUser,
+  ): Promise<IncidentResponseDto> {
+    await this.assertProjectInOrg(dto.projectId, user.orgId);
+    await this.assertTypeExists(dto.typeId);
+    await this.assertUsersInOrg(dto.assigneeIds ?? [], user.orgId);
+    await this.assertUsersInOrg(dto.observerIds ?? [], user.orgId);
+    await this.assertTagsInOrg(dto.tagIds ?? [], user.orgId);
+
+    for (let attempt = 1; attempt <= MAX_SEQUENCE_ID_ATTEMPTS; attempt++) {
+      const sequenceId = await this.nextSequenceId(user.orgId);
+      try {
+        const created = await this.prisma.incident.create({
+          data: {
+            sequenceId,
+            orgId: user.orgId,
+            projectId: dto.projectId,
+            typeId: dto.typeId,
+            title: dto.title,
+            description: dto.description,
+            priority: dto.priority,
+            status: 'open',
+            ownerId: user.id,
+            lat: dto.coordinates?.lat ?? null,
+            lng: dto.coordinates?.lng ?? null,
+            locationDescription: dto.locationDescription ?? null,
+            dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
+            assignees: {
+              create: (dto.assigneeIds ?? []).map((userId) => ({ userId })),
+            },
+            observers: {
+              create: (dto.observerIds ?? []).map((userId) => ({ userId })),
+            },
+            tags: {
+              create: (dto.tagIds ?? []).map((tagId) => ({ tagId })),
+            },
+          },
+          include: INCIDENT_INCLUDE,
+        });
+        return toIncidentResponseDto(created);
+      } catch (error) {
+        const isSequenceCollision =
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002';
+        if (!isSequenceCollision || attempt === MAX_SEQUENCE_ID_ATTEMPTS) {
+          throw error;
+        }
+      }
+    }
+    // Unreachable: the loop above always returns or throws.
+    throw new ConflictException('Could not allocate a sequence id');
+  }
+
+  async update(
+    id: string,
+    dto: UpdateIncidentDto,
+    user: AuthenticatedUser,
+  ): Promise<IncidentResponseDto> {
+    const incident = await this.findScopedOrThrow(id, user);
+    if (!this.canEdit(incident, user)) throw new ForbiddenException();
+
+    if (dto.projectId) {
+      await this.assertProjectInOrg(dto.projectId, incident.orgId);
+    }
+    if (dto.typeId) await this.assertTypeExists(dto.typeId);
+    if (dto.assigneeIds) {
+      await this.assertUsersInOrg(dto.assigneeIds, incident.orgId);
+    }
+    if (dto.observerIds) {
+      await this.assertUsersInOrg(dto.observerIds, incident.orgId);
+    }
+    if (dto.tagIds) await this.assertTagsInOrg(dto.tagIds, incident.orgId);
+
+    const updated = await this.prisma.incident.update({
+      where: { id: incident.id },
+      data: {
+        ...(dto.title !== undefined && { title: dto.title }),
+        ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.priority !== undefined && { priority: dto.priority }),
+        ...(dto.projectId !== undefined && { projectId: dto.projectId }),
+        ...(dto.typeId !== undefined && { typeId: dto.typeId }),
+        ...(dto.dueDate !== undefined && {
+          dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
+        }),
+        ...(dto.locationDescription !== undefined && {
+          locationDescription: dto.locationDescription,
+        }),
+        ...(dto.coordinates !== undefined && {
+          lat: dto.coordinates?.lat ?? null,
+          lng: dto.coordinates?.lng ?? null,
+        }),
+        ...(dto.assigneeIds !== undefined && {
+          assignees: {
+            deleteMany: {},
+            create: dto.assigneeIds.map((userId) => ({ userId })),
+          },
+        }),
+        ...(dto.observerIds !== undefined && {
+          observers: {
+            deleteMany: {},
+            create: dto.observerIds.map((userId) => ({ userId })),
+          },
+        }),
+        ...(dto.tagIds !== undefined && {
+          tags: {
+            deleteMany: {},
+            create: dto.tagIds.map((tagId) => ({ tagId })),
+          },
+        }),
+      },
+      include: INCIDENT_INCLUDE,
+    });
+    return toIncidentResponseDto(updated);
+  }
+
+  async updateStatus(
+    id: string,
+    dto: UpdateIncidentStatusDto,
+    user: AuthenticatedUser,
+  ): Promise<IncidentResponseDto> {
+    const incident = await this.findScopedOrThrow(id, user);
+    if (!this.canEdit(incident, user)) throw new ForbiddenException();
+
+    const allowed =
+      ALLOWED_STATUS_TRANSITIONS[
+        incident.status as keyof typeof ALLOWED_STATUS_TRANSITIONS
+      ];
+    if (!allowed.includes(dto.status)) {
+      throw new ConflictException(
+        `Cannot transition from ${incident.status} to ${dto.status}`,
+      );
+    }
+
+    const data: Prisma.IncidentUpdateInput = { status: dto.status };
+    if (dto.status === 'closed') data.closingDate = new Date();
+    else if (incident.status === 'closed' && dto.status === 'open') {
+      data.closingDate = null;
+    }
+
+    const updated = await this.prisma.incident.update({
+      where: { id: incident.id },
+      data,
+      include: INCIDENT_INCLUDE,
+    });
+    return toIncidentResponseDto(updated);
+  }
+
+  async remove(id: string, user: AuthenticatedUser): Promise<void> {
+    const incident = await this.findScopedOrThrow(id, user);
+    const isAdmin = user.role === 'admin' || user.role === 'superadmin';
+    if (!isAdmin && incident.ownerId !== user.id) {
+      throw new ForbiddenException();
+    }
+    await this.prisma.incident.update({
+      where: { id: incident.id },
+      data: { deleted: true },
+    });
+  }
+
+  private canEdit(incident: ScopedIncident, user: AuthenticatedUser): boolean {
+    if (user.role === 'admin' || user.role === 'superadmin') return true;
+    if (incident.ownerId === user.id) return true;
+    return incident.assignees.some((a) => a.userId === user.id);
+  }
+
+  /**
+   * Lean lookup used by every mutating route: enough to run the permission
+   * check (owner/assignee/admin) without pulling the full nested response.
+   */
+  private async findScopedOrThrow(
+    id: string,
+    user: AuthenticatedUser,
+  ): Promise<ScopedIncident> {
+    const incident = await this.prisma.incident.findUnique({
+      where: { id },
+      include: { assignees: { select: { userId: true } } },
+    });
+    if (!incident || incident.deleted) throw new NotFoundException();
+    if (user.role !== 'superadmin' && incident.orgId !== user.orgId) {
+      throw new NotFoundException();
+    }
+    return incident;
+  }
+
+  private async nextSequenceId(orgId: string): Promise<string> {
+    const count = await this.prisma.incident.count({ where: { orgId } });
+    return String(count + 1).padStart(INCIDENT_SEQUENCE_ID_LENGTH, '0');
+  }
+
+  private async assertProjectInOrg(
+    projectId: string,
+    orgId: string,
+  ): Promise<void> {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    });
+    if (!project || project.orgId !== orgId) {
+      throw new BadRequestException(
+        'projectId does not belong to your organization',
+      );
+    }
+  }
+
+  private async assertTypeExists(typeId: string): Promise<void> {
+    const type = await this.prisma.incidentType.findUnique({
+      where: { id: typeId },
+    });
+    if (!type) throw new BadRequestException('typeId does not exist');
+  }
+
+  private async assertUsersInOrg(
+    userIds: string[],
+    orgId: string,
+  ): Promise<void> {
+    if (userIds.length === 0) return;
+    const users = await this.prisma.user.findMany({ where: { orgId } });
+    const validIds = new Set(users.map((u) => u.id));
+    const invalid = userIds.filter((id) => !validIds.has(id));
+    if (invalid.length > 0) {
+      throw new BadRequestException(
+        `assignee/observer ids not in your organization: ${invalid.join(', ')}`,
+      );
+    }
+  }
+
+  private async assertTagsInOrg(
+    tagIds: string[],
+    orgId: string,
+  ): Promise<void> {
+    if (tagIds.length === 0) return;
+    const tags = await this.prisma.tag.findMany({ where: { orgId } });
+    const validIds = new Set(tags.map((t) => t.id));
+    const invalid = tagIds.filter((id) => !validIds.has(id));
+    if (invalid.length > 0) {
+      throw new BadRequestException(
+        `tag ids not in your organization: ${invalid.join(', ')}`,
+      );
+    }
+  }
+}

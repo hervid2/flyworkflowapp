@@ -1,5 +1,12 @@
 import * as bcrypt from 'bcrypt';
-import type { Role } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
+import {
+  Prisma,
+  type ApprovalStatus,
+  type IncidentPriority,
+  type IncidentStatus,
+  type Role,
+} from '@prisma/client';
 
 /**
  * Stands in for `PrismaService` in e2e tests. `F7.5` wires a real ephemeral
@@ -36,15 +43,67 @@ export interface FakeProject {
   createdAt: Date;
 }
 
+export interface FakeIncidentType {
+  id: string;
+  key: string;
+  name: string;
+  nameEn: string;
+}
+
+export interface FakeTag {
+  id: string;
+  orgId: string;
+  name: string;
+  color: string;
+}
+
+export interface FakeIncident {
+  id: string;
+  sequenceId: string;
+  orgId: string;
+  projectId: string;
+  typeId: string;
+  title: string;
+  description: string;
+  priority: IncidentPriority;
+  status: IncidentStatus;
+  approval: ApprovalStatus;
+  ownerId: string;
+  deleted: boolean;
+  lat: number | null;
+  lng: number | null;
+  locationDescription: string | null;
+  dueDate: Date | null;
+  closingDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  assigneeIds: string[];
+  observerIds: string[];
+  tagIds: string[];
+}
+
+interface FakeIncidentWhere {
+  orgId?: string;
+  deleted?: boolean;
+  projectId?: string;
+  id?: string;
+  status?: { in: IncidentStatus[] };
+  priority?: { in: IncidentPriority[] };
+  type?: { key: { in: string[] } };
+  createdAt?: { gte?: Date; lte?: Date };
+}
+
 export class FakePrismaService {
   readonly users: FakeUser[] = [];
   readonly refreshTokens: FakeRefreshToken[] = [];
   readonly projects: FakeProject[] = [];
-  private idCounter = 0;
-
-  private nextId(prefix: string): string {
-    this.idCounter += 1;
-    return `${prefix}-${this.idCounter}`;
+  readonly incidentTypes: FakeIncidentType[] = [];
+  readonly tags: FakeTag[] = [];
+  readonly incidents: FakeIncident[] = [];
+  // Real (v4-shaped) uuids so `@IsUUID()`-validated DTO fields (e.g.
+  // projectId/typeId/assigneeIds on incidents) accept seeded fixture ids.
+  private nextId(): string {
+    return randomUUID();
   }
 
   async seedProject(params: {
@@ -52,13 +111,72 @@ export class FakePrismaService {
     name: string;
   }): Promise<FakeProject> {
     const project: FakeProject = {
-      id: this.nextId('project'),
+      id: this.nextId(),
       orgId: params.orgId,
       name: params.name,
       createdAt: new Date(),
     };
     this.projects.push(project);
     return Promise.resolve(project);
+  }
+
+  async seedIncidentType(params: {
+    key: string;
+    name: string;
+    nameEn: string;
+  }): Promise<FakeIncidentType> {
+    const type: FakeIncidentType = { id: this.nextId(), ...params };
+    this.incidentTypes.push(type);
+    return Promise.resolve(type);
+  }
+
+  async seedTag(params: {
+    orgId: string;
+    name: string;
+    color: string;
+  }): Promise<FakeTag> {
+    const tag: FakeTag = { id: this.nextId(), ...params };
+    this.tags.push(tag);
+    return Promise.resolve(tag);
+  }
+
+  async seedIncident(
+    params: Partial<Omit<FakeIncident, 'id'>> & {
+      orgId: string;
+      projectId: string;
+      typeId: string;
+      ownerId: string;
+      title: string;
+      priority: IncidentPriority;
+    },
+  ): Promise<FakeIncident> {
+    const incident: FakeIncident = {
+      id: this.nextId(),
+      sequenceId:
+        params.sequenceId ?? String(this.incidents.length + 1).padStart(4, '0'),
+      orgId: params.orgId,
+      projectId: params.projectId,
+      typeId: params.typeId,
+      title: params.title,
+      description: params.description ?? 'Test incident description',
+      priority: params.priority,
+      status: params.status ?? 'open',
+      approval: params.approval ?? 'pending',
+      ownerId: params.ownerId,
+      deleted: params.deleted ?? false,
+      lat: params.lat ?? null,
+      lng: params.lng ?? null,
+      locationDescription: params.locationDescription ?? null,
+      dueDate: params.dueDate ?? null,
+      closingDate: params.closingDate ?? null,
+      createdAt: params.createdAt ?? new Date(),
+      updatedAt: params.updatedAt ?? new Date(),
+      assigneeIds: params.assigneeIds ?? [],
+      observerIds: params.observerIds ?? [],
+      tagIds: params.tagIds ?? [],
+    };
+    this.incidents.push(incident);
+    return Promise.resolve(incident);
   }
 
   async seedUser(params: {
@@ -69,7 +187,7 @@ export class FakePrismaService {
     name?: string;
   }): Promise<FakeUser> {
     const user: FakeUser = {
-      id: this.nextId('user'),
+      id: this.nextId(),
       orgId: params.orgId,
       name: params.name ?? 'Test User',
       email: params.email,
@@ -110,7 +228,7 @@ export class FakePrismaService {
       data: { userId: string; tokenHash: string; expiresAt: Date };
     }): Promise<FakeRefreshToken> => {
       const row: FakeRefreshToken = {
-        id: this.nextId('rt'),
+        id: this.nextId(),
         revokedAt: null,
         createdAt: new Date(),
         ...data,
@@ -184,7 +302,7 @@ export class FakePrismaService {
       data: { orgId: string; name: string };
     }): Promise<FakeProject> => {
       const project: FakeProject = {
-        id: this.nextId('project'),
+        id: this.nextId(),
         createdAt: new Date(),
         ...data,
       };
@@ -206,6 +324,243 @@ export class FakePrismaService {
       const index = this.projects.findIndex((p) => p.id === where.id);
       const [removed] = this.projects.splice(index, 1);
       return Promise.resolve(removed);
+    },
+  };
+
+  readonly incidentType = {
+    findUnique: ({
+      where,
+    }: {
+      where: { id: string };
+    }): Promise<FakeIncidentType | null> => {
+      return Promise.resolve(
+        this.incidentTypes.find((t) => t.id === where.id) ?? null,
+      );
+    },
+  };
+
+  readonly tag = {
+    findMany: ({ where }: { where: { orgId: string } }): Promise<FakeTag[]> => {
+      return Promise.resolve(this.tags.filter((t) => t.orgId === where.orgId));
+    },
+    findUnique: ({
+      where,
+    }: {
+      where: { id: string };
+    }): Promise<FakeTag | null> => {
+      return Promise.resolve(this.tags.find((t) => t.id === where.id) ?? null);
+    },
+  };
+
+  private hydrateUserRef(userId: string): {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+  } {
+    const user = this.users.find((u) => u.id === userId);
+    return user
+      ? {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+        }
+      : { id: userId, name: 'Unknown user', email: '', avatarUrl: null };
+  }
+
+  private hydrateIncident(incident: FakeIncident) {
+    const project = this.projects.find((p) => p.id === incident.projectId);
+    const type = this.incidentTypes.find((t) => t.id === incident.typeId);
+    return {
+      ...incident,
+      project: project ?? {
+        id: incident.projectId,
+        orgId: incident.orgId,
+        name: 'Unknown project',
+        createdAt: new Date(),
+      },
+      type: type ?? {
+        id: incident.typeId,
+        key: 'unknown',
+        name: 'Unknown',
+        nameEn: 'Unknown',
+      },
+      owner: this.hydrateUserRef(incident.ownerId),
+      assignees: incident.assigneeIds.map((userId) => ({
+        userId,
+        user: this.hydrateUserRef(userId),
+      })),
+      observers: incident.observerIds.map((userId) => ({
+        userId,
+        user: this.hydrateUserRef(userId),
+      })),
+      tags: incident.tagIds.map((tagId) => {
+        const tag = this.tags.find((t) => t.id === tagId);
+        return {
+          tagId,
+          tag: tag ?? {
+            id: tagId,
+            orgId: incident.orgId,
+            name: 'Unknown',
+            color: '#000000',
+          },
+        };
+      }),
+    };
+  }
+
+  private matchesIncidentWhere(
+    incident: FakeIncident,
+    where: FakeIncidentWhere = {},
+  ): boolean {
+    if (where.id && incident.id !== where.id) return false;
+    if (where.orgId && incident.orgId !== where.orgId) return false;
+    if (where.deleted !== undefined && incident.deleted !== where.deleted) {
+      return false;
+    }
+    if (where.projectId && incident.projectId !== where.projectId) {
+      return false;
+    }
+    if (where.status?.in && !where.status.in.includes(incident.status)) {
+      return false;
+    }
+    if (where.priority?.in && !where.priority.in.includes(incident.priority)) {
+      return false;
+    }
+    if (where.type?.key?.in) {
+      const type = this.incidentTypes.find((t) => t.id === incident.typeId);
+      if (!type || !where.type.key.in.includes(type.key)) return false;
+    }
+    if (where.createdAt?.gte && incident.createdAt < where.createdAt.gte) {
+      return false;
+    }
+    if (where.createdAt?.lte && incident.createdAt > where.createdAt.lte) {
+      return false;
+    }
+    return true;
+  }
+
+  readonly incident = {
+    findMany: ({
+      where,
+      orderBy,
+      skip,
+      take,
+    }: {
+      where?: FakeIncidentWhere;
+      orderBy?: { createdAt?: 'asc' | 'desc' };
+      skip?: number;
+      take?: number;
+    }) => {
+      let results = this.incidents.filter((i) =>
+        this.matchesIncidentWhere(i, where),
+      );
+      if (orderBy?.createdAt) {
+        const direction = orderBy.createdAt === 'asc' ? 1 : -1;
+        results = [...results].sort(
+          (a, b) => direction * (a.createdAt.getTime() - b.createdAt.getTime()),
+        );
+      }
+      if (typeof skip === 'number') results = results.slice(skip);
+      if (typeof take === 'number') results = results.slice(0, take);
+      return Promise.resolve(results.map((i) => this.hydrateIncident(i)));
+    },
+    count: ({ where }: { where?: FakeIncidentWhere }): Promise<number> => {
+      return Promise.resolve(
+        this.incidents.filter((i) => this.matchesIncidentWhere(i, where))
+          .length,
+      );
+    },
+    findUnique: ({ where }: { where: { id: string } }) => {
+      const incident = this.incidents.find((i) => i.id === where.id);
+      return Promise.resolve(incident ? this.hydrateIncident(incident) : null);
+    },
+    create: ({
+      data,
+    }: {
+      data: {
+        sequenceId: string;
+        orgId: string;
+        projectId: string;
+        typeId: string;
+        title: string;
+        description: string;
+        priority: IncidentPriority;
+        status: IncidentStatus;
+        ownerId: string;
+        lat: number | null;
+        lng: number | null;
+        locationDescription: string | null;
+        dueDate: Date | null;
+        assignees?: { create: { userId: string }[] };
+        observers?: { create: { userId: string }[] };
+        tags?: { create: { tagId: string }[] };
+      };
+    }) => {
+      if (
+        this.incidents.some(
+          (i) => i.orgId === data.orgId && i.sequenceId === data.sequenceId,
+        )
+      ) {
+        throw new Prisma.PrismaClientKnownRequestError(
+          'Unique constraint failed on the fields: (`orgId`,`sequenceId`)',
+          { code: 'P2002', clientVersion: 'fake' },
+        );
+      }
+      const incident: FakeIncident = {
+        id: this.nextId(),
+        sequenceId: data.sequenceId,
+        orgId: data.orgId,
+        projectId: data.projectId,
+        typeId: data.typeId,
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        status: data.status,
+        approval: 'pending',
+        ownerId: data.ownerId,
+        deleted: false,
+        lat: data.lat,
+        lng: data.lng,
+        locationDescription: data.locationDescription,
+        dueDate: data.dueDate,
+        closingDate: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        assigneeIds: (data.assignees?.create ?? []).map((a) => a.userId),
+        observerIds: (data.observers?.create ?? []).map((o) => o.userId),
+        tagIds: (data.tags?.create ?? []).map((t) => t.tagId),
+      };
+      this.incidents.push(incident);
+      return Promise.resolve(this.hydrateIncident(incident));
+    },
+    update: ({
+      where,
+      data,
+    }: {
+      where: { id: string };
+      data: Partial<
+        Omit<FakeIncident, 'assigneeIds' | 'observerIds' | 'tagIds' | 'id'>
+      > & {
+        assignees?: { deleteMany: object; create: { userId: string }[] };
+        observers?: { deleteMany: object; create: { userId: string }[] };
+        tags?: { deleteMany: object; create: { tagId: string }[] };
+      };
+    }) => {
+      const incident = this.incidents.find((i) => i.id === where.id);
+      if (!incident) throw new Error('Incident not found in fake store');
+      const { assignees, observers, tags, ...scalars } = data;
+      Object.assign(incident, scalars);
+      if (assignees) {
+        incident.assigneeIds = assignees.create.map((a) => a.userId);
+      }
+      if (observers) {
+        incident.observerIds = observers.create.map((o) => o.userId);
+      }
+      if (tags) incident.tagIds = tags.create.map((t) => t.tagId);
+      incident.updatedAt = new Date();
+      return Promise.resolve(this.hydrateIncident(incident));
     },
   };
 }
