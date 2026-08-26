@@ -449,17 +449,23 @@ export class FakePrismaService {
       take,
     }: {
       where?: FakeIncidentWhere;
-      orderBy?: { createdAt?: 'asc' | 'desc' };
+      orderBy?: { createdAt?: 'asc' | 'desc'; updatedAt?: 'asc' | 'desc' };
       skip?: number;
       take?: number;
     }) => {
       let results = this.incidents.filter((i) =>
         this.matchesIncidentWhere(i, where),
       );
-      if (orderBy?.createdAt) {
-        const direction = orderBy.createdAt === 'asc' ? 1 : -1;
+      const sortField = orderBy?.createdAt
+        ? 'createdAt'
+        : orderBy?.updatedAt
+          ? 'updatedAt'
+          : undefined;
+      if (sortField) {
+        const direction = orderBy?.[sortField] === 'asc' ? 1 : -1;
         results = [...results].sort(
-          (a, b) => direction * (a.createdAt.getTime() - b.createdAt.getTime()),
+          (a, b) =>
+            direction * (a[sortField].getTime() - b[sortField].getTime()),
         );
       }
       if (typeof skip === 'number') results = results.slice(skip);
