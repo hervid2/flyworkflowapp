@@ -29,14 +29,36 @@ interface FakeRefreshToken {
   createdAt: Date;
 }
 
+export interface FakeProject {
+  id: string;
+  orgId: string;
+  name: string;
+  createdAt: Date;
+}
+
 export class FakePrismaService {
   readonly users: FakeUser[] = [];
   readonly refreshTokens: FakeRefreshToken[] = [];
+  readonly projects: FakeProject[] = [];
   private idCounter = 0;
 
   private nextId(prefix: string): string {
     this.idCounter += 1;
     return `${prefix}-${this.idCounter}`;
+  }
+
+  async seedProject(params: {
+    orgId: string;
+    name: string;
+  }): Promise<FakeProject> {
+    const project: FakeProject = {
+      id: this.nextId('project'),
+      orgId: params.orgId,
+      name: params.name,
+      createdAt: new Date(),
+    };
+    this.projects.push(project);
+    return Promise.resolve(project);
   }
 
   async seedUser(params: {
@@ -134,6 +156,56 @@ export class FakePrismaService {
       );
       matches.forEach((row) => Object.assign(row, data));
       return Promise.resolve({ count: matches.length });
+    },
+  };
+
+  readonly project = {
+    findMany: ({
+      where,
+    }: {
+      where: { orgId: string };
+    }): Promise<FakeProject[]> => {
+      return Promise.resolve(
+        this.projects.filter((p) => p.orgId === where.orgId),
+      );
+    },
+    findUnique: ({
+      where,
+    }: {
+      where: { id: string };
+    }): Promise<FakeProject | null> => {
+      return Promise.resolve(
+        this.projects.find((p) => p.id === where.id) ?? null,
+      );
+    },
+    create: ({
+      data,
+    }: {
+      data: { orgId: string; name: string };
+    }): Promise<FakeProject> => {
+      const project: FakeProject = {
+        id: this.nextId('project'),
+        createdAt: new Date(),
+        ...data,
+      };
+      this.projects.push(project);
+      return Promise.resolve(project);
+    },
+    update: ({
+      where,
+      data,
+    }: {
+      where: { id: string };
+      data: Partial<FakeProject>;
+    }): Promise<FakeProject | null> => {
+      const project = this.projects.find((p) => p.id === where.id);
+      if (project) Object.assign(project, data);
+      return Promise.resolve(project ?? null);
+    },
+    delete: ({ where }: { where: { id: string } }): Promise<FakeProject> => {
+      const index = this.projects.findIndex((p) => p.id === where.id);
+      const [removed] = this.projects.splice(index, 1);
+      return Promise.resolve(removed);
     },
   };
 }
