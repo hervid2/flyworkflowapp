@@ -131,6 +131,39 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
+    it('signs the access token with a numeric expiresIn even when the env var arrives as a string', async () => {
+      // Regression test: `ConfigService.get` returns the raw dotenv string
+      // ("900"), never a real number. jsonwebtoken treats a *string*
+      // `expiresIn` as an `ms`-style duration (no unit = milliseconds), so
+      // "900" used to expire tokens after 0.9s instead of 900s.
+      const prisma = createPrismaMock();
+      const sign = jest.fn(
+        (_payload: unknown, _options: { expiresIn: unknown }): string =>
+          'signed.jwt.token',
+      );
+      const jwtService = { sign } as unknown as JwtService;
+      const configService = {
+        getOrThrow: jest.fn((): string => 'test-secret'),
+        get: jest.fn((): string => '900'),
+      } as unknown as ConfigService;
+      const service = new AuthService(
+        prisma as unknown as PrismaService,
+        jwtService,
+        configService,
+      );
+
+      await service.login({
+        id: 'u1',
+        orgId: 'org1',
+        role: 'member',
+        email: 'a@b.com',
+      });
+
+      const [, options] = sign.mock.calls[0];
+      expect(options.expiresIn).toBe(900);
+      expect(typeof options.expiresIn).toBe('number');
+    });
+
     it('signs an access token and persists a hashed (not raw) refresh token', async () => {
       const prisma = createPrismaMock();
       const { service, sign } = createService(prisma);
