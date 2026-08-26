@@ -8,7 +8,10 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
-import { DEFAULT_PAGE_SIZE } from '../../common/dto/pagination-query.dto';
+import {
+  DEFAULT_PAGE_SIZE,
+  PaginationQueryDto,
+} from '../../common/dto/pagination-query.dto';
 import {
   PaginatedResponseDto,
   toPaginatedResponse,
@@ -104,6 +107,56 @@ export class IncidentsService {
       throw new NotFoundException();
     }
     return toIncidentResponseDto(incident);
+  }
+
+  async findTrash(
+    query: PaginationQueryDto,
+    user: AuthenticatedUser,
+  ): Promise<PaginatedResponseDto<IncidentResponseDto>> {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? DEFAULT_PAGE_SIZE;
+    const where: Prisma.IncidentWhereInput = {
+      orgId: user.orgId,
+      deleted: true,
+    };
+
+    const [items, total] = await Promise.all([
+      this.prisma.incident.findMany({
+        where,
+        include: INCIDENT_INCLUDE,
+        orderBy: { updatedAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.incident.count({ where }),
+    ]);
+
+    return toPaginatedResponse(
+      items.map(toIncidentResponseDto),
+      total,
+      page,
+      pageSize,
+    );
+  }
+
+  async restore(
+    id: string,
+    user: AuthenticatedUser,
+  ): Promise<IncidentResponseDto> {
+    const incident = await this.prisma.incident.findUnique({ where: { id } });
+    if (!incident) throw new NotFoundException();
+    if (user.role !== 'superadmin' && incident.orgId !== user.orgId) {
+      throw new NotFoundException();
+    }
+    // "Not in trash" reuses 404, same not-found convention as everywhere else.
+    if (!incident.deleted) throw new NotFoundException();
+
+    const restored = await this.prisma.incident.update({
+      where: { id },
+      data: { deleted: false },
+      include: INCIDENT_INCLUDE,
+    });
+    return toIncidentResponseDto(restored);
   }
 
   async create(
