@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import {
   Prisma,
   type ApprovalStatus,
+  type AuditAction,
   type IncidentPriority,
   type IncidentStatus,
   type MediaStatus,
@@ -96,6 +97,16 @@ export interface FakeMedia {
   createdAt: Date;
 }
 
+export interface FakeAuditLog {
+  id: string;
+  orgId: string;
+  incidentId: string;
+  actorId: string;
+  action: AuditAction;
+  metadata: unknown;
+  createdAt: Date;
+}
+
 interface FakeIncidentWhere {
   orgId?: string;
   deleted?: boolean;
@@ -115,6 +126,7 @@ export class FakePrismaService {
   readonly tags: FakeTag[] = [];
   readonly incidents: FakeIncident[] = [];
   readonly medias: FakeMedia[] = [];
+  readonly auditLogs: FakeAuditLog[] = [];
   // Real (v4-shaped) uuids so `@IsUUID()`-validated DTO fields (e.g.
   // projectId/typeId/assigneeIds on incidents) accept seeded fixture ids.
   private nextId(): string {
@@ -386,6 +398,140 @@ export class FakePrismaService {
       where: { id: string };
     }): Promise<FakeTag | null> => {
       return Promise.resolve(this.tags.find((t) => t.id === where.id) ?? null);
+    },
+    create: ({
+      data,
+    }: {
+      data: { orgId: string; name: string; color: string };
+    }): Promise<FakeTag> => {
+      const tag: FakeTag = { id: this.nextId(), ...data };
+      this.tags.push(tag);
+      return Promise.resolve(tag);
+    },
+    update: ({
+      where,
+      data,
+    }: {
+      where: { id: string };
+      data: Partial<FakeTag>;
+    }): Promise<FakeTag | null> => {
+      const tag = this.tags.find((t) => t.id === where.id);
+      if (tag) Object.assign(tag, data);
+      return Promise.resolve(tag ?? null);
+    },
+    delete: ({ where }: { where: { id: string } }): Promise<FakeTag> => {
+      const index = this.tags.findIndex((t) => t.id === where.id);
+      const [removed] = this.tags.splice(index, 1);
+      return Promise.resolve(removed);
+    },
+  };
+
+  async seedAuditLog(
+    params: Partial<Omit<FakeAuditLog, 'id'>> & {
+      orgId: string;
+      incidentId: string;
+      actorId: string;
+      action: AuditAction;
+    },
+  ): Promise<FakeAuditLog> {
+    const log: FakeAuditLog = {
+      id: this.nextId(),
+      orgId: params.orgId,
+      incidentId: params.incidentId,
+      actorId: params.actorId,
+      action: params.action,
+      metadata: params.metadata ?? {},
+      createdAt: params.createdAt ?? new Date(),
+    };
+    this.auditLogs.push(log);
+    return Promise.resolve(log);
+  }
+
+  private matchesAuditLogWhere(
+    log: FakeAuditLog,
+    where: {
+      orgId?: string;
+      actorId?: string;
+      incident?: { projectId: string };
+    } = {},
+  ): boolean {
+    if (where.orgId && log.orgId !== where.orgId) return false;
+    if (where.actorId && log.actorId !== where.actorId) return false;
+    if (where.incident?.projectId) {
+      const incident = this.incidents.find((i) => i.id === log.incidentId);
+      if (!incident || incident.projectId !== where.incident.projectId) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  readonly auditLog = {
+    create: ({
+      data,
+    }: {
+      data: {
+        orgId: string;
+        incidentId: string;
+        actorId: string;
+        action: AuditAction;
+        metadata: unknown;
+      };
+    }): Promise<FakeAuditLog> => {
+      const log: FakeAuditLog = {
+        id: this.nextId(),
+        createdAt: new Date(),
+        ...data,
+      };
+      this.auditLogs.push(log);
+      return Promise.resolve(log);
+    },
+    findMany: ({
+      where,
+      orderBy,
+      skip,
+      take,
+    }: {
+      where?: {
+        orgId?: string;
+        actorId?: string;
+        incident?: { projectId: string };
+      };
+      orderBy?: { createdAt?: 'asc' | 'desc' };
+      skip?: number;
+      take?: number;
+    }) => {
+      let results = this.auditLogs.filter((l) =>
+        this.matchesAuditLogWhere(l, where),
+      );
+      if (orderBy?.createdAt) {
+        const direction = orderBy.createdAt === 'asc' ? 1 : -1;
+        results = [...results].sort(
+          (a, b) => direction * (a.createdAt.getTime() - b.createdAt.getTime()),
+        );
+      }
+      if (typeof skip === 'number') results = results.slice(skip);
+      if (typeof take === 'number') results = results.slice(0, take);
+      return Promise.resolve(
+        results.map((l) => ({
+          ...l,
+          actor: this.hydrateUserRef(l.actorId),
+        })),
+      );
+    },
+    count: ({
+      where,
+    }: {
+      where?: {
+        orgId?: string;
+        actorId?: string;
+        incident?: { projectId: string };
+      };
+    }): Promise<number> => {
+      return Promise.resolve(
+        this.auditLogs.filter((l) => this.matchesAuditLogWhere(l, where))
+          .length,
+      );
     },
   };
 
