@@ -137,9 +137,8 @@ describe('AuthService', () => {
       // `expiresIn` as an `ms`-style duration (no unit = milliseconds), so
       // "900" used to expire tokens after 0.9s instead of 900s.
       const prisma = createPrismaMock();
-      const sign = jest.fn(
-        (_payload: unknown, _options: { expiresIn: unknown }): string =>
-          'signed.jwt.token',
+      const sign = jest.fn<string, [unknown, { expiresIn: unknown }]>(
+        () => 'signed.jwt.token',
       );
       const jwtService = { sign } as unknown as JwtService;
       const configService = {
