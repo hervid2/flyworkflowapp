@@ -88,7 +88,7 @@ Parallelizable with Phase 3 (there's no real dependency between frontend fixes a
 
 ---
 
-## Phase 5 — Backend: incident domain
+## Phase 5 — Backend: incident domain _(complete)_
 
 **F5.1 — `feat/backend-projects-module`** — Project CRUD scoped per organization. Commit: `feat(backend): add projects module scoped by organization`
 
