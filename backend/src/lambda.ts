@@ -4,7 +4,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import type { Callback, Context, Handler } from 'aws-lambda';
 import express from 'express';
 import { AppModule } from './app.module';
-import { configureApp } from './bootstrap';
+import { configureApp, createLogger } from './bootstrap';
 
 let cachedHandler: Handler;
 
@@ -13,6 +13,7 @@ async function bootstrapHandler(): Promise<Handler> {
   const app = await NestFactory.create(
     AppModule,
     new ExpressAdapter(expressApp),
+    { logger: createLogger() },
   );
   configureApp(app);
   await app.init();
