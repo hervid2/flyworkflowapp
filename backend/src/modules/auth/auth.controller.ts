@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -35,11 +35,12 @@ export class AuthController {
   ) {}
 
   @Public()
-  // ThrottlerGuard must run before LocalAuthGuard: failed-password attempts
-  // are exactly what needs to count toward the limit, and Nest evaluates
-  // guards in the order listed — reversing this would let LocalAuthGuard's
-  // 401 short-circuit every failed attempt before it's ever throttled.
-  @UseGuards(DtoValidationGuard(LoginDto), ThrottlerGuard, LocalAuthGuard)
+  // No route-level ThrottlerGuard here: the global one (auth.module.ts,
+  // F6.3) already runs before any route-level guard, including
+  // LocalAuthGuard below — so failed-password attempts still count toward
+  // the limit. Adding it again here would double-count every attempt
+  // against the same 'default' throttler record and trip the limit early.
+  @UseGuards(DtoValidationGuard(LoginDto), LocalAuthGuard)
   @Throttle({
     default: { limit: LOGIN_THROTTLE_LIMIT, ttl: LOGIN_THROTTLE_TTL_MS },
   })

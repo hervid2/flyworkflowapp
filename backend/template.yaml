@@ -31,6 +31,13 @@ Parameters:
     Type: String
     Default: '300'
     Description: How long a presigned media upload URL stays valid (F5.5).
+  FrontendOrigin:
+    Type: String
+    Default: 'http://localhost:3000'
+    Description: >
+      Allowed CORS origin for both the API (backend CORS/helmet setup) and
+      the MediaBucket's PUT CORS rule — the deployed Vercel URL in
+      production (F6.3). Never '*'.
 
 Globals:
   Function:
@@ -54,9 +61,7 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedMethods: [PUT]
-            # Tightened to the real Vercel origin in F6.3, alongside the
-            # backend's own CORS/helmet setup for the API itself.
-            AllowedOrigins: ['*']
+            AllowedOrigins: [!Ref FrontendOrigin]
             AllowedHeaders: ['*']
 
   BackendFunction:
@@ -73,6 +78,8 @@ Resources:
           JWT_REFRESH_EXPIRES_IN_DAYS: !Ref JwtRefreshExpiresInDays
           S3_BUCKET_NAME: !Ref MediaBucket
           S3_PRESIGNED_URL_EXPIRES_IN_SECONDS: !Ref S3PresignedUrlExpiresInSeconds
+          FRONTEND_ORIGIN: !Ref FrontendOrigin
+          NODE_ENV: production
           # AWS_REGION is a reserved Lambda runtime variable — it's already
           # set automatically, SAM would reject an explicit override here.
       Policies:
@@ -93,6 +100,18 @@ Resources:
       Dockerfile: Dockerfile
       DockerContext: .
       DockerTag: latest
+
+  # Explicit so retention can be set (F6.3) — without this, SAM's
+  # implicitly-created log group for BackendFunction has no retention and
+  # accumulates cost indefinitely even though ingestion itself stays free
+  # (best-practices.md §AWS SAM / CI-CD). The name must match the
+  # auto-created one exactly for CloudFormation to treat this as the same
+  # resource instead of erroring on a duplicate.
+  BackendFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${BackendFunction}
+      RetentionInDays: 14
 
 Outputs:
   ApiUrl:

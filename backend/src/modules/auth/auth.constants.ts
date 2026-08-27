@@ -9,6 +9,10 @@ export const REFRESH_TOKEN_COOKIE_PATH = '/auth';
 export const DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 export const DEFAULT_REFRESH_TOKEN_TTL_DAYS = 7;
 
-/** Strict, login-only limit (`requirements.md §1.1`); the app-wide limiter arrives in F6.3. */
+/** Strict, login-only limit (`requirements.md §1.1`), overriding the 'default' throttler below just for `/auth/login`. */
 export const LOGIN_THROTTLE_LIMIT = 5;
 export const LOGIN_THROTTLE_TTL_MS = 60_000;
+
+/** App-wide ceiling for every other route, applied via the global `ThrottlerGuard` (F6.3). */
+export const APP_THROTTLE_LIMIT = 20;
+export const APP_THROTTLE_TTL_MS = 60_000;
