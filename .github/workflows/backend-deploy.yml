@@ -1,0 +1,47 @@
+name: Backend Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy.yml'
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - uses: aws-actions/setup-sam@v2
+
+      - name: sam build
+        run: sam build
+
+      # samconfig.toml (versioned) supplies stack_name/region/capabilities/
+      # image_repositories — no --guided, no --resolve-image-repos needed.
+      # NoEcho params (DatabaseUrl/JwtAccessSecret) are never saved there by
+      # design (aws-deploy-guide.md §7), and FrontendOrigin was left at its
+      # template default during the guided run — so all three, plus the
+      # three that ARE already in samconfig.toml, are passed explicitly here
+      # to avoid CLI --parameter-overrides silently dropping the latter.
+      - name: sam deploy
+        run: |
+          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              DatabaseUrl="${{ secrets.DATABASE_URL }}" \
+              JwtAccessSecret="${{ secrets.JWT_SECRET }}" \
+              FrontendOrigin="${{ secrets.FRONTEND_ORIGIN }}" \
+              JwtAccessExpiresInSeconds="900" \
+              JwtRefreshExpiresInDays="7" \
+              S3PresignedUrlExpiresInSeconds="300"

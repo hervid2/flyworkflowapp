@@ -104,7 +104,7 @@ Parallelizable with Phase 3 (there's no real dependency between frontend fixes a
 
 ---
 
-## Phase 6 — First AWS deployment
+## Phase 6 — First AWS deployment _(complete)_
 
 **F6.1 — AWS account bootstrap** _(manual work by the user, guided end-to-end by `aws-deploy-guide.md` up through "install CLIs")_ — account, billing alarm, IAM user, AWS CLI + SAM CLI. No code commit.
 

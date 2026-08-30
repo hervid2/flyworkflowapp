@@ -4,7 +4,10 @@ import request from 'supertest';
 import type { App } from 'supertest/types';
 import { createTestApp } from './utils/test-app';
 import type { FakePrismaService, FakeUser } from './utils/fake-prisma.service';
-import { LOGIN_THROTTLE_LIMIT } from '../src/modules/auth/auth.constants';
+import {
+  APP_THROTTLE_LIMIT,
+  LOGIN_THROTTLE_LIMIT,
+} from '../src/modules/auth/auth.constants';
 
 describe('Auth hardening (e2e)', () => {
   let app: INestApplication<App>;
@@ -71,6 +74,21 @@ describe('Auth hardening (e2e)', () => {
         .send({ email: member.email, password: 'wrong-password' });
 
     for (let i = 0; i < LOGIN_THROTTLE_LIMIT; i++) {
+      const res = await attempt();
+      expect(res.status).toBe(401);
+    }
+
+    const throttled = await attempt();
+    expect(throttled.status).toBe(429);
+  });
+
+  it(`throttles unauthenticated hits on a protected route after ${APP_THROTTLE_LIMIT} attempts, proving the global ThrottlerGuard runs before JwtAuthGuard`, async () => {
+    const attempt = () =>
+      request(app.getHttpServer())
+        .get('/users/me')
+        .set('Authorization', 'Bearer not-a-real-token');
+
+    for (let i = 0; i < APP_THROTTLE_LIMIT; i++) {
       const res = await attempt();
       expect(res.status).toBe(401);
     }
