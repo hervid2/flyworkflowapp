@@ -1,8 +1,8 @@
 'use client';
 /**
  * Login screen. Validates credentials with React Hook Form + Zod, calls the
- * auth service, persists the session via the auth store, and redirects to the
- * map. Includes accessibility hooks (aria-invalid/alert) and a demo-credentials panel.
+ * real auth service, persists the session via the auth store, and redirects
+ * to the map. Includes accessibility hooks (aria-invalid/alert).
  */
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { login } from '@/services/auth.service';
 import { useAuthStore } from '@/store/useAuthStore';
+import { ApiError } from '@/lib/api-client';
 import FlyIcon from '@/components/ui/FlyIcon';
 import styles from './Login.module.scss';
 
@@ -22,6 +23,15 @@ const loginSchema = z.object({
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
+
+function mapLoginError(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 401) return 'Credenciales inválidas. Verifica tu email y contraseña.';
+    if (err.status === 429)
+      return 'Demasiados intentos. Espera un momento antes de volver a intentarlo.';
+  }
+  return 'No se pudo iniciar sesión. Intenta de nuevo.';
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,11 +49,11 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     setServerError('');
     try {
-      const { user, token } = await login(data.email, data.password);
-      loginAction(user, token);
+      const { user, accessToken } = await login(data.email, data.password);
+      loginAction(user, accessToken);
       router.push('/mapa');
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+      setServerError(mapLoginError(err));
     }
   };
 
@@ -132,22 +142,6 @@ export default function LoginPage() {
             {isSubmitting ? 'Iniciando sesión…' : 'Iniciar sesión'}
           </button>
         </form>
-
-        <div className={styles.login__demo} aria-label="Credenciales de demostración">
-          <p className={styles.login__demo_title}>Credenciales de demo</p>
-          <div className={styles.login__demo_item}>
-            <span className={styles.login__demo_label}>FlyWorkFlow</span>
-            <code className={styles.login__demo_code}>
-              camila.rojas@flyworkflow.io / flyworkflow123
-            </code>
-          </div>
-          <div className={styles.login__demo_item}>
-            <span className={styles.login__demo_label}>Constructora del Valle</span>
-            <code className={styles.login__demo_code}>
-              diego.salazar@constructoradelvalle.com / constructora123
-            </code>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -137,13 +137,13 @@ beforeEach(() => {
   // Open the create-issue modal so CreateIssueModal renders
   useModalStore.setState({ activeModal: 'create-issue' });
   // IssueForm resolves the incident owner from the session
-  useAuthStore.setState({ user: TEST_USER, token: 'test-token', isAuthenticated: true });
+  useAuthStore.setState({ user: TEST_USER, accessToken: 'test-token', isAuthenticated: true });
 });
 
 afterEach(() => {
   useModalStore.setState({ activeModal: null });
   useCategoriesStore.setState({ customTypes: [] });
-  useAuthStore.setState({ user: null, token: null, isAuthenticated: false });
+  useAuthStore.setState({ user: null, accessToken: null, isAuthenticated: false });
   vi.clearAllMocks();
 });
 
