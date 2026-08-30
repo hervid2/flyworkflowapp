@@ -1,0 +1,15 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "flyworkflow-backend"
+resolve_s3 = true
+s3_prefix = "flyworkflow-backend"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+parameter_overrides = "JwtAccessExpiresInSeconds=\"900\" JwtRefreshExpiresInDays=\"7\" S3PresignedUrlExpiresInSeconds=\"300\""
+image_repositories = ["BackendFunction=299362456624.dkr.ecr.us-east-1.amazonaws.com/flyworkflowbackend5003cdf4/backendfunction474b807brepo"]
+
+[default.global.parameters]
+region = "us-east-1"
