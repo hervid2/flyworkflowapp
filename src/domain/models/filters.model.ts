@@ -16,8 +16,6 @@ export interface DashboardFilters {
   typeKey?: string[];
   createdByUser?: string[];
   responsibleUser?: string[];
-  createdByCompany?: string[];
-  responsibleByCompany?: string[];
 }
 
 /** Filter set for the map view (independent from the dashboard filters). */

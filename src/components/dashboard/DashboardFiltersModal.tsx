@@ -4,14 +4,14 @@
  * (period, status, priority, user/company) and only commits it to the filters
  * store on "Apply", so the dashboard doesn't re-render on every keystroke.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { useModalStore } from '@/store/useModalStore';
 import { useFiltersStore } from '@/store/useFiltersStore';
+import { useIssuesStore } from '@/store/useIssuesStore';
 import type { DashboardFilters, DashboardPeriod } from '@/domain/models/filters.model';
-import type { IncidentStatus, IncidentPriority } from '@/domain/models/incident.model';
-import { MOCK_USERS } from '@/lib/constants/mock-users';
+import type { IncidentStatus, IncidentPriority, UserRef } from '@/domain/models/incident.model';
 import styles from './DashboardFiltersModal.module.scss';
 
 const PERIODS: { value: DashboardPeriod; labelKey: string }[] = [
@@ -33,8 +33,6 @@ const PRIORITIES: { value: IncidentPriority; labelKey: string }[] = [
   { value: 'medium', labelKey: 'priorityMedium' },
   { value: 'low', labelKey: 'priorityLow' },
 ];
-
-const COMPANIES = Array.from(new Set(MOCK_USERS.map((u) => u.company)));
 
 function toggle<T>(arr: T[] | undefined, item: T): T[] {
   const current = arr ?? [];
@@ -75,8 +73,26 @@ export default function DashboardFiltersModal() {
   const dashboardFilters = useFiltersStore((s) => s.dashboardFilters);
   const setDashboardFilters = useFiltersStore((s) => s.setDashboardFilters);
   const resetDashboardFilters = useFiltersStore((s) => s.resetDashboardFilters);
+  const incidents = useIssuesStore((s) => s.incidents);
 
   const [draft, setDraft] = useState<DashboardFilters>(dashboardFilters);
+
+  // Only offer people who actually appear in the current incident set —
+  // a real backend org-members fetch would list teammates with zero results too.
+  const { creators, responsibles } = useMemo(() => {
+    const creatorsById = new Map<string, UserRef>();
+    const responsiblesById = new Map<string, UserRef>();
+    incidents.forEach((i) => {
+      if (i.owner?.id) creatorsById.set(i.owner.id, i.owner);
+      (i.assignees ?? []).forEach((a) => {
+        if (a?.id) responsiblesById.set(a.id, a);
+      });
+    });
+    return {
+      creators: Array.from(creatorsById.values()),
+      responsibles: Array.from(responsiblesById.values()),
+    };
+  }, [incidents]);
 
   useEffect(() => {
     if (activeModal === 'dashboard-filters') {
@@ -144,22 +160,9 @@ export default function DashboardFiltersModal() {
           </fieldset>
 
           <fieldset className={styles.field}>
-            <legend className={styles.field__label}>
-              {t('filtersModalLegendCreatedByCompany')}
-            </legend>
-            <ChipGroup
-              options={COMPANIES.map((c) => ({ value: c, label: c }))}
-              selected={draft.createdByCompany}
-              onToggle={(v) =>
-                setDraft((d) => ({ ...d, createdByCompany: toggle(d.createdByCompany, v) }))
-              }
-            />
-          </fieldset>
-
-          <fieldset className={styles.field}>
             <legend className={styles.field__label}>{t('filtersModalLegendCreatedByUser')}</legend>
             <div className={styles.userList}>
-              {MOCK_USERS.map((u) => {
+              {creators.map((u) => {
                 const active = draft.createdByUser?.includes(u.id);
                 return (
                   <button
@@ -173,7 +176,6 @@ export default function DashboardFiltersModal() {
                   >
                     <span className={styles.userChip__avatar}>{u.name.charAt(0)}</span>
                     <span className={styles.userChip__name}>{u.name}</span>
-                    <span className={styles.userChip__company}>{u.company}</span>
                   </button>
                 );
               })}
@@ -182,26 +184,10 @@ export default function DashboardFiltersModal() {
 
           <fieldset className={styles.field}>
             <legend className={styles.field__label}>
-              {t('filtersModalLegendResponsibleByCompany')}
-            </legend>
-            <ChipGroup
-              options={COMPANIES.map((c) => ({ value: c, label: c }))}
-              selected={draft.responsibleByCompany}
-              onToggle={(v) =>
-                setDraft((d) => ({
-                  ...d,
-                  responsibleByCompany: toggle(d.responsibleByCompany, v),
-                }))
-              }
-            />
-          </fieldset>
-
-          <fieldset className={styles.field}>
-            <legend className={styles.field__label}>
               {t('filtersModalLegendResponsibleByUser')}
             </legend>
             <div className={styles.userList}>
-              {MOCK_USERS.map((u) => {
+              {responsibles.map((u) => {
                 const active = draft.responsibleUser?.includes(u.id);
                 return (
                   <button
@@ -218,7 +204,6 @@ export default function DashboardFiltersModal() {
                   >
                     <span className={styles.userChip__avatar}>{u.name.charAt(0)}</span>
                     <span className={styles.userChip__name}>{u.name}</span>
-                    <span className={styles.userChip__company}>{u.company}</span>
                   </button>
                 );
               })}
