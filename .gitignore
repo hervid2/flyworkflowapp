@@ -41,6 +41,8 @@ Thumbs.db
 /playwright-report
 /test-results
 /playwright/.cache/
+# Access tokens cached by e2e/global-setup.ts across the whole run (real, short-lived — never commit)
+/e2e/.auth/
 # Test artifacts: screenshots, snapshot diffs, videos and traces
 *-actual.png
 *-diff.png

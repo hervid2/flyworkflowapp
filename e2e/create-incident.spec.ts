@@ -13,28 +13,34 @@ function futureDateStr(daysAhead = 7) {
   return d.toISOString().split('T')[0];
 }
 
+// loginViaCookie's default (camila.rojas@flyworkflow.io) is the platform
+// vendor's own superadmin, whose org has no project of its own (seed.ts) —
+// creating an incident needs a user from an org that actually has one.
+const CREATOR_EMAIL = 'diego.salazar@constructoradelvalle.com';
+const CREATOR_PASSWORD = 'FlyWorkFlow2026!';
+
 test.describe('Crear Incidencia — Mapa', () => {
   test.beforeEach(async ({ page }) => {
-    await loginViaCookie(page);
+    await loginViaCookie(page, CREATOR_EMAIL, CREATOR_PASSWORD);
     await page.goto('/mapa');
   });
 
   test('botón + abre el modal "Crear Incidencia"', async ({ page }) => {
-    await page.getByRole('button', { name: 'Crear nueva incidencia' }).click();
+    await page.getByRole('button', { name: 'Crear incidencia' }).click();
     const dialog = page.getByRole('dialog', { name: 'Crear Incidencia' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('Crear Incidencia')).toBeVisible();
   });
 
   test('Escape cierra el modal sin enviar el formulario', async ({ page }) => {
-    await page.getByRole('button', { name: 'Crear nueva incidencia' }).click();
+    await page.getByRole('button', { name: 'Crear incidencia' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3_000 });
   });
 
   test('botón Cancelar cierra el modal', async ({ page }) => {
-    await page.getByRole('button', { name: 'Crear nueva incidencia' }).click();
+    await page.getByRole('button', { name: 'Crear incidencia' }).click();
     await page.getByRole('button', { name: 'Cancelar' }).click();
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3_000 });
   });
@@ -42,7 +48,7 @@ test.describe('Crear Incidencia — Mapa', () => {
   test('enviar formulario vacío muestra errores de validación y mantiene el modal abierto', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: 'Crear nueva incidencia' }).click();
+    await page.getByRole('button', { name: 'Crear incidencia' }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: 'Crear', exact: true }).click();
     // At least one inline error alert must appear
@@ -52,7 +58,7 @@ test.describe('Crear Incidencia — Mapa', () => {
   });
 
   test('flujo completo: rellenar campos requeridos → Crear → modal se cierra', async ({ page }) => {
-    await page.getByRole('button', { name: 'Crear nueva incidencia' }).click();
+    await page.getByRole('button', { name: 'Crear incidencia' }).click();
     const dialog = page.getByRole('dialog');
 
     // Título
@@ -69,6 +75,9 @@ test.describe('Crear Incidencia — Mapa', () => {
     // Categoría (select first valid option after the placeholder)
     await dialog.locator('#issue-type').selectOption({ index: 1 });
 
+    // Proyecto
+    await dialog.locator('#issue-project').selectOption({ index: 1 });
+
     // Prioridad
     await dialog.locator('#issue-priority').selectOption('high');
 
@@ -80,7 +89,7 @@ test.describe('Crear Incidencia — Mapa', () => {
   });
 
   test('Gestionar categorías abre sub-modal', async ({ page }) => {
-    await page.getByRole('button', { name: 'Crear nueva incidencia' }).click();
+    await page.getByRole('button', { name: 'Crear incidencia' }).click();
     await page.getByRole('button', { name: 'Gestionar categorías' }).click();
     // CategoryManagerModal opens — check for its unique heading
     await expect(page.getByRole('heading', { name: /Gestionar Categorías/i })).toBeVisible();
@@ -90,7 +99,7 @@ test.describe('Crear Incidencia — Mapa', () => {
 // ── Dashboard: el modal también se abre desde el header ───────────────────
 test.describe('Crear Incidencia — Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    await loginViaCookie(page);
+    await loginViaCookie(page, CREATOR_EMAIL, CREATOR_PASSWORD);
     await page.goto('/dashboard');
   });
 
@@ -107,6 +116,7 @@ test.describe('Crear Incidencia — Dashboard', () => {
     await dialog.locator('#issue-description').fill('Mancha húmeda de aprox. 0.4 m² detectada.');
     await dialog.locator('#issue-due-date').fill(futureDateStr(14));
     await dialog.locator('#issue-type').selectOption({ index: 2 });
+    await dialog.locator('#issue-project').selectOption({ index: 1 });
     await dialog.locator('#issue-priority').selectOption('medium');
     await dialog.getByRole('button', { name: 'Crear' }).click();
 
@@ -119,9 +129,9 @@ test.describe('Crear Incidencia — mobile (375×812)', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
   test('modal ocupa pantalla completa en móvil', async ({ page }) => {
-    await loginViaCookie(page);
+    await loginViaCookie(page, CREATOR_EMAIL, CREATOR_PASSWORD);
     await page.goto('/mapa');
-    await page.getByRole('button', { name: 'Crear nueva incidencia' }).click();
+    await page.getByRole('button', { name: 'Crear incidencia' }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     // In mobile the modal should cover the full viewport (width ≥ 95% of screen)
