@@ -3,26 +3,33 @@
  * Drag-and-drop attachment picker for the create form. Splits uploads into
  * media vs. document tabs (each with its own accepted MIME types), previews
  * images as thumbnails, and lifts the chosen `File[]` to the parent form.
+ * Accepted types mirror the backend's real allowlist exactly
+ * (media.constants.ts) — offering a type the server would reject anyway
+ * (SVG, AVI, XLS/XLSX) just produces a confusing failure after upload starts.
  */
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDropzone } from 'react-dropzone';
-import { UploadCloud, X, FileText, Video } from 'lucide-react';
+import { UploadCloud, X, FileText, Video, Check, AlertCircle, Loader2 } from 'lucide-react';
+import type { Media } from '@/domain/models';
 import styles from './FileUploader.module.scss';
 
 type FileTab = 'media' | 'documents';
 
 const MEDIA_ACCEPT = {
-  'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'],
-  'video/*': ['.mp4', '.mov', '.avi', '.webm'],
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+  'image/webp': ['.webp'],
+  'image/gif': ['.gif'],
+  'video/mp4': ['.mp4'],
+  'video/quicktime': ['.mov'],
+  'video/webm': ['.webm'],
 };
 
 const DOCUMENT_ACCEPT = {
   'application/pdf': ['.pdf'],
   'application/msword': ['.doc'],
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-  'application/vnd.ms-excel': ['.xls'],
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
 };
 
 /** True for images/videos; documents fall into the other tab. */
@@ -31,9 +38,13 @@ const isMediaFile = (f: File) => f.type.startsWith('image/') || f.type.startsWit
 interface Props {
   value: File[];
   onChange: (files: File[]) => void;
+  /** Per-file upload outcome, set once the parent starts uploading after creating the incident. */
+  statuses?: Map<File, Media['status']>;
+  /** Disables adding/removing files while an upload pass is in progress. */
+  uploading?: boolean;
 }
 
-export default function FileUploader({ value, onChange }: Props) {
+export default function FileUploader({ value, onChange, statuses, uploading }: Props) {
   const t = useTranslations('createIssue');
   const [activeTab, setActiveTab] = useState<FileTab>('media');
 
@@ -51,6 +62,7 @@ export default function FileUploader({ value, onChange }: Props) {
     onDrop,
     accept: activeTab === 'media' ? MEDIA_ACCEPT : DOCUMENT_ACCEPT,
     multiple: true,
+    disabled: uploading,
   });
 
   const removeFile = (target: File) => {
@@ -112,33 +124,63 @@ export default function FileUploader({ value, onChange }: Props) {
           role="list"
           aria-label={t('fileUploader.previewAriaLabel')}
         >
-          {displayedFiles.map((file, i) => (
-            <li key={`${file.name}-${i}`} className={styles.uploader__item}>
-              {file.type.startsWith('image/') ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={file.name}
-                  className={styles.uploader__thumbnail}
-                />
-              ) : (
-                <div className={styles.uploader__file_icon} aria-hidden="true">
-                  {file.type.startsWith('video/') ? <Video size={20} /> : <FileText size={20} />}
-                </div>
-              )}
-              <p className={styles.uploader__filename} title={file.name}>
-                {file.name}
-              </p>
-              <button
-                type="button"
-                className={styles.uploader__remove}
-                onClick={() => removeFile(file)}
-                aria-label={t('fileUploader.remove', { name: file.name })}
-              >
-                <X size={12} />
-              </button>
-            </li>
-          ))}
+          {displayedFiles.map((file, i) => {
+            const status = statuses?.get(file);
+            return (
+              <li key={`${file.name}-${i}`} className={styles.uploader__item}>
+                {file.type.startsWith('image/') ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={file.name}
+                    className={styles.uploader__thumbnail}
+                  />
+                ) : (
+                  <div className={styles.uploader__file_icon} aria-hidden="true">
+                    {file.type.startsWith('video/') ? <Video size={20} /> : <FileText size={20} />}
+                  </div>
+                )}
+                <p className={styles.uploader__filename} title={file.name}>
+                  {file.name}
+                </p>
+                {status === 'pending' && (
+                  <span
+                    className={styles['uploader__status-badge']}
+                    aria-label={t('fileUploader.uploading')}
+                  >
+                    <Loader2 size={12} className={styles['uploader__status-spinner']} />
+                  </span>
+                )}
+                {status === 'uploaded' && (
+                  <span
+                    className={`${styles['uploader__status-badge']} ${styles['uploader__status-badge--ok']}`}
+                    aria-label={t('fileUploader.uploaded')}
+                  >
+                    <Check size={12} />
+                  </span>
+                )}
+                {status === 'error' && (
+                  <span
+                    className={`${styles['uploader__status-badge']} ${styles['uploader__status-badge--error']}`}
+                    aria-label={t('fileUploader.uploadError')}
+                    title={t('fileUploader.uploadError')}
+                  >
+                    <AlertCircle size={12} />
+                  </span>
+                )}
+                {!uploading && (
+                  <button
+                    type="button"
+                    className={styles.uploader__remove}
+                    onClick={() => removeFile(file)}
+                    aria-label={t('fileUploader.remove', { name: file.name })}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

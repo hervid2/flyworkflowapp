@@ -18,13 +18,14 @@ import { useModalStore } from '@/store/useModalStore';
 import { useCategoriesStore } from '@/store/useCategoriesStore';
 import { createIncident } from '@/services/incident-mutations.service';
 import { getIncidentTypes, getProjects, getTags, getOrgMembers } from '@/services/catalogs.service';
+import { uploadMedia } from '@/services/media.service';
 import { createIssueFormSchema, type IssueFormValues } from '@/lib/validators/issue-form.schema';
 import TagTreeSelect from './TagTreeSelect';
 import UserMultiSelect from './UserMultiSelect';
 import CategoryManagerModal from './CategoryManagerModal';
 import LocationPicker from './LocationPicker';
 import FileUploader from './FileUploader';
-import type { IncidentType, Project, Tag, UserRef } from '@/domain/models';
+import type { IncidentType, Media, Project, Tag, UserRef } from '@/domain/models';
 import styles from './IssueForm.module.scss';
 
 const TODAY = format(new Date(), 'yyyy-MM-dd');
@@ -45,9 +46,18 @@ export default function IssueForm({ onClose }: Props) {
   const tValidation = useTranslations('validation');
   const schema = useMemo(() => createIssueFormSchema(tValidation), [tValidation]);
   const addIncident = useIssuesStore((s) => s.addIncident);
+  const updateIncidentInStore = useIssuesStore((s) => s.updateIncident);
   const openModal = useModalStore((s) => s.open);
   const customTypes = useCategoriesStore((s) => s.customTypes);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [uploadStatuses, setUploadStatuses] = useState<Map<File, Media['status']>>(new Map());
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [uploadPartialError, setUploadPartialError] = useState(false);
+  // Guards against a double-submit re-creating the incident: once creation
+  // succeeds, isSubmitting goes back to false after the upload pass settles
+  // (even on a partial failure), so the submit button would otherwise be
+  // clickable again.
+  const [createdIncidentId, setCreatedIncidentId] = useState<string | null>(null);
 
   const [catalogs, setCatalogs] = useState<Catalogs | null>(null);
   const [catalogsError, setCatalogsError] = useState(false);
@@ -76,7 +86,6 @@ export default function IssueForm({ onClose }: Props) {
     watch,
     setValue,
     formState: { errors, isSubmitting },
-    reset,
   } = useForm<IssueFormValues>({
     resolver: zodResolver(schema) as Resolver<IssueFormValues>,
     defaultValues: {
@@ -97,9 +106,11 @@ export default function IssueForm({ onClose }: Props) {
   const coordinates = watch('coordinates');
   const locationDescription = watch('locationDescription');
 
-  // Resolve selected ids back to full objects, build the DTO, persist, reset.
+  // Resolve selected ids back to full objects, build the DTO, persist, then
+  // (if any files were attached) upload them before closing — the modal
+  // stays open through the upload pass so FileUploader can show progress.
   const onSubmit = async (data: IssueFormValues) => {
-    if (!catalogs) return;
+    if (!catalogs || createdIncidentId) return;
     setSubmitError(false);
 
     const type = typeCatalog.find((ty) => ty.id === data.typeId)!;
@@ -108,8 +119,9 @@ export default function IssueForm({ onClose }: Props) {
     const observers = catalogs.members.filter((u) => (data.observerIds ?? []).includes(u.id));
     const tags = catalogs.tags.filter((tg) => (data.tagIds ?? []).includes(tg.id));
 
+    let incident;
     try {
-      const incident = await createIncident(
+      incident = await createIncident(
         {
           title: data.title,
           description: data.description,
@@ -121,19 +133,55 @@ export default function IssueForm({ onClose }: Props) {
           tags,
           coordinates: data.coordinates ?? null,
           locationDescription: data.locationDescription ?? null,
-          // Attachments upload directly to S3 after creation (roadmap F7.3) —
-          // not sent as part of this request.
           media: mediaFiles,
         },
         project,
       );
-
-      addIncident(incident);
-      reset();
-      setMediaFiles([]);
-      onClose();
     } catch {
       setSubmitError(true);
+      return;
+    }
+
+    addIncident(incident);
+    setCreatedIncidentId(incident.id);
+
+    if (mediaFiles.length === 0) {
+      onClose();
+      return;
+    }
+
+    setUploadingMedia(true);
+    setUploadStatuses(new Map(mediaFiles.map((f) => [f, 'pending' as const])));
+
+    const results = await Promise.allSettled(
+      mediaFiles.map((file) => uploadMedia(incident.id, file)),
+    );
+
+    const uploaded: Media[] = [];
+    const finalStatuses = new Map<File, Media['status']>();
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') {
+        uploaded.push(result.value);
+        finalStatuses.set(mediaFiles[i], 'uploaded');
+      } else {
+        finalStatuses.set(mediaFiles[i], 'error');
+      }
+    });
+    setUploadStatuses(finalStatuses);
+    setUploadingMedia(false);
+
+    if (uploaded.length > 0) {
+      updateIncidentInStore({ ...incident, media: uploaded });
+    }
+
+    // All attachments uploaded cleanly — close like before. On a partial
+    // failure, stay open so the per-file error badges (FileUploader) and the
+    // summary message below are actually visible; the incident itself is
+    // already created either way, so there's nothing left to submit.
+    if (uploaded.length === mediaFiles.length) {
+      onClose();
+    } else {
+      setUploadPartialError(true);
     }
   };
 
@@ -389,9 +437,20 @@ export default function IssueForm({ onClose }: Props) {
         <p className={styles['section-label']}>{t('form.attachmentsSection')}</p>
 
         <div className={styles.field}>
-          <FileUploader value={mediaFiles} onChange={setMediaFiles} />
+          <FileUploader
+            value={mediaFiles}
+            onChange={setMediaFiles}
+            statuses={uploadStatuses}
+            uploading={uploadingMedia}
+          />
         </div>
 
+        {uploadingMedia && <p aria-live="polite">{t('form.uploadingAttachments')}</p>}
+        {uploadPartialError && (
+          <p className={styles.error} role="alert" aria-live="assertive">
+            {t('form.uploadPartialError')}
+          </p>
+        )}
         {submitError && (
           <p className={styles.error} role="alert" aria-live="assertive">
             {t('form.submitError')}
@@ -402,11 +461,13 @@ export default function IssueForm({ onClose }: Props) {
       {/* ── Footer ──────────────────────────────────────────────────────────────── */}
       <div className={styles.footer}>
         <button type="button" className={styles['btn-cancel']} onClick={onClose}>
-          {t('form.cancel')}
+          {createdIncidentId ? t('form.close') : t('form.cancel')}
         </button>
-        <button type="submit" className={styles['btn-submit']} disabled={isSubmitting}>
-          {isSubmitting ? t('form.submitting') : t('form.submit')}
-        </button>
+        {!createdIncidentId && (
+          <button type="submit" className={styles['btn-submit']} disabled={isSubmitting}>
+            {isSubmitting ? t('form.submitting') : t('form.submit')}
+          </button>
+        )}
       </div>
 
       {/* CategoryManagerModal se renderiza aquí (sub-modal) */}
