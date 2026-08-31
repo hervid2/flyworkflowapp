@@ -13,8 +13,12 @@ import { formatDistanceToNow, parseISO, isBefore, isAfter, startOfDay, addDays }
 import { es } from 'date-fns/locale';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useFiltersStore } from '@/store/useFiltersStore';
-import { MOCK_USERS, USER_COMPANY_MAP } from '@/lib/constants/mock-users';
-import type { Incident, IncidentPriority, IncidentStatus } from '@/domain/models/incident.model';
+import type {
+  Incident,
+  IncidentPriority,
+  IncidentStatus,
+  UserRef,
+} from '@/domain/models/incident.model';
 import type { RiskFilter } from './RiskIndicators';
 import styles from './CriticalIssuesList.module.scss';
 
@@ -80,10 +84,12 @@ function UserAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
 /** In-table filter dialog; edits a local draft and commits it on "Apply". */
 function TableFiltersModal({
   filters,
+  creators,
   onChange,
   onClose,
 }: {
   filters: TableFilters;
+  creators: UserRef[];
   onChange: (f: TableFilters) => void;
   onClose: () => void;
 }) {
@@ -170,7 +176,7 @@ function TableFiltersModal({
           <fieldset className={styles.filterField}>
             <legend className={styles.filterField__label}>{t('criticalLegendCreatedBy')}</legend>
             <div className={styles.userFilterList}>
-              {MOCK_USERS.map((u) => {
+              {creators.map((u) => {
                 const active = draft.createdBy.includes(u.id);
                 return (
                   <button
@@ -184,7 +190,6 @@ function TableFiltersModal({
                   >
                     <span className={styles.userFilterChip__avatar}>{u.name.charAt(0)}</span>
                     <span className={styles.userFilterChip__name}>{u.name}</span>
-                    <span className={styles.userFilterChip__company}>{u.company}</span>
                   </button>
                 );
               })}
@@ -252,6 +257,16 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
   const [tableFilters, setTableFilters] = useState<TableFilters>(DEFAULT_TABLE_FILTERS);
   const [showFilterModal, setShowFilterModal] = useState(false);
 
+  // Only offer people who actually own an incident here — a real backend
+  // org-members fetch would list teammates with zero results too.
+  const creators = useMemo(() => {
+    const byId = new Map<string, UserRef>();
+    incidents.forEach((i) => {
+      if (i.owner?.id) byId.set(i.owner.id, i.owner);
+    });
+    return Array.from(byId.values());
+  }, [incidents]);
+
   const PRIORITY_LABELS: Record<string, string> = {
     high: t('priorityHigh'),
     medium: t('priorityMedium'),
@@ -292,18 +307,6 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
           .some((a) => dashboardFilters.responsibleUser!.includes(a.id))
       )
         return false;
-      if (dashboardFilters.createdByCompany?.length) {
-        const company = USER_COMPANY_MAP.get(i.owner?.id ?? '');
-        if (company === undefined || !dashboardFilters.createdByCompany.includes(company))
-          return false;
-      }
-      if (dashboardFilters.responsibleByCompany?.length) {
-        const matches = (i.assignees ?? []).filter(Boolean).some((a) => {
-          const company = USER_COMPANY_MAP.get(a.id);
-          return company !== undefined && dashboardFilters.responsibleByCompany!.includes(company);
-        });
-        if (!matches) return false;
-      }
       return true;
     });
 
@@ -537,6 +540,7 @@ export default function CriticalIssuesList({ riskFilter }: Props) {
       {showFilterModal && (
         <TableFiltersModal
           filters={tableFilters}
+          creators={creators}
           onChange={handleTableFiltersChange}
           onClose={() => setShowFilterModal(false)}
         />

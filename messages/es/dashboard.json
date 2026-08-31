@@ -72,10 +72,8 @@
   "filtersModalLegendPeriod": "Período",
   "filtersModalLegendStatus": "Estado",
   "filtersModalLegendPriority": "Prioridad",
-  "filtersModalLegendCreatedByCompany": "Creado por (compañía)",
-  "filtersModalLegendCreatedByUser": "Creado por (usuario)",
-  "filtersModalLegendResponsibleByCompany": "Responsable por (compañía)",
-  "filtersModalLegendResponsibleByUser": "Responsable (usuario)",
+  "filtersModalLegendCreatedByUser": "Creado por",
+  "filtersModalLegendResponsibleByUser": "Responsable",
   "filtersModalClearFilters": "Limpiar filtros",
   "filtersModalApply": "Aplicar",
 

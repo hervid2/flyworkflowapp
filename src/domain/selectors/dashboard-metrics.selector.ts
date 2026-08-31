@@ -8,7 +8,6 @@ import { differenceInDays, isAfter, isBefore, parseISO, format, startOfDay } fro
 import type { Incident } from '../models/incident.model';
 import type { DashboardFilters } from '../models/filters.model';
 import type { DashboardMetrics } from '../models/dashboard-metrics.model';
-import { USER_COMPANY_MAP } from '@/lib/constants/mock-users';
 
 /** Resolves the active filter preset into a concrete `[from, to]` date range. */
 function getPeriodRange(filters: DashboardFilters): { from: Date; to: Date } {
@@ -59,20 +58,6 @@ export function getDashboardMetrics(
   if (filters.responsibleUser?.length) {
     filtered = filtered.filter((i) =>
       i.assignees.some((a) => filters.responsibleUser!.includes(a.id)),
-    );
-  }
-  if (filters.createdByCompany?.length) {
-    filtered = filtered.filter((i) => {
-      const company = USER_COMPANY_MAP.get(i.owner.id);
-      return company !== undefined && filters.createdByCompany!.includes(company);
-    });
-  }
-  if (filters.responsibleByCompany?.length) {
-    filtered = filtered.filter((i) =>
-      i.assignees.some((a) => {
-        const company = USER_COMPANY_MAP.get(a.id);
-        return company !== undefined && filters.responsibleByCompany!.includes(company);
-      }),
     );
   }
 
