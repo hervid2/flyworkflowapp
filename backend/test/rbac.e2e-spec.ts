@@ -98,13 +98,27 @@ describe('Users / Organizations RBAC (e2e)', () => {
       );
     });
 
-    it('rejects a plain member with 403 (insufficient role)', async () => {
+    it('lets a plain member list their own organization members (F7.2: needed for the assignee/observer picker)', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+
+      const res = await request(app.getHttpServer())
+        .get('/organizations/org-a/members')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      const emails = (res.body as { email: string }[]).map((m) => m.email);
+      expect(emails.sort()).toEqual(
+        ['admin@org-a.test', 'member@org-a.test'].sort(),
+      );
+    });
+
+    it('rejects a plain member reaching into another organization with 404 (never 403)', async () => {
       const token = await loginAs(app, orgAMember, 'password123');
 
       await request(app.getHttpServer())
-        .get('/organizations/org-a/members')
+        .get('/organizations/org-b/members')
         .set('Authorization', `Bearer ${token}`)
-        .expect(403);
+        .expect(404);
     });
 
     it('rejects an admin reaching into another organization with 404 (never 403)', async () => {

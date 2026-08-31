@@ -3,9 +3,12 @@
  * The create-incident form itself. Orchestrates React Hook Form + Zod validation
  * and the custom field widgets (tags, people, location, files), then maps the
  * form values to a {@link CreateIncidentDto}, calls the service and pushes the
- * resulting incident into the issues store.
+ * resulting incident into the issues store. Reference data (types, projects,
+ * tags, teammates) is fetched from the real backend when the form mounts —
+ * it's unmounted/remounted every time the modal opens (CreateIssueModal.tsx),
+ * so this stays reasonably fresh without needing its own cache invalidation.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
@@ -13,33 +16,25 @@ import { useTranslations } from 'next-intl';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useModalStore } from '@/store/useModalStore';
 import { useCategoriesStore } from '@/store/useCategoriesStore';
-import { useAuthStore } from '@/store/useAuthStore';
-import { createIncident } from '@/services/create-incident.service';
+import { createIncident } from '@/services/incident-mutations.service';
+import { getIncidentTypes, getProjects, getTags, getOrgMembers } from '@/services/catalogs.service';
 import { createIssueFormSchema, type IssueFormValues } from '@/lib/validators/issue-form.schema';
-import { INCIDENT_TYPES } from '@/lib/constants/incident-types';
-import { PROJECTS } from '@/lib/constants/projects';
-import { MOCK_USERS } from '@/lib/constants/mock-users';
 import TagTreeSelect from './TagTreeSelect';
 import UserMultiSelect from './UserMultiSelect';
 import CategoryManagerModal from './CategoryManagerModal';
 import LocationPicker from './LocationPicker';
 import FileUploader from './FileUploader';
-import type { Tag } from '@/domain/models';
+import type { IncidentType, Project, Tag, UserRef } from '@/domain/models';
 import styles from './IssueForm.module.scss';
 
-// Static demo data standing in for catalogs a backend would supply.
-const MOCK_TAGS: Tag[] = [
-  { id: '4bf3f690ae021229ec15f203', name: 'Reproceso', color: '#EF4444' },
-  { id: '2a544044d7c705a56d0cf6c5', name: 'Acabados', color: '#6366F1' },
-  { id: '86207f931475a6ec04908f00', name: 'Urgente', color: '#F59E0B' },
-  { id: '95ef91272c28455168120ac3', name: 'Humedad', color: '#3B82F6' },
-  { id: '132cd775ccc64acfd82582cc', name: 'Cliente', color: '#EC4899' },
-  { id: 'a0314e3a97dac785a2dd5a6f', name: 'Seguridad', color: '#10B981' },
-  { id: '835ac9eaf409e5d275108498', name: 'Calidad', color: '#8B5CF6' },
-  { id: 'd1fa90ad0559f69ec34319e1', name: 'Garantía', color: '#14B8A6' },
-];
-
 const TODAY = format(new Date(), 'yyyy-MM-dd');
+
+interface Catalogs {
+  types: IncidentType[];
+  projects: Project[];
+  tags: Tag[];
+  members: UserRef[];
+}
 
 interface Props {
   onClose: () => void;
@@ -52,10 +47,27 @@ export default function IssueForm({ onClose }: Props) {
   const addIncident = useIssuesStore((s) => s.addIncident);
   const openModal = useModalStore((s) => s.open);
   const customTypes = useCategoriesStore((s) => s.customTypes);
-  const authUser = useAuthStore((s) => s.user);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
 
-  const typeCatalog = [...INCIDENT_TYPES, ...customTypes];
+  const [catalogs, setCatalogs] = useState<Catalogs | null>(null);
+  const [catalogsError, setCatalogsError] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([getIncidentTypes(), getProjects(), getTags(), getOrgMembers()])
+      .then(([types, projects, tags, members]) => {
+        if (!cancelled) setCatalogs({ types, projects, tags, members });
+      })
+      .catch(() => {
+        if (!cancelled) setCatalogsError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const typeCatalog = [...(catalogs?.types ?? []), ...customTypes];
 
   const {
     register,
@@ -87,35 +99,61 @@ export default function IssueForm({ onClose }: Props) {
 
   // Resolve selected ids back to full objects, build the DTO, persist, reset.
   const onSubmit = async (data: IssueFormValues) => {
-    const type = typeCatalog.find((t) => t.id === data.typeId)!;
-    const project = PROJECTS.find((p) => p.id === data.projectId)!;
-    const assignees = MOCK_USERS.filter((u) => (data.assigneeIds ?? []).includes(u.id));
-    const observers = MOCK_USERS.filter((u) => (data.observerIds ?? []).includes(u.id));
-    const tags = MOCK_TAGS.filter((t) => (data.tagIds ?? []).includes(t.id));
+    if (!catalogs) return;
+    setSubmitError(false);
 
-    const incident = await createIncident(
-      {
-        title: data.title,
-        description: data.description,
-        type,
-        priority: data.priority,
-        dueDate: data.dueDate,
-        assignees,
-        observers,
-        tags,
-        coordinates: data.coordinates ?? null,
-        locationDescription: data.locationDescription ?? null,
-        media: mediaFiles,
-      },
-      authUser!,
-      project,
-    );
+    const type = typeCatalog.find((ty) => ty.id === data.typeId)!;
+    const project = catalogs.projects.find((p) => p.id === data.projectId)!;
+    const assignees = catalogs.members.filter((u) => (data.assigneeIds ?? []).includes(u.id));
+    const observers = catalogs.members.filter((u) => (data.observerIds ?? []).includes(u.id));
+    const tags = catalogs.tags.filter((tg) => (data.tagIds ?? []).includes(tg.id));
 
-    addIncident(incident);
-    reset();
-    setMediaFiles([]);
-    onClose();
+    try {
+      const incident = await createIncident(
+        {
+          title: data.title,
+          description: data.description,
+          type,
+          priority: data.priority,
+          dueDate: data.dueDate,
+          assignees,
+          observers,
+          tags,
+          coordinates: data.coordinates ?? null,
+          locationDescription: data.locationDescription ?? null,
+          // Attachments upload directly to S3 after creation (roadmap F7.3) —
+          // not sent as part of this request.
+          media: mediaFiles,
+        },
+        project,
+      );
+
+      addIncident(incident);
+      reset();
+      setMediaFiles([]);
+      onClose();
+    } catch {
+      setSubmitError(true);
+    }
   };
+
+  if (catalogsError) {
+    return (
+      <div className={styles.body}>
+        <p className={styles.error} role="alert">
+          {t('form.catalogsError')}
+        </p>
+      </div>
+    );
+  }
+
+  if (!catalogs) {
+    return (
+      <div className={styles.body}>
+        <p aria-live="polite">{t('form.loadingCatalogs')}</p>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -210,9 +248,9 @@ export default function IssueForm({ onClose }: Props) {
                 {...register('typeId')}
               >
                 <option value="">{t('form.categoryPlaceholder')}</option>
-                {typeCatalog.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
+                {typeCatalog.map((ty) => (
+                  <option key={ty.id} value={ty.id}>
+                    {ty.name}
                   </option>
                 ))}
               </select>
@@ -245,7 +283,7 @@ export default function IssueForm({ onClose }: Props) {
             {...register('projectId')}
           >
             <option value="">{t('form.projectPlaceholder')}</option>
-            {PROJECTS.map((p) => (
+            {catalogs.projects.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>
@@ -286,7 +324,7 @@ export default function IssueForm({ onClose }: Props) {
             control={control}
             render={({ field }) => (
               <TagTreeSelect
-                tags={MOCK_TAGS}
+                tags={catalogs.tags}
                 selectedIds={field.value ?? []}
                 onChange={field.onChange}
               />
@@ -304,7 +342,7 @@ export default function IssueForm({ onClose }: Props) {
             control={control}
             render={({ field }) => (
               <UserMultiSelect
-                users={MOCK_USERS}
+                users={catalogs.members}
                 selectedIds={field.value ?? []}
                 onChange={field.onChange}
                 placeholder={t('form.assigneesPlaceholder')}
@@ -321,7 +359,7 @@ export default function IssueForm({ onClose }: Props) {
             control={control}
             render={({ field }) => (
               <UserMultiSelect
-                users={MOCK_USERS}
+                users={catalogs.members}
                 selectedIds={field.value ?? []}
                 onChange={field.onChange}
                 placeholder={t('form.observersPlaceholder')}
@@ -353,6 +391,12 @@ export default function IssueForm({ onClose }: Props) {
         <div className={styles.field}>
           <FileUploader value={mediaFiles} onChange={setMediaFiles} />
         </div>
+
+        {submitError && (
+          <p className={styles.error} role="alert" aria-live="assertive">
+            {t('form.submitError')}
+          </p>
+        )}
       </div>
 
       {/* ── Footer ──────────────────────────────────────────────────────────────── */}

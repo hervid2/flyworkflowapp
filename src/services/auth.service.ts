@@ -28,6 +28,7 @@ function toAuthUser(profile: UserProfileResponse): AuthUser {
     email: profile.email,
     avatarUrl: profile.avatarUrl ?? undefined,
     role: profile.role,
+    orgId: profile.orgId,
   };
 }
 

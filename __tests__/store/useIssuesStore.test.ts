@@ -16,7 +16,7 @@ const baseIncident: Incident = {
   type: { id: 't1', key: 'structural', name: 'Estructural', name_en: 'Structural' },
   priority: 'high',
   status: 'open',
-  approval: false,
+  approval: 'pending',
   project: { id: 'proj-1', name: 'Proyecto Onboarding' },
   owner: { id: 'u1', name: 'Julian Lozano', email: 'julian@example.com' },
   assignees: [],
@@ -75,5 +75,33 @@ describe('createIssuesStore (vanilla factory)', () => {
     store.getState().addIncident(c);
     const ids = store.getState().incidents.map((i) => i.id);
     expect(ids).toEqual(['c', 'b', 'a']);
+  });
+
+  it('updateIncident reemplaza la incidencia por id sin cambiar su posición', () => {
+    const other: Incident = { ...baseIncident, id: 'inc-002', title: 'Otra' };
+    const store = createIssuesStore([baseIncident, other]);
+    const updated: Incident = { ...baseIncident, status: 'closed', title: 'Fisura reparada' };
+    store.getState().updateIncident(updated);
+    const incidents = store.getState().incidents;
+    expect(incidents).toHaveLength(2);
+    expect(incidents[0].status).toBe('closed');
+    expect(incidents[0].title).toBe('Fisura reparada');
+    expect(incidents[1].id).toBe('inc-002');
+  });
+
+  it('updateIncident no hace nada si el id no existe en la lista', () => {
+    const store = createIssuesStore([baseIncident]);
+    store.getState().updateIncident({ ...baseIncident, id: 'no-existe', title: 'X' });
+    expect(store.getState().incidents).toHaveLength(1);
+    expect(store.getState().incidents[0].id).toBe('inc-001');
+  });
+
+  it('removeIncident quita la incidencia por id', () => {
+    const other: Incident = { ...baseIncident, id: 'inc-002', title: 'Otra' };
+    const store = createIssuesStore([baseIncident, other]);
+    store.getState().removeIncident('inc-001');
+    const incidents = store.getState().incidents;
+    expect(incidents).toHaveLength(1);
+    expect(incidents[0].id).toBe('inc-002');
   });
 });

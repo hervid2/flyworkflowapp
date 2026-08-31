@@ -283,3 +283,87 @@
   font-weight: $font-weight-semibold;
   margin-top: 2px;
 }
+
+// ── Actions (status change, delete) ──────────────────────
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-sm;
+}
+
+.statusSelect {
+  padding: $space-xs $space-sm;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  background: $color-bg-surface;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.deleteBtn {
+  margin-left: auto;
+  padding: $space-xs $space-md;
+  border: 1px solid rgba($color-priority-high, 0.4);
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-priority-high;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: rgba($color-priority-high, 0.08);
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.confirmDelete {
+  display: flex;
+  align-items: center;
+  gap: $space-xs;
+  margin-left: auto;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+}
+
+.confirmDelete__yes {
+  padding: $space-xs $space-sm;
+  border: none;
+  border-radius: $radius-md;
+  background: $color-priority-high;
+  color: #fff;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.confirmDelete__no {
+  padding: $space-xs $space-sm;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: transparent;
+  color: $color-text-primary;
+  font-size: $font-size-xs;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.error {
+  font-size: $font-size-xs;
+  color: $color-priority-high;
+  margin: 0;
+}

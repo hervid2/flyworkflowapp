@@ -31,7 +31,10 @@
     "attachmentsSection": "Archivos adjuntos",
     "cancel": "Cancelar",
     "submit": "Crear",
-    "submitting": "Creando..."
+    "submitting": "Creando...",
+    "loadingCatalogs": "Cargando datos del formulario...",
+    "catalogsError": "No se pudieron cargar los datos del formulario. Intenta de nuevo.",
+    "submitError": "No se pudo crear la incidencia. Intenta de nuevo."
   },
   "categoryManager": {
     "ariaLabel": "Gestionar categorías",

@@ -7,6 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { IncidentsModule } from './modules/incidents/incidents.module';
+import { IncidentTypesModule } from './modules/incident-types/incident-types.module';
 import { MediaModule } from './modules/media/media.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { AuditModule } from './modules/audit/audit.module';
@@ -23,6 +24,7 @@ import { AuditModule } from './modules/audit/audit.module';
     OrganizationsModule,
     ProjectsModule,
     IncidentsModule,
+    IncidentTypesModule,
     MediaModule,
     TagsModule,
     AuditModule,

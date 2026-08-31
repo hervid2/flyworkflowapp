@@ -5,13 +5,16 @@
  * from the issues store. Also bridges the imperative Mapbox popup links by
  * intercepting their clicks at the document level to open the modal.
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { X, MapPin, Calendar, Clock, FileText } from 'lucide-react';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useIncidentDetailStore } from '@/store/useIncidentDetailStore';
 import { useIssuesStore } from '@/store/useIssuesStore';
-import type { UserRef } from '@/domain/models/incident.model';
+import { useAuthStore } from '@/store/useAuthStore';
+import { updateIncidentStatus, deleteIncident } from '@/services/incident-mutations.service';
+import { ApiError } from '@/lib/api-client';
+import type { UserRef, IncidentStatus } from '@/domain/models/incident.model';
 import styles from './IncidentDetailModal.module.scss';
 
 const PRIORITY_LABELS: Record<string, string> = { high: 'Alta', medium: 'Media', low: 'Baja' };
@@ -20,6 +23,7 @@ const STATUS_LABELS: Record<string, string> = {
   on_pause: 'Pausada',
   closed: 'Cerrada',
 };
+const STATUS_OPTIONS: IncidentStatus[] = ['open', 'on_pause', 'closed'];
 
 /** Small avatar + name chip reused for owner, assignees and observers. */
 function UserChip({ user }: { user: UserRef }) {
@@ -41,6 +45,13 @@ function UserChip({ user }: { user: UserRef }) {
 export default function IncidentDetailModal() {
   const { selectedIncidentId, openDetail, closeDetail } = useIncidentDetailStore();
   const incidents = useIssuesStore((s) => s.incidents);
+  const updateIncidentInStore = useIssuesStore((s) => s.updateIncident);
+  const removeIncidentFromStore = useIssuesStore((s) => s.removeIncident);
+  const currentUser = useAuthStore((s) => s.user);
+  const [statusPending, setStatusPending] = useState(false);
+  const [statusError, setStatusError] = useState('');
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
 
   // Intercept "Ver detalles" clicks from Mapbox popups (DOM-rendered, not React)
   useEffect(() => {
@@ -65,8 +76,56 @@ export default function IncidentDetailModal() {
     return () => document.removeEventListener('keydown', handleKey);
   }, [selectedIncidentId, closeDetail]);
 
+  // Reset transient action state whenever the open incident changes.
+  useEffect(() => {
+    setStatusError('');
+    setConfirmingDelete(false);
+  }, [selectedIncidentId]);
+
   const incident = incidents.find((i) => i.id === selectedIncidentId);
   if (!incident) return null;
+
+  // Mirrors the backend's own permission check (canEdit/remove in
+  // incidents.service.ts) for UI gating only — the backend is still the
+  // real authority and re-checks on every request.
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
+  const isOwnerOrAssignee =
+    !!currentUser &&
+    (incident.owner.id === currentUser.id ||
+      incident.assignees.some((a) => a.id === currentUser.id));
+  const canChangeStatus = isAdmin || isOwnerOrAssignee;
+  const canDelete = isAdmin || incident.owner.id === currentUser?.id;
+
+  const handleStatusChange = async (next: IncidentStatus) => {
+    if (next === incident.status) return;
+    setStatusError('');
+    setStatusPending(true);
+    try {
+      const updated = await updateIncidentStatus(incident.id, next);
+      updateIncidentInStore(updated);
+    } catch (err) {
+      setStatusError(
+        err instanceof ApiError && err.status === 409
+          ? 'Transición de estado no permitida.'
+          : 'No se pudo cambiar el estado.',
+      );
+    } finally {
+      setStatusPending(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeletePending(true);
+    try {
+      await deleteIncident(incident.id);
+      removeIncidentFromStore(incident.id);
+      closeDetail();
+    } catch {
+      setDeletePending(false);
+      setConfirmingDelete(false);
+      setStatusError('No se pudo eliminar la incidencia.');
+    }
+  };
 
   return (
     <div
@@ -227,6 +286,66 @@ export default function IncidentDetailModal() {
             </div>
           </div>
         </section>
+
+        {/* ── Acciones ── */}
+        {(canChangeStatus || canDelete) && (
+          <section className={styles.section}>
+            <h3 className={styles.section__label}>Acciones</h3>
+            <div className={styles.actions}>
+              {canChangeStatus && (
+                <select
+                  className={styles.statusSelect}
+                  value={incident.status}
+                  disabled={statusPending}
+                  aria-label="Cambiar estado"
+                  onChange={(e) => handleStatusChange(e.target.value as IncidentStatus)}
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {STATUS_LABELS[s]}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {canDelete &&
+                (confirmingDelete ? (
+                  <div className={styles.confirmDelete}>
+                    <span>¿Eliminar esta incidencia?</span>
+                    <button
+                      type="button"
+                      className={styles.confirmDelete__yes}
+                      onClick={handleDelete}
+                      disabled={deletePending}
+                    >
+                      {deletePending ? 'Eliminando…' : 'Sí, eliminar'}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.confirmDelete__no}
+                      onClick={() => setConfirmingDelete(false)}
+                      disabled={deletePending}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.deleteBtn}
+                    onClick={() => setConfirmingDelete(true)}
+                  >
+                    Eliminar
+                  </button>
+                ))}
+            </div>
+            {statusError && (
+              <p className={styles.error} role="alert">
+                {statusError}
+              </p>
+            )}
+          </section>
+        )}
       </div>
     </div>
   );

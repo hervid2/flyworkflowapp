@@ -31,7 +31,10 @@
     "attachmentsSection": "Attachments",
     "cancel": "Cancel",
     "submit": "Create",
-    "submitting": "Creating..."
+    "submitting": "Creating...",
+    "loadingCatalogs": "Loading form data...",
+    "catalogsError": "Couldn't load the form data. Please try again.",
+    "submitError": "Couldn't create the incident. Please try again."
   },
   "categoryManager": {
     "ariaLabel": "Manage categories",
