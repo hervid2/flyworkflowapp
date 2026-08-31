@@ -35,7 +35,7 @@ function makeIncident(overrides: Partial<Incident>): Incident {
     type: { id: 't1', key: 'plumbing', name: 'Hidrosanitario', name_en: 'Plumbing' },
     priority: 'medium',
     status: 'open',
-    approval: false,
+    approval: 'pending',
     project: { id: 'p1', name: 'Proyecto Demo' },
     owner: VALLE_OWNER,
     assignees: [],

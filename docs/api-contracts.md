@@ -35,6 +35,14 @@
 | `DELETE /incidents/:id`         | Bearer, author/admin                  | —                                                                                       | `204` — soft delete (`deleted = true`)       | `403` · `404`                                          |
 | `POST /incidents/:id/restore`   | Bearer, admin                         | —                                                                                       | `200` restored                               | `404` not in trash                                     |
 
+## Incident types
+
+Added in Phase 7 (F7.2): the frontend has no other way to discover the `typeId` UUIDs `POST /incidents` requires.
+
+| Method and route      | Auth   | Request | Response                                                                      | Errors |
+| --------------------- | ------ | ------- | ----------------------------------------------------------------------------- | ------ |
+| `GET /incident-types` | Bearer | —       | `200` the shared 15-row catalog (`{id, key, name, nameEn}[]`), not org-scoped | —      |
+
 ## Media (`requirements.md §1.7`)
 
 | Method and route            | Auth   | Request                                       | Response                                      | Errors                                   |
@@ -44,12 +52,12 @@
 
 ## Organizations / Projects (`requirements.md §1.6`)
 
-| Method and route                 | Auth           | Request    | Response                          | Errors |
-| -------------------------------- | -------------- | ---------- | --------------------------------- | ------ |
-| `GET /users/me`                  | Bearer         | —          | `200` profile + `orgId` + `role`  | `401`  |
-| `GET /organizations/:id/members` | Bearer, admin+ | —          | `200` member list                 | `403`  |
-| `GET /projects`                  | Bearer         | —          | `200` the organization's projects | —      |
-| `POST /projects`                 | Bearer, admin+ | `{ name }` | `201`                             | `403`  |
+| Method and route                 | Auth           | Request    | Response                                               | Errors                   |
+| -------------------------------- | -------------- | ---------- | ------------------------------------------------------ | ------------------------ |
+| `GET /users/me`                  | Bearer         | —          | `200` profile + `orgId` + `role`                       | `401`                    |
+| `GET /organizations/:id/members` | Bearer         | —          | `200` member list (own organization unless superadmin) | `404` other organization |
+| `GET /projects`                  | Bearer         | —          | `200` the organization's projects                      | —                        |
+| `POST /projects`                 | Bearer, admin+ | `{ name }` | `201`                                                  | `403`                    |
 
 ## Notifications (`requirements.md §1.5`)
 

@@ -1,17 +1,18 @@
 'use client';
 /**
- * Searchable multi-select for people, grouped by company. Used for both the
- * assignees and observers fields; matches on name/email/company and returns the
- * selected user ids to the form. Selected users surface as removable chips.
+ * Searchable multi-select for people (the caller's own organization — a
+ * session only ever sees one). Used for both the assignees and observers
+ * fields; matches on name/email and returns the selected user ids to the
+ * form. Selected users surface as removable chips.
  */
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Check, X } from 'lucide-react';
-import type { MockUserWithCompany } from '@/lib/constants/mock-users';
+import type { UserRef } from '@/domain/models';
 import styles from './UserMultiSelect.module.scss';
 
 interface Props {
-  users: MockUserWithCompany[];
+  users: UserRef[];
   selectedIds: string[];
   onChange: (ids: string[]) => void;
   placeholder?: string;
@@ -41,13 +42,9 @@ export default function UserMultiSelect({
 
   const q = search.toLowerCase();
   const filtered = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q) ||
-      u.company.toLowerCase().includes(q),
+    (u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
   );
 
-  const companies = Array.from(new Set(filtered.map((u) => u.company)));
   const selectedUsers = users.filter((u) => selectedIds.includes(u.id));
 
   const initials = (name: string) =>
@@ -94,52 +91,36 @@ export default function UserMultiSelect({
         </div>
 
         <div className={styles.list} role="listbox" aria-multiselectable="true">
-          {companies.length === 0 ? (
+          {filtered.length === 0 ? (
             <p className={styles.empty}>{t('userMultiSelect.noResults')}</p>
           ) : (
-            companies.map((company) => (
-              <div key={company}>
-                <div className={styles['group-label']} role="group" aria-label={company}>
-                  {company}
+            filtered.map((user) => {
+              const selected = selectedIds.includes(user.id);
+              return (
+                <div
+                  key={user.id}
+                  className={[styles.option, selected ? styles['option--selected'] : ''].join(' ')}
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => toggle(user.id)}
+                >
+                  {user.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={user.avatarUrl} alt={user.name} className={styles.option__avatar} />
+                  ) : (
+                    <span className={styles['option__avatar-placeholder']}>
+                      {initials(user.name)}
+                    </span>
+                  )}
+                  <div className={styles.option__info}>
+                    <span className={styles.option__name}>{user.name}</span>
+                  </div>
+                  {selected && (
+                    <Check size={14} className={styles.option__check} aria-hidden="true" />
+                  )}
                 </div>
-                {filtered
-                  .filter((u) => u.company === company)
-                  .map((user) => {
-                    const selected = selectedIds.includes(user.id);
-                    return (
-                      <div
-                        key={user.id}
-                        className={[styles.option, selected ? styles['option--selected'] : ''].join(
-                          ' ',
-                        )}
-                        role="option"
-                        aria-selected={selected}
-                        onClick={() => toggle(user.id)}
-                      >
-                        {user.avatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={user.avatarUrl}
-                            alt={user.name}
-                            className={styles.option__avatar}
-                          />
-                        ) : (
-                          <span className={styles['option__avatar-placeholder']}>
-                            {initials(user.name)}
-                          </span>
-                        )}
-                        <div className={styles.option__info}>
-                          <span className={styles.option__name}>{user.name}</span>
-                          {user.role && <span className={styles.option__role}>[{user.role}]</span>}
-                        </div>
-                        {selected && (
-                          <Check size={14} className={styles.option__check} aria-hidden="true" />
-                        )}
-                      </div>
-                    );
-                  })}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

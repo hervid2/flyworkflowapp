@@ -13,6 +13,8 @@ import type { Incident } from '@/domain/models';
 interface IssuesState {
   incidents: Incident[];
   addIncident: (incident: Incident) => void;
+  updateIncident: (incident: Incident) => void;
+  removeIncident: (id: string) => void;
 }
 
 /** Factory for a fresh store instance seeded with server-fetched incidents. */
@@ -21,6 +23,13 @@ export const createIssuesStore = (initialIncidents: Incident[] = []) =>
     incidents: initialIncidents,
     // Prepend so newly created incidents surface at the top of lists.
     addIncident: (incident) => set((state) => ({ incidents: [incident, ...state.incidents] })),
+    // Replaces the incident by id in place (status change, media attached, future edits).
+    updateIncident: (incident) =>
+      set((state) => ({
+        incidents: state.incidents.map((i) => (i.id === incident.id ? incident : i)),
+      })),
+    removeIncident: (id) =>
+      set((state) => ({ incidents: state.incidents.filter((i) => i.id !== id) })),
   }));
 
 export type IssuesStoreApi = ReturnType<typeof createIssuesStore>;

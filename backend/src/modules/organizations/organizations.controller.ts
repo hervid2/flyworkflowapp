@@ -1,8 +1,6 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrganizationsService } from './organizations.service';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { RolesGuard } from '../../common/guards/roles.guard';
 import { OrgScopeGuard } from '../../common/guards/org-scope.guard';
 import type { UserProfileDto } from '../../common/dto/user-profile.dto';
 
@@ -12,12 +10,14 @@ import type { UserProfileDto } from '../../common/dto/user-profile.dto';
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
 
+  // Any authenticated org member (not admin-only): the frontend's
+  // assignee/observer picker (F7.2) needs teammates listed for every role,
+  // not just admins. OrgScopeGuard alone still blocks cross-org access.
   @Get(':id/members')
-  @Roles('admin')
-  @UseGuards(RolesGuard, OrgScopeGuard)
+  @UseGuards(OrgScopeGuard)
   @ApiOperation({
     summary:
-      "List an organization's members (admin+, own organization unless superadmin)",
+      "List an organization's members (own organization unless superadmin)",
   })
   findMembers(@Param('id') id: string): Promise<UserProfileDto[]> {
     return this.organizationsService.findMembers(id);

@@ -386,6 +386,11 @@ export class FakePrismaService {
         this.incidentTypes.find((t) => t.id === where.id) ?? null,
       );
     },
+    findMany: (): Promise<FakeIncidentType[]> => {
+      return Promise.resolve(
+        [...this.incidentTypes].sort((a, b) => a.name.localeCompare(b.name)),
+      );
+    },
   };
 
   readonly tag = {

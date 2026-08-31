@@ -13,9 +13,10 @@ import { decodeJwtExp, isJwtExpired } from '@/lib/jwt';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/auth-cookie';
 import * as authService from '@/services/auth.service';
 
-/** Authenticated user enriched with role beyond the base ref. */
+/** Authenticated user enriched with role and organization beyond the base ref. */
 export interface AuthUser extends UserRef {
   role: string;
+  orgId: string;
 }
 
 interface AuthState {

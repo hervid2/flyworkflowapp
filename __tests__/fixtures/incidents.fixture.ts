@@ -33,7 +33,7 @@ function makeIncident(overrides: Partial<Incident>): Incident {
     type: typeStructural,
     priority: 'medium',
     status: 'open',
-    approval: false,
+    approval: 'pending',
     project,
     owner,
     assignees: [assignee],

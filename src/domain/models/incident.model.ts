@@ -8,6 +8,8 @@
 export type IncidentStatus = 'open' | 'on_pause' | 'closed';
 // Severity ranking used for sorting, risk indicators and badge colors.
 export type IncidentPriority = 'high' | 'medium' | 'low';
+// Approval workflow state; UI for this is Phase 8 (roadmap 8.3) — read-only for now.
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 /** Catalog entry classifying an incident (e.g. plumbing, electrical). */
 export interface IncidentType {
@@ -65,7 +67,7 @@ export interface Incident {
   type: IncidentType;
   priority: IncidentPriority;
   status: IncidentStatus;
-  approval: boolean;
+  approval: ApprovalStatus;
   project: Project;
   owner: UserRef;
   assignees: UserRef[];
