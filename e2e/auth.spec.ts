@@ -16,7 +16,17 @@ test.describe('Autenticación', () => {
     }
   });
 
-  test('credenciales inválidas muestran error y permanecen en /login', async ({ page }) => {
+  test('credenciales inválidas muestran error y permanecen en /login', async ({
+    page,
+    isMobile,
+  }) => {
+    // Not viewport-dependent (same assertions regardless of screen size), so
+    // it only runs under one project — see the mobile describe block below
+    // for why real (uncached) logins aren't duplicated across projects: this
+    // test plus "credenciales válidas" already spend 2 of the login
+    // endpoint's 5-requests-per-minute throttle (requirements.md §1.1) per
+    // project, on top of global-setup's own 2 prewarm calls.
+    test.skip(isMobile, 'Not viewport-dependent — covered once under chromium.');
     await loginViaUI(page, 'camila.rojas@flyworkflow.io', 'wrongpassword');
     // Server error alert should appear
     await expect(
