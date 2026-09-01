@@ -14,6 +14,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MOCK_USERS } from '../src/lib/constants/mock-users';
 import type {
+  ApprovalStatus,
   Coordinates,
   Incident,
   IncidentPriority,
@@ -420,7 +421,11 @@ function buildIncident(index: number): Incident {
     ['closed', 0.33],
     ['on_pause', 0.17],
   ]);
-  const approval = rand() < 0.3;
+  const approval = weightedPick<ApprovalStatus>([
+    ['pending', 0.3],
+    ['approved', 0.6],
+    ['rejected', 0.1],
+  ]);
 
   const now = Date.now();
   const createdAt = new Date(now - randomInt(1, 200) * 86_400_000);

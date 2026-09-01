@@ -4,7 +4,7 @@
  * mobile-viewport smoke check. Exercises the real login form via the UI.
  */
 import { test, expect } from '@playwright/test';
-import { loginViaUI } from './helpers/auth';
+import { loginViaCookie, loginViaUI } from './helpers/auth';
 
 test.describe('Autenticación', () => {
   test('credenciales válidas redirigen a /mapa', async ({ page, isMobile }) => {
@@ -16,7 +16,17 @@ test.describe('Autenticación', () => {
     }
   });
 
-  test('credenciales inválidas muestran error y permanecen en /login', async ({ page }) => {
+  test('credenciales inválidas muestran error y permanecen en /login', async ({
+    page,
+    isMobile,
+  }) => {
+    // Not viewport-dependent (same assertions regardless of screen size), so
+    // it only runs under one project — see the mobile describe block below
+    // for why real (uncached) logins aren't duplicated across projects: this
+    // test plus "credenciales válidas" already spend 2 of the login
+    // endpoint's 5-requests-per-minute throttle (requirements.md §1.1) per
+    // project, on top of global-setup's own 2 prewarm calls.
+    test.skip(isMobile, 'Not viewport-dependent — covered once under chromium.');
     await loginViaUI(page, 'camila.rojas@flyworkflow.io', 'wrongpassword');
     // Server error alert should appear
     await expect(
@@ -49,12 +59,19 @@ test.describe('Autenticación', () => {
   });
 });
 
-// ── Responsive smoke: auth flow in mobile viewport ─────────────────────────
+// ── Responsive smoke: an authenticated session reaches /mapa at a narrow
+// viewport without being redirected to /login. The real login FORM at mobile
+// width is already exercised by "credenciales válidas redirigen a /mapa"
+// above under the mobile-chrome project (isMobile) — no need to drive it a
+// second time here (loginViaUI is real/uncached by design, unlike
+// loginViaCookie, so duplicating it needlessly eats into the login
+// endpoint's 5-requests-per-minute throttle, requirements.md §1.1).
 test.describe('Autenticación — mobile (375×812)', () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  test('login funciona en viewport móvil', async ({ page }) => {
-    await loginViaUI(page);
+  test('sesión autenticada llega a /mapa en viewport móvil', async ({ page }) => {
+    await loginViaCookie(page);
+    await page.goto('/mapa');
     await expect(page).toHaveURL(/\/mapa/, { timeout: 10_000 });
   });
 });

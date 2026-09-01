@@ -3,43 +3,40 @@
  * The create-incident form itself. Orchestrates React Hook Form + Zod validation
  * and the custom field widgets (tags, people, location, files), then maps the
  * form values to a {@link CreateIncidentDto}, calls the service and pushes the
- * resulting incident into the issues store.
+ * resulting incident into the issues store. Reference data (types, projects,
+ * tags, teammates) is fetched from the real backend when the form mounts —
+ * it's unmounted/remounted every time the modal opens (CreateIssueModal.tsx),
+ * so this stays reasonably fresh without needing its own cache invalidation.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useModalStore } from '@/store/useModalStore';
-import { useCategoriesStore } from '@/store/useCategoriesStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { createIncident } from '@/services/create-incident.service';
+import { useCategoriesStore } from '@/store/useCategoriesStore';
+import { createIncident } from '@/services/incident-mutations.service';
+import { getIncidentTypes, getProjects, getTags, getOrgMembers } from '@/services/catalogs.service';
+import { uploadMedia } from '@/services/media.service';
 import { createIssueFormSchema, type IssueFormValues } from '@/lib/validators/issue-form.schema';
-import { INCIDENT_TYPES } from '@/lib/constants/incident-types';
-import { PROJECTS } from '@/lib/constants/projects';
-import { MOCK_USERS } from '@/lib/constants/mock-users';
 import TagTreeSelect from './TagTreeSelect';
 import UserMultiSelect from './UserMultiSelect';
 import CategoryManagerModal from './CategoryManagerModal';
 import LocationPicker from './LocationPicker';
 import FileUploader from './FileUploader';
-import type { Tag } from '@/domain/models';
+import type { IncidentType, Media, Project, Tag, UserRef } from '@/domain/models';
 import styles from './IssueForm.module.scss';
 
-// Static demo data standing in for catalogs a backend would supply.
-const MOCK_TAGS: Tag[] = [
-  { id: '4bf3f690ae021229ec15f203', name: 'Reproceso', color: '#EF4444' },
-  { id: '2a544044d7c705a56d0cf6c5', name: 'Acabados', color: '#6366F1' },
-  { id: '86207f931475a6ec04908f00', name: 'Urgente', color: '#F59E0B' },
-  { id: '95ef91272c28455168120ac3', name: 'Humedad', color: '#3B82F6' },
-  { id: '132cd775ccc64acfd82582cc', name: 'Cliente', color: '#EC4899' },
-  { id: 'a0314e3a97dac785a2dd5a6f', name: 'Seguridad', color: '#10B981' },
-  { id: '835ac9eaf409e5d275108498', name: 'Calidad', color: '#8B5CF6' },
-  { id: 'd1fa90ad0559f69ec34319e1', name: 'Garantía', color: '#14B8A6' },
-];
-
 const TODAY = format(new Date(), 'yyyy-MM-dd');
+
+interface Catalogs {
+  types: IncidentType[];
+  projects: Project[];
+  tags: Tag[];
+  members: UserRef[];
+}
 
 interface Props {
   onClose: () => void;
@@ -50,12 +47,45 @@ export default function IssueForm({ onClose }: Props) {
   const tValidation = useTranslations('validation');
   const schema = useMemo(() => createIssueFormSchema(tValidation), [tValidation]);
   const addIncident = useIssuesStore((s) => s.addIncident);
+  const updateIncidentInStore = useIssuesStore((s) => s.updateIncident);
   const openModal = useModalStore((s) => s.open);
+  const authHydrated = useAuthStore((s) => s.hydrated);
   const customTypes = useCategoriesStore((s) => s.customTypes);
-  const authUser = useAuthStore((s) => s.user);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [uploadStatuses, setUploadStatuses] = useState<Map<File, Media['status']>>(new Map());
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [uploadPartialError, setUploadPartialError] = useState(false);
+  // Guards against a double-submit re-creating the incident: once creation
+  // succeeds, isSubmitting goes back to false after the upload pass settles
+  // (even on a partial failure), so the submit button would otherwise be
+  // clickable again.
+  const [createdIncidentId, setCreatedIncidentId] = useState<string | null>(null);
 
-  const typeCatalog = [...INCIDENT_TYPES, ...customTypes];
+  const [catalogs, setCatalogs] = useState<Catalogs | null>(null);
+  const [catalogsError, setCatalogsError] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
+
+  // Waits for AuthBootstrap's hydrateFromCookie to settle before firing: the
+  // modal can open (and this effect run) before that async call has put an
+  // access token in the store, and unlike a submit/upload — which only ever
+  // happen after a user has already interacted with a hydrated page — this
+  // fetch runs on mount, right after the fastest possible first paint.
+  useEffect(() => {
+    if (!authHydrated) return;
+    let cancelled = false;
+    Promise.all([getIncidentTypes(), getProjects(), getTags(), getOrgMembers()])
+      .then(([types, projects, tags, members]) => {
+        if (!cancelled) setCatalogs({ types, projects, tags, members });
+      })
+      .catch(() => {
+        if (!cancelled) setCatalogsError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authHydrated]);
+
+  const typeCatalog = [...(catalogs?.types ?? []), ...customTypes];
 
   const {
     register,
@@ -64,7 +94,6 @@ export default function IssueForm({ onClose }: Props) {
     watch,
     setValue,
     formState: { errors, isSubmitting },
-    reset,
   } = useForm<IssueFormValues>({
     resolver: zodResolver(schema) as Resolver<IssueFormValues>,
     defaultValues: {
@@ -85,37 +114,102 @@ export default function IssueForm({ onClose }: Props) {
   const coordinates = watch('coordinates');
   const locationDescription = watch('locationDescription');
 
-  // Resolve selected ids back to full objects, build the DTO, persist, reset.
+  // Resolve selected ids back to full objects, build the DTO, persist, then
+  // (if any files were attached) upload them before closing — the modal
+  // stays open through the upload pass so FileUploader can show progress.
   const onSubmit = async (data: IssueFormValues) => {
-    const type = typeCatalog.find((t) => t.id === data.typeId)!;
-    const project = PROJECTS.find((p) => p.id === data.projectId)!;
-    const assignees = MOCK_USERS.filter((u) => (data.assigneeIds ?? []).includes(u.id));
-    const observers = MOCK_USERS.filter((u) => (data.observerIds ?? []).includes(u.id));
-    const tags = MOCK_TAGS.filter((t) => (data.tagIds ?? []).includes(t.id));
+    if (!catalogs || createdIncidentId) return;
+    setSubmitError(false);
 
-    const incident = await createIncident(
-      {
-        title: data.title,
-        description: data.description,
-        type,
-        priority: data.priority,
-        dueDate: data.dueDate,
-        assignees,
-        observers,
-        tags,
-        coordinates: data.coordinates ?? null,
-        locationDescription: data.locationDescription ?? null,
-        media: mediaFiles,
-      },
-      authUser!,
-      project,
-    );
+    const type = typeCatalog.find((ty) => ty.id === data.typeId)!;
+    const project = catalogs.projects.find((p) => p.id === data.projectId)!;
+    const assignees = catalogs.members.filter((u) => (data.assigneeIds ?? []).includes(u.id));
+    const observers = catalogs.members.filter((u) => (data.observerIds ?? []).includes(u.id));
+    const tags = catalogs.tags.filter((tg) => (data.tagIds ?? []).includes(tg.id));
+
+    let incident;
+    try {
+      incident = await createIncident(
+        {
+          title: data.title,
+          description: data.description,
+          type,
+          priority: data.priority,
+          dueDate: data.dueDate,
+          assignees,
+          observers,
+          tags,
+          coordinates: data.coordinates ?? null,
+          locationDescription: data.locationDescription ?? null,
+          media: mediaFiles,
+        },
+        project,
+      );
+    } catch {
+      setSubmitError(true);
+      return;
+    }
 
     addIncident(incident);
-    reset();
-    setMediaFiles([]);
-    onClose();
+    setCreatedIncidentId(incident.id);
+
+    if (mediaFiles.length === 0) {
+      onClose();
+      return;
+    }
+
+    setUploadingMedia(true);
+    setUploadStatuses(new Map(mediaFiles.map((f) => [f, 'pending' as const])));
+
+    const results = await Promise.allSettled(
+      mediaFiles.map((file) => uploadMedia(incident.id, file)),
+    );
+
+    const uploaded: Media[] = [];
+    const finalStatuses = new Map<File, Media['status']>();
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') {
+        uploaded.push(result.value);
+        finalStatuses.set(mediaFiles[i], 'uploaded');
+      } else {
+        finalStatuses.set(mediaFiles[i], 'error');
+      }
+    });
+    setUploadStatuses(finalStatuses);
+    setUploadingMedia(false);
+
+    if (uploaded.length > 0) {
+      updateIncidentInStore({ ...incident, media: uploaded });
+    }
+
+    // All attachments uploaded cleanly — close like before. On a partial
+    // failure, stay open so the per-file error badges (FileUploader) and the
+    // summary message below are actually visible; the incident itself is
+    // already created either way, so there's nothing left to submit.
+    if (uploaded.length === mediaFiles.length) {
+      onClose();
+    } else {
+      setUploadPartialError(true);
+    }
   };
+
+  if (catalogsError) {
+    return (
+      <div className={styles.body}>
+        <p className={styles.error} role="alert">
+          {t('form.catalogsError')}
+        </p>
+      </div>
+    );
+  }
+
+  if (!catalogs) {
+    return (
+      <div className={styles.body}>
+        <p aria-live="polite">{t('form.loadingCatalogs')}</p>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -210,9 +304,9 @@ export default function IssueForm({ onClose }: Props) {
                 {...register('typeId')}
               >
                 <option value="">{t('form.categoryPlaceholder')}</option>
-                {typeCatalog.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
+                {typeCatalog.map((ty) => (
+                  <option key={ty.id} value={ty.id}>
+                    {ty.name}
                   </option>
                 ))}
               </select>
@@ -245,7 +339,7 @@ export default function IssueForm({ onClose }: Props) {
             {...register('projectId')}
           >
             <option value="">{t('form.projectPlaceholder')}</option>
-            {PROJECTS.map((p) => (
+            {catalogs.projects.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>
@@ -286,7 +380,7 @@ export default function IssueForm({ onClose }: Props) {
             control={control}
             render={({ field }) => (
               <TagTreeSelect
-                tags={MOCK_TAGS}
+                tags={catalogs.tags}
                 selectedIds={field.value ?? []}
                 onChange={field.onChange}
               />
@@ -304,7 +398,7 @@ export default function IssueForm({ onClose }: Props) {
             control={control}
             render={({ field }) => (
               <UserMultiSelect
-                users={MOCK_USERS}
+                users={catalogs.members}
                 selectedIds={field.value ?? []}
                 onChange={field.onChange}
                 placeholder={t('form.assigneesPlaceholder')}
@@ -321,7 +415,7 @@ export default function IssueForm({ onClose }: Props) {
             control={control}
             render={({ field }) => (
               <UserMultiSelect
-                users={MOCK_USERS}
+                users={catalogs.members}
                 selectedIds={field.value ?? []}
                 onChange={field.onChange}
                 placeholder={t('form.observersPlaceholder')}
@@ -351,18 +445,37 @@ export default function IssueForm({ onClose }: Props) {
         <p className={styles['section-label']}>{t('form.attachmentsSection')}</p>
 
         <div className={styles.field}>
-          <FileUploader value={mediaFiles} onChange={setMediaFiles} />
+          <FileUploader
+            value={mediaFiles}
+            onChange={setMediaFiles}
+            statuses={uploadStatuses}
+            uploading={uploadingMedia}
+          />
         </div>
+
+        {uploadingMedia && <p aria-live="polite">{t('form.uploadingAttachments')}</p>}
+        {uploadPartialError && (
+          <p className={styles.error} role="alert" aria-live="assertive">
+            {t('form.uploadPartialError')}
+          </p>
+        )}
+        {submitError && (
+          <p className={styles.error} role="alert" aria-live="assertive">
+            {t('form.submitError')}
+          </p>
+        )}
       </div>
 
       {/* ── Footer ──────────────────────────────────────────────────────────────── */}
       <div className={styles.footer}>
         <button type="button" className={styles['btn-cancel']} onClick={onClose}>
-          {t('form.cancel')}
+          {createdIncidentId ? t('form.close') : t('form.cancel')}
         </button>
-        <button type="submit" className={styles['btn-submit']} disabled={isSubmitting}>
-          {isSubmitting ? t('form.submitting') : t('form.submit')}
-        </button>
+        {!createdIncidentId && (
+          <button type="submit" className={styles['btn-submit']} disabled={isSubmitting}>
+            {isSubmitting ? t('form.submitting') : t('form.submit')}
+          </button>
+        )}
       </div>
 
       {/* CategoryManagerModal se renderiza aquí (sub-modal) */}

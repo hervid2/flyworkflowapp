@@ -151,36 +151,3 @@
     cursor: not-allowed;
   }
 }
-
-.login__demo {
-  margin-top: $space-xl;
-  padding-top: $space-md;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.login__demo_title {
-  font-size: $font-size-xs;
-  font-weight: $font-weight-medium;
-  color: $color-text-secondary;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: $space-sm;
-}
-
-.login__demo_item {
-  @include flex-col;
-  gap: 2px;
-  margin-bottom: $space-sm;
-}
-
-.login__demo_label {
-  font-size: $font-size-xs;
-  color: $color-text-secondary;
-}
-
-.login__demo_code {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  font-family: monospace;
-  word-break: break-all;
-}

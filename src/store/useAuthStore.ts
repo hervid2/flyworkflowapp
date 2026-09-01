@@ -1,64 +1,116 @@
 'use client';
 /**
- * Global authentication store. Persists the session to a cookie (not
- * localStorage) so the Next.js middleware can read it server-side and gate
- * protected routes. Components subscribe here for the current user and auth state.
+ * Global authentication store. The access token lives in memory (this
+ * store), not in a persisted `zustand/middleware` cookie — it's mirrored into
+ * a short, non-`httpOnly` cookie purely so the Edge middleware can verify it
+ * and Server Components can forward it (see `lib/auth-cookie.ts`), not as the
+ * source of truth. `hydrateFromCookie` reconciles that mirror (or a silent
+ * refresh) into this store once per page load.
  */
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import type { UserRef } from '@/domain/models';
+import { decodeJwtExp, isJwtExpired } from '@/lib/jwt';
+import { ACCESS_TOKEN_COOKIE } from '@/lib/auth-cookie';
+import * as authService from '@/services/auth.service';
 
-/** Authenticated user enriched with role and company beyond the base ref. */
+/** Authenticated user enriched with role and organization beyond the base ref. */
 export interface AuthUser extends UserRef {
   role: string;
-  company: string;
+  orgId: string;
 }
 
 interface AuthState {
   user: AuthUser | null;
-  token: string | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
-  login: (user: AuthUser, token: string) => void;
-  logout: () => void;
+  hydrated: boolean;
+  login: (user: AuthUser, accessToken: string) => void;
+  setAccessToken: (token: string) => void;
+  logout: () => Promise<void>;
+  hydrateFromCookie: () => Promise<void>;
 }
+
+function readCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
+function writeAccessTokenCookie(token: string) {
+  if (typeof document === 'undefined') return;
+  const exp = decodeJwtExp(token);
+  const maxAge = exp ? Math.max(exp - Math.floor(Date.now() / 1000), 0) : 900;
+  document.cookie = `${ACCESS_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+}
+
+function clearAccessTokenCookie() {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${ACCESS_TOKEN_COOKIE}=; path=/; max-age=0`;
+}
+
+export const useAuthStore = create<AuthState>()((set, get) => ({
+  user: null,
+  accessToken: null,
+  isAuthenticated: false,
+  hydrated: false,
+
+  login: (user, accessToken) => {
+    writeAccessTokenCookie(accessToken);
+    set({ user, accessToken, isAuthenticated: true, hydrated: true });
+  },
+
+  setAccessToken: (token) => {
+    writeAccessTokenCookie(token);
+    set({ accessToken: token, isAuthenticated: true });
+  },
+
+  logout: async () => {
+    await authService.logout(get().accessToken);
+    clearAccessTokenCookie();
+    set({ user: null, accessToken: null, isAuthenticated: false, hydrated: true });
+  },
+
+  // Called once on mount by AuthBootstrap. Tries the cookie mirror first (no
+  // network round-trip needed when it's still fresh), then falls back to a
+  // silent refresh via the httpOnly cookie, then gives up as logged-out.
+  hydrateFromCookie: async () => {
+    if (get().hydrated) return;
+
+    const cookieToken = readCookie(ACCESS_TOKEN_COOKIE);
+    if (cookieToken && !isJwtExpired(cookieToken)) {
+      try {
+        const user = await authService.getMe(cookieToken);
+        set({ user, accessToken: cookieToken, isAuthenticated: true, hydrated: true });
+        return;
+      } catch {
+        // Rejected by the backend despite looking unexpired (revoked, clock skew) — fall through.
+      }
+    }
+
+    const freshToken = await authService.refresh();
+    if (freshToken) {
+      try {
+        const user = await authService.getMe(freshToken);
+        writeAccessTokenCookie(freshToken);
+        set({ user, accessToken: freshToken, isAuthenticated: true, hydrated: true });
+        return;
+      } catch {
+        // Fall through to logged-out below.
+      }
+    }
+
+    clearAccessTokenCookie();
+    set({ user: null, accessToken: null, isAuthenticated: false, hydrated: true });
+  },
+}));
 
 /**
- * Custom persist storage backed by `document.cookie`. Also writes a companion
- * `flyworkflow-session` flag cookie that the middleware checks to authorize routes.
- * SSR-safe: every accessor no-ops when `document` is unavailable.
+ * Refresh callback handed to `apiFetch` by client-side services for their
+ * silent-retry-on-401. Lives here (not api-client.ts) because it's the one
+ * place allowed to know about the Zustand store.
  */
-function cookieStorage() {
-  return createJSONStorage<AuthState>(() => ({
-    getItem(name) {
-      if (typeof document === 'undefined') return null;
-      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-      return match ? decodeURIComponent(match[2]) : null;
-    },
-    setItem(name, value) {
-      if (typeof document === 'undefined') return;
-      document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=86400; SameSite=Lax`;
-      document.cookie = `flyworkflow-session=1; path=/; max-age=86400; SameSite=Lax`;
-    },
-    removeItem(name) {
-      if (typeof document === 'undefined') return;
-      document.cookie = `${name}=; path=/; max-age=0`;
-      document.cookie = `flyworkflow-session=; path=/; max-age=0`;
-    },
-  }));
+export async function refreshAccessToken(): Promise<string | null> {
+  const freshToken = await authService.refresh();
+  if (freshToken) useAuthStore.getState().setAccessToken(freshToken);
+  return freshToken;
 }
-
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      login: (user, token) => set({ user, token, isAuthenticated: true }),
-      logout: () => set({ user: null, token: null, isAuthenticated: false }),
-    }),
-    {
-      name: 'flyworkflow-auth',
-      storage: cookieStorage(),
-    },
-  ),
-);

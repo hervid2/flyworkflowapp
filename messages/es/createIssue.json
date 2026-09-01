@@ -30,8 +30,14 @@
     "locationSection": "Ubicación",
     "attachmentsSection": "Archivos adjuntos",
     "cancel": "Cancelar",
+    "close": "Cerrar",
     "submit": "Crear",
-    "submitting": "Creando..."
+    "submitting": "Creando...",
+    "loadingCatalogs": "Cargando datos del formulario...",
+    "catalogsError": "No se pudieron cargar los datos del formulario. Intenta de nuevo.",
+    "submitError": "No se pudo crear la incidencia. Intenta de nuevo.",
+    "uploadingAttachments": "Subiendo archivos adjuntos...",
+    "uploadPartialError": "La incidencia se creó, pero algunos archivos no se pudieron subir."
   },
   "categoryManager": {
     "ariaLabel": "Gestionar categorías",
@@ -78,10 +84,13 @@
     "dropzoneDocumentsAriaLabel": "Zona para subir documentos",
     "dropHint": "Suelta los archivos aquí…",
     "dragHint": "Arrastra archivos o haz clic para seleccionar",
-    "mediaFormats": "JPG, PNG, GIF, SVG, MP4, MOV, AVI, WEBM",
-    "documentFormats": "PDF, DOC, DOCX, XLS, XLSX",
+    "mediaFormats": "JPG, PNG, GIF, WEBP, MP4, MOV, WEBM",
+    "documentFormats": "PDF, DOC, DOCX",
     "empty": "No hay medios disponibles",
     "previewAriaLabel": "Vista previa de archivos adjuntos",
-    "remove": "Eliminar {name}"
+    "remove": "Eliminar {name}",
+    "uploading": "Subiendo...",
+    "uploaded": "Subido",
+    "uploadError": "Error al subir el archivo"
   }
 }

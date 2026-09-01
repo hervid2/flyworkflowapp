@@ -43,8 +43,8 @@ export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarPr
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [langMenuOpen]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push('/login');
   };
 

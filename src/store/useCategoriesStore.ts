@@ -1,9 +1,11 @@
 'use client';
 /**
  * Custom incident categories added from CategoryManagerModal. Merged into
- * INCIDENT_TYPES by IssueForm so a category created in the sub-modal is
- * immediately selectable in the create-issue form's real catalog, not just
- * held in a disconnected list. Session-scoped, same lifetime as before.
+ * the fetched incident-type catalog by IssueForm so a category created in
+ * the sub-modal is immediately selectable in the form, not just held in a
+ * disconnected list. Client-session-only — there's no backend endpoint yet
+ * for creating a real incident type (a real admin feature, not itemized for
+ * Phase 7); these vanish on refresh, same as before Phase 7.
  */
 import { create } from 'zustand';
 import type { IncidentType } from '@/domain/models';

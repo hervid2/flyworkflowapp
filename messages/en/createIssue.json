@@ -30,8 +30,14 @@
     "locationSection": "Location",
     "attachmentsSection": "Attachments",
     "cancel": "Cancel",
+    "close": "Close",
     "submit": "Create",
-    "submitting": "Creating..."
+    "submitting": "Creating...",
+    "loadingCatalogs": "Loading form data...",
+    "catalogsError": "Couldn't load the form data. Please try again.",
+    "submitError": "Couldn't create the incident. Please try again.",
+    "uploadingAttachments": "Uploading attachments...",
+    "uploadPartialError": "The incident was created, but some files couldn't be uploaded."
   },
   "categoryManager": {
     "ariaLabel": "Manage categories",
@@ -78,10 +84,13 @@
     "dropzoneDocumentsAriaLabel": "Zone to upload documents",
     "dropHint": "Drop the files here…",
     "dragHint": "Drag files or click to select",
-    "mediaFormats": "JPG, PNG, GIF, SVG, MP4, MOV, AVI, WEBM",
-    "documentFormats": "PDF, DOC, DOCX, XLS, XLSX",
+    "mediaFormats": "JPG, PNG, GIF, WEBP, MP4, MOV, WEBM",
+    "documentFormats": "PDF, DOC, DOCX",
     "empty": "No media available",
     "previewAriaLabel": "Attachment preview",
-    "remove": "Remove {name}"
+    "remove": "Remove {name}",
+    "uploading": "Uploading...",
+    "uploaded": "Uploaded",
+    "uploadError": "Failed to upload file"
   }
 }

@@ -3,12 +3,8 @@ name: CI
 on:
   pull_request:
     branches: [main, develop]
-    paths-ignore:
-      - 'backend/**'
   push:
     branches: [main, develop]
-    paths-ignore:
-      - 'backend/**'
 
 jobs:
   quality:
@@ -28,13 +24,81 @@ jobs:
   e2e:
     needs: quality
     runs-on: ubuntu-latest
+    # F7.5: the e2e specs exercise the real incidents/auth API (Phase 7), not
+    # a static mock — an ephemeral Postgres + a real backend instance replace
+    # what used to be a frontend-only job. This is also why `paths-ignore:
+    # backend/**` is gone from the triggers above: a backend-only change can
+    # now break this suite too.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: flyworkflow
+          POSTGRES_PASSWORD: flyworkflow
+          POSTGRES_DB: flyworkflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Shared between the ephemeral backend and the frontend build/test run:
+      # middleware.ts verifies the access token's signature at the Edge with
+      # this same secret (roadmap.md Phase 7 decision #2) — never the real
+      # secret, which only ever lives as a SAM NoEcho parameter (F6.2).
+      JWT_ACCESS_SECRET: ci-test-only-secret-do-not-use-in-prod
+      NEXT_PUBLIC_API_URL: http://localhost:3001
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
-      - run: npm ci
+
+      # ── Ephemeral backend ──────────────────────────────────────────────
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Apply migrations and seed the ephemeral database
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://flyworkflow:flyworkflow@localhost:5432/flyworkflow?schema=public
+        run: |
+          npx prisma migrate deploy
+          npx prisma db seed
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+      - name: Start backend and wait for /health
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://flyworkflow:flyworkflow@localhost:5432/flyworkflow?schema=public
+          PORT: 3001
+          JWT_ACCESS_EXPIRES_IN_SECONDS: 900
+          JWT_REFRESH_EXPIRES_IN_DAYS: 7
+          # Never actually exercised by these specs (no test attaches media),
+          # just needs to be present — S3StorageProvider's constructor
+          # requires both at boot (getOrThrow).
+          AWS_REGION: us-east-1
+          S3_BUCKET_NAME: ci-placeholder-bucket
+          FRONTEND_ORIGIN: http://localhost:3000
+        run: |
+          node dist/main.js &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3001/health > /dev/null; then
+              echo "Backend ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Backend did not become ready in time" >&2
+          exit 1
+
+      # ── Frontend + e2e ──────────────────────────────────────────────────
+      - name: Install frontend dependencies
+        run: npm ci
       - run: npx playwright install --with-deps
       # Se construye SIN token de Mapbox a propósito: en CI el WebGL por software
       # (swiftshader) hace que inicializar mapas reales sature la CPU y dispare el

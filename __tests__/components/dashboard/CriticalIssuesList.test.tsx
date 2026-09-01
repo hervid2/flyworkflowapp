@@ -1,8 +1,10 @@
 /**
- * Reproduces the company-filter bug described in docs/roadmap.md F2.1: the
- * dashboard's "created by company" filter reaches the metrics selector but
- * never reaches CriticalIssuesList, so the table keeps showing incidents from
- * companies the user just filtered out.
+ * Regression coverage for docs/roadmap.md F2.1: a global dashboard filter
+ * (useFiltersStore) must actually reach CriticalIssuesList's table, not just
+ * the metrics selector. Originally about a company dimension retired in
+ * Phase 7 (roadmap.md decision #5 — a session only ever sees one
+ * organization, so cross-company filtering is meaningless); re-targeted at
+ * createdByUser/responsibleUser, the real dimensions that remain.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -13,14 +15,14 @@ import { useFiltersStore } from '@/store/useFiltersStore';
 import { MESSAGES } from '@/i18n/messages';
 import type { Incident, UserRef } from '@/domain/models';
 
-const VALLE_OWNER: UserRef = {
-  id: 'a3f7c1d8e6b94025f8a1c7d2', // CONSTRUCTORA DEL VALLE, per mock-users.ts
+const DIEGO: UserRef = {
+  id: 'a3f7c1d8-e6b9-4025-b8a1-c7d20b1f1234',
   name: 'Diego Salazar',
   email: 'diego.salazar@constructoradelvalle.com',
 };
 
-const MERIDIANO_OWNER: UserRef = {
-  id: 'meridiano_u1', // GRUPO MERIDIANO, per mock-users.ts
+const SANTIAGO: UserRef = {
+  id: 'a3f7c1d8-e6b9-4025-b8a1-c7d20b1f5678',
   name: 'Santiago Ibarra',
   email: 'santiago.ibarra@grupomeridiano.com',
 };
@@ -35,9 +37,9 @@ function makeIncident(overrides: Partial<Incident>): Incident {
     type: { id: 't1', key: 'plumbing', name: 'Hidrosanitario', name_en: 'Plumbing' },
     priority: 'medium',
     status: 'open',
-    approval: false,
+    approval: 'pending',
     project: { id: 'p1', name: 'Proyecto Demo' },
-    owner: VALLE_OWNER,
+    owner: DIEGO,
     assignees: [],
     observers: [],
     coordinates: null,
@@ -54,8 +56,8 @@ function makeIncident(overrides: Partial<Incident>): Incident {
 }
 
 const INCIDENTS: Incident[] = [
-  makeIncident({ id: 'inc-valle', title: 'Fuga en columna', owner: VALLE_OWNER }),
-  makeIncident({ id: 'inc-meridiano', title: 'Grieta en muro', owner: MERIDIANO_OWNER }),
+  makeIncident({ id: 'inc-diego', title: 'Fuga en columna', owner: DIEGO }),
+  makeIncident({ id: 'inc-santiago', title: 'Grieta en muro', owner: SANTIAGO }),
 ];
 
 function renderWithIncidents(incidents: Incident[]) {
@@ -68,15 +70,13 @@ function renderWithIncidents(incidents: Incident[]) {
   );
 }
 
-describe('CriticalIssuesList — filtro de compañía del dashboard', () => {
+describe('CriticalIssuesList — filtros globales del dashboard', () => {
   beforeEach(() => {
     useFiltersStore.getState().resetDashboardFilters();
   });
 
-  it('respeta createdByCompany: solo muestra incidencias de la compañía seleccionada', () => {
-    useFiltersStore
-      .getState()
-      .setDashboardFilters({ createdByCompany: ['CONSTRUCTORA DEL VALLE'] });
+  it('respeta createdByUser: solo muestra incidencias del creador seleccionado', () => {
+    useFiltersStore.getState().setDashboardFilters({ createdByUser: [DIEGO.id] });
 
     renderWithIncidents(INCIDENTS);
 
@@ -84,15 +84,15 @@ describe('CriticalIssuesList — filtro de compañía del dashboard', () => {
     expect(screen.queryByText('Grieta en muro')).not.toBeInTheDocument();
   });
 
-  it('respeta responsibleByCompany: filtra por la compañía del responsable asignado', () => {
+  it('respeta responsibleUser: filtra por el responsable asignado', () => {
     const assigned = makeIncident({
-      id: 'inc-assigned-meridiano',
+      id: 'inc-assigned-santiago',
       title: 'Filtración en techo',
-      owner: VALLE_OWNER,
-      assignees: [MERIDIANO_OWNER],
+      owner: DIEGO,
+      assignees: [SANTIAGO],
     });
 
-    useFiltersStore.getState().setDashboardFilters({ responsibleByCompany: ['GRUPO MERIDIANO'] });
+    useFiltersStore.getState().setDashboardFilters({ responsibleUser: [SANTIAGO.id] });
 
     renderWithIncidents([...INCIDENTS, assigned]);
 

@@ -1,14 +1,15 @@
 /**
- * Component tests for UserMultiSelect: company grouping, select/deselect via
- * option and chip, search by name/company with an empty state, aria-selected
- * state and a custom placeholder.
+ * Component tests for UserMultiSelect: flat list (no company grouping — a
+ * session only ever sees one organization, see roadmap.md Phase 7 decision
+ * #5), select/deselect via option and chip, search by name/email with an
+ * empty state, aria-selected state and a custom placeholder.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import UserMultiSelect from '@/components/modals/create-issue/UserMultiSelect';
 import { MESSAGES } from '@/i18n/messages';
-import type { MockUserWithCompany } from '@/lib/constants/mock-users';
+import type { UserRef } from '@/domain/models';
 import type { ReactElement } from 'react';
 
 // UserMultiSelect calls useTranslations(), so it needs a NextIntlClientProvider ancestor.
@@ -20,31 +21,18 @@ function withIntl(ui: ReactElement) {
   );
 }
 
-const USERS: MockUserWithCompany[] = [
-  { id: 'u1', name: 'Ana Gómez', email: 'ana@example.com', company: 'ACME', role: 'QA' },
-  {
-    id: 'u2',
-    name: 'Carlos López',
-    email: 'carlos@empresa.com',
-    company: 'CONSTRUCTORA',
-    role: 'Inspector',
-  },
-  {
-    id: 'u3',
-    name: 'María Torres',
-    email: 'maria@empresa.com',
-    company: 'CONSTRUCTORA',
-    role: 'Directora',
-  },
+const USERS: UserRef[] = [
+  { id: 'u1', name: 'Ana Gómez', email: 'ana@example.com' },
+  { id: 'u2', name: 'Carlos López', email: 'carlos@empresa.com' },
+  { id: 'u3', name: 'María Torres', email: 'maria@empresa.com' },
 ];
 
 describe('UserMultiSelect', () => {
-  it('renderiza los usuarios agrupados por compañía', () => {
+  it('renderiza la lista plana de usuarios', () => {
     render(withIntl(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />));
-    expect(screen.getByText('ACME')).toBeInTheDocument();
-    expect(screen.getByText('CONSTRUCTORA')).toBeInTheDocument();
     expect(screen.getByText('Ana Gómez')).toBeInTheDocument();
     expect(screen.getByText('Carlos López')).toBeInTheDocument();
+    expect(screen.getByText('María Torres')).toBeInTheDocument();
   });
 
   it('llama a onChange al seleccionar un usuario', () => {
@@ -80,13 +68,14 @@ describe('UserMultiSelect', () => {
     expect(screen.queryByText('Carlos López')).not.toBeInTheDocument();
   });
 
-  it('filtra usuarios por compañía', () => {
+  it('filtra usuarios por email', () => {
     render(withIntl(<UserMultiSelect users={USERS} selectedIds={[]} onChange={vi.fn()} />));
     fireEvent.change(screen.getByPlaceholderText('Buscar usuario...'), {
-      target: { value: 'ACME' },
+      target: { value: 'empresa.com' },
     });
-    expect(screen.getByText('Ana Gómez')).toBeInTheDocument();
-    expect(screen.queryByText('Carlos López')).not.toBeInTheDocument();
+    expect(screen.getByText('Carlos López')).toBeInTheDocument();
+    expect(screen.getByText('María Torres')).toBeInTheDocument();
+    expect(screen.queryByText('Ana Gómez')).not.toBeInTheDocument();
   });
 
   it('muestra "Sin resultados" cuando no hay coincidencias', () => {

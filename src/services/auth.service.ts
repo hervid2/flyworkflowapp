@@ -1,59 +1,83 @@
 /**
- * Mock authentication service. With no real backend, it validates credentials
- * against an in-memory table and simulates network latency, returning the
- * shape a real `/auth/login` endpoint would. The auth store consumes it.
+ * Real authentication service, talking to the FlyWorkFlow backend. The
+ * access token never lives in a cookie the backend itself set (it comes back
+ * in the `/auth/login` JSON body); the refresh token is the backend's
+ * `httpOnly` cookie, sent automatically via `credentials: 'include'`.
  */
-import { MOCK_USERS } from '@/lib/constants/mock-users';
+import { apiFetch } from '@/lib/api-client';
 import type { AuthUser } from '@/store/useAuthStore';
 
-/** Payload returned on a successful login: the user plus a session token. */
-interface LoginResult {
-  user: AuthUser;
-  token: string;
+interface LoginResponse {
+  accessToken: string;
 }
 
-// Simulated credential store — password matches company convention.
-const CREDENTIALS: Record<string, string> = {
-  'diego.salazar@constructoradelvalle.com': 'constructora123',
-  'paula.restrepo@constructoradelvalle.com': 'constructora123',
-  'tomas.beltran@constructoradelvalle.com': 'constructora123',
-  'camilo.duarte@constructoradelvalle.com': 'constructora123',
-  'isabela.nieto@constructoradelvalle.com': 'constructora123',
-  'camila.rojas@flyworkflow.io': 'flyworkflow123',
-  'andres.vargas@flyworkflow.io': 'flyworkflow123',
-  'laura.mendez@flyworkflow.io': 'flyworkflow123',
-  'santiago.ibarra@grupomeridiano.com': 'meridiano123',
-  'valeria.cardenas@grupomeridiano.com': 'meridiano123',
-};
+interface UserProfileResponse {
+  id: string;
+  orgId: string;
+  name: string;
+  email: string;
+  role: string;
+  avatarUrl: string | null;
+  createdAt: string;
+}
+
+function toAuthUser(profile: UserProfileResponse): AuthUser {
+  return {
+    id: profile.id,
+    name: profile.name,
+    email: profile.email,
+    avatarUrl: profile.avatarUrl ?? undefined,
+    role: profile.role,
+    orgId: profile.orgId,
+  };
+}
+
+/** `GET /users/me` — the JWT payload alone has no name/avatar, so this always follows a successful login/refresh. */
+export async function getMe(accessToken: string): Promise<AuthUser> {
+  const profile = await apiFetch<UserProfileResponse>('/users/me', { accessToken });
+  return toAuthUser(profile);
+}
 
 /**
- * Validates credentials and resolves the matching user.
- * @throws Error with a user-facing message when credentials are invalid.
+ * `POST /auth/login`. Throws {@link ApiError} on invalid credentials (401) or
+ * rate limiting (429) — the caller maps those to a user-facing message.
  */
-export async function login(email: string, password: string): Promise<LoginResult> {
-  await new Promise((r) => setTimeout(r, 450)); // simulate network round-trip
-
-  const expected = CREDENTIALS[email.toLowerCase().trim()];
-  if (!expected || expected !== password) {
-    throw new Error('Credenciales inválidas. Verifica tu email y contraseña.');
-  }
-
-  const found = MOCK_USERS.find((u) => u.email === email.toLowerCase().trim());
-  if (!found) throw new Error('Usuario no encontrado.');
-
-  const user: AuthUser = {
-    id: found.id,
-    name: found.name,
-    email: found.email,
-    avatarUrl: found.avatarUrl,
-    role: found.role ?? 'Usuario',
-    company: found.company,
-  };
-
-  return { user, token: crypto.randomUUID() };
+export async function login(
+  email: string,
+  password: string,
+): Promise<{ user: AuthUser; accessToken: string }> {
+  const { accessToken } = await apiFetch<LoginResponse>('/auth/login', {
+    method: 'POST',
+    body: { email, password },
+    skipAuthRetry: true,
+  });
+  const user = await getMe(accessToken);
+  return { user, accessToken };
 }
 
-/** Simulated sign-out; the store clears the session once this resolves. */
-export async function logout(): Promise<void> {
-  await new Promise((r) => setTimeout(r, 100));
+/** `POST /auth/logout`. Best-effort — the caller clears local state regardless of the outcome. */
+export async function logout(accessToken: string | null): Promise<void> {
+  if (!accessToken) return;
+  try {
+    await apiFetch<void>('/auth/logout', { method: 'POST', accessToken, skipAuthRetry: true });
+  } catch {
+    // Local session is cleared either way; nothing more to do if the server call fails.
+  }
+}
+
+/**
+ * `POST /auth/refresh`. Relies solely on the `httpOnly` refresh cookie —
+ * returns `null` (never throws) when there is no valid session to refresh,
+ * so callers can treat it as a plain "is there still a session?" check.
+ */
+export async function refresh(): Promise<string | null> {
+  try {
+    const { accessToken } = await apiFetch<LoginResponse>('/auth/refresh', {
+      method: 'POST',
+      skipAuthRetry: true,
+    });
+    return accessToken;
+  } catch {
+    return null;
+  }
 }
