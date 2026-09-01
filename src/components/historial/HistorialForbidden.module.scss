@@ -1,0 +1,28 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.wrap {
+  @include flex-center;
+  flex-direction: column;
+  gap: $space-md;
+  padding: $space-2xl;
+  text-align: center;
+}
+
+.icon {
+  color: $color-text-secondary;
+}
+
+.title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin: 0;
+}
+
+.message {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0;
+  max-width: 420px;
+}

@@ -521,6 +521,7 @@ export class FakePrismaService {
         results.map((l) => ({
           ...l,
           actor: this.hydrateUserRef(l.actorId),
+          incident: this.hydrateAuditIncidentRef(l.incidentId),
         })),
       );
     },
@@ -555,6 +556,26 @@ export class FakePrismaService {
           avatarUrl: user.avatarUrl,
         }
       : { id: userId, name: 'Unknown user', email: '', avatarUrl: null };
+  }
+
+  private hydrateAuditIncidentRef(incidentId: string): {
+    id: string;
+    sequenceId: string;
+    title: string;
+    project: { id: string; name: string };
+  } {
+    const incident = this.incidents.find((i) => i.id === incidentId);
+    const project = incident
+      ? this.projects.find((p) => p.id === incident.projectId)
+      : undefined;
+    return {
+      id: incidentId,
+      sequenceId: incident?.sequenceId ?? '',
+      title: incident?.title ?? 'Unknown incident',
+      project: project
+        ? { id: project.id, name: project.name }
+        : { id: incident?.projectId ?? '', name: 'Unknown project' },
+    };
   }
 
   private hydrateIncident(incident: FakeIncident) {
