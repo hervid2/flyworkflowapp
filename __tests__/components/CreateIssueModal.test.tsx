@@ -172,7 +172,12 @@ function renderWithProviders(ui: ReactNode) {
 beforeEach(() => {
   // Open the create-issue modal so CreateIssueModal renders
   useModalStore.setState({ activeModal: 'create-issue' });
-  useAuthStore.setState({ user: TEST_USER, accessToken: 'test-token', isAuthenticated: true });
+  useAuthStore.setState({
+    user: TEST_USER,
+    accessToken: 'test-token',
+    isAuthenticated: true,
+    hydrated: true,
+  });
 
   vi.mocked(getIncidentTypes).mockResolvedValue([TYPE_PLUMBING, TYPE_ELECTRICAL]);
   vi.mocked(getProjects).mockResolvedValue([PROJECT_1, PROJECT_2]);
@@ -211,7 +216,7 @@ beforeEach(() => {
 afterEach(() => {
   useModalStore.setState({ activeModal: null });
   useCategoriesStore.setState({ customTypes: [] });
-  useAuthStore.setState({ user: null, accessToken: null, isAuthenticated: false });
+  useAuthStore.setState({ user: null, accessToken: null, isAuthenticated: false, hydrated: false });
   vi.clearAllMocks();
 });
 

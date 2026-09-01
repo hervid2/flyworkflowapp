@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useModalStore } from '@/store/useModalStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useCategoriesStore } from '@/store/useCategoriesStore';
 import { createIncident } from '@/services/incident-mutations.service';
 import { getIncidentTypes, getProjects, getTags, getOrgMembers } from '@/services/catalogs.service';
@@ -48,6 +49,7 @@ export default function IssueForm({ onClose }: Props) {
   const addIncident = useIssuesStore((s) => s.addIncident);
   const updateIncidentInStore = useIssuesStore((s) => s.updateIncident);
   const openModal = useModalStore((s) => s.open);
+  const authHydrated = useAuthStore((s) => s.hydrated);
   const customTypes = useCategoriesStore((s) => s.customTypes);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [uploadStatuses, setUploadStatuses] = useState<Map<File, Media['status']>>(new Map());
@@ -63,7 +65,13 @@ export default function IssueForm({ onClose }: Props) {
   const [catalogsError, setCatalogsError] = useState(false);
   const [submitError, setSubmitError] = useState(false);
 
+  // Waits for AuthBootstrap's hydrateFromCookie to settle before firing: the
+  // modal can open (and this effect run) before that async call has put an
+  // access token in the store, and unlike a submit/upload — which only ever
+  // happen after a user has already interacted with a hydrated page — this
+  // fetch runs on mount, right after the fastest possible first paint.
   useEffect(() => {
+    if (!authHydrated) return;
     let cancelled = false;
     Promise.all([getIncidentTypes(), getProjects(), getTags(), getOrgMembers()])
       .then(([types, projects, tags, members]) => {
@@ -75,7 +83,7 @@ export default function IssueForm({ onClose }: Props) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authHydrated]);
 
   const typeCatalog = [...(catalogs?.types ?? []), ...customTypes];
 
