@@ -68,9 +68,9 @@ Added in Phase 7 (F7.2): the frontend has no other way to discover the `typeId` 
 
 ## Audit / History (`requirements.md §1.8`)
 
-| Method and route | Auth           | Request                            | Response                                  | Errors |
-| ---------------- | -------------- | ---------------------------------- | ----------------------------------------- | ------ |
-| `GET /audit-log` | Bearer, admin+ | query: `projectId?, userId?, page` | `200` a page of events, scoped by `orgId` | `403`  |
+| Method and route | Auth           | Request                            | Response                                                                                                                                                                                                       | Errors |
+| ---------------- | -------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `GET /audit-log` | Bearer, admin+ | query: `projectId?, userId?, page` | `200` a page of events, scoped by `orgId`; each entry includes `incident: { id, sequenceId, title, project }` alongside `actor` (F8.1 — the `/historial` page renders these without a per-row incident lookup) | `403`  |
 
 ## Reports (`requirements.md §1.10`)
 

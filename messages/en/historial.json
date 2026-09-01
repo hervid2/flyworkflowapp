@@ -1,0 +1,37 @@
+{
+  "pageTitle": "History",
+  "pageSubtitle": "Audit trail — who did what and when, across every incident in the organization",
+  "sectionAriaLabel": "Audit history",
+
+  "filtersAriaLabel": "Filter history",
+  "filterProjectLabel": "Project",
+  "filterProjectAll": "All projects",
+  "filterUserLabel": "User",
+  "filterUserAll": "All users",
+  "filterClear": "Clear filters",
+
+  "columnAction": "Action",
+  "columnIncident": "Incident",
+  "columnProject": "Project",
+  "columnActor": "User",
+  "columnDate": "Date",
+
+  "actionCreated": "Created",
+  "actionUpdated": "Updated",
+  "actionStatusChanged": "Status changed",
+  "actionApproved": "Approved",
+  "actionRejected": "Rejected",
+  "actionDeleted": "Deleted",
+  "actionRestored": "Restored",
+
+  "emptyTable": "No events to show for the current filters.",
+  "resultsEmpty": "0 results",
+  "resultsRange": "{from}–{to} of {total}",
+
+  "paginationAriaLabel": "History pagination",
+  "prevPageAriaLabel": "Previous page",
+  "nextPageAriaLabel": "Next page",
+
+  "forbiddenTitle": "Access restricted",
+  "forbiddenMessage": "The audit history is only available to organization admins."
+}
