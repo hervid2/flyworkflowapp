@@ -1,0 +1,361 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.section {
+  background: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-sm;
+  margin: $space-lg;
+
+  @include mobile {
+    margin: $space-md;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: $space-lg;
+  border-bottom: 1px solid $color-border;
+  gap: $space-md;
+
+  &__title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin: 0 0 4px;
+  }
+
+  &__subtitle {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0;
+  }
+
+  &__count {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0 0 0 auto;
+    white-space: nowrap;
+
+    @include mobile {
+      margin-left: 0;
+    }
+  }
+}
+
+.filters {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: $space-md;
+  padding: $space-md $space-lg;
+  border-bottom: 1px solid $color-border;
+  background: $color-bg-muted;
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &__label {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+  }
+}
+
+.select {
+  min-width: 180px;
+  padding: 7px $space-sm;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: $color-bg-surface;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+
+  @include mobile {
+    min-width: 0;
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+.clearBtn {
+  padding: 8px $space-md;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: transparent;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  @include mobile {
+    min-height: 44px;
+  }
+
+  &:hover {
+    background: $color-bg-surface;
+    color: $color-text-primary;
+  }
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $font-size-sm;
+}
+
+.th {
+  padding: $space-sm $space-md;
+  text-align: left;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid $color-border;
+  background: $color-bg-muted;
+  white-space: nowrap;
+}
+
+.row {
+  &:not(:last-child) {
+    border-bottom: 1px solid $color-border;
+  }
+
+  &:hover {
+    background: $color-bg-muted;
+  }
+}
+
+.td {
+  padding: $space-sm $space-md;
+  color: $color-text-primary;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.id {
+  font-family: monospace;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  background: $color-bg-muted;
+  padding: 2px 6px;
+  border-radius: $radius-sm;
+}
+
+.title {
+  color: $color-text-primary;
+}
+
+.actionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: $radius-full;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  white-space: nowrap;
+
+  &--created,
+  &--approved,
+  &--restored {
+    background: rgba(52, 199, 89, 0.12);
+    color: $color-status-open;
+  }
+
+  &--updated {
+    background: rgba(59, 130, 246, 0.12);
+    color: $color-info-blue;
+  }
+
+  &--status_changed {
+    background: rgba(245, 166, 35, 0.12);
+    color: $color-status-paused;
+  }
+
+  &--rejected,
+  &--deleted {
+    background: rgba(229, 72, 77, 0.1);
+    color: $color-status-closed;
+  }
+}
+
+.actorCell {
+  display: flex;
+  align-items: center;
+  gap: $space-xs;
+
+  &__name {
+    font-size: $font-size-xs;
+    color: $color-text-primary;
+    white-space: nowrap;
+  }
+}
+
+.avatarWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: $radius-full;
+  background: $color-bg-surface;
+  flex-shrink: 0;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: $radius-full;
+  background: $color-accent-gold;
+  color: $color-text-primary;
+  font-size: 11px;
+  font-weight: $font-weight-semibold;
+  flex-shrink: 0;
+}
+
+.avatarImg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: $radius-full;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.empty {
+  text-align: center;
+  padding: $space-2xl;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  white-space: normal;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $space-sm;
+  padding: $space-md $space-lg;
+  border-top: 1px solid $color-border;
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: $radius-md;
+    border: 1px solid $color-border;
+    background: $color-bg-surface;
+    cursor: pointer;
+    color: $color-text-primary;
+    transition: all $transition-fast;
+
+    @include mobile {
+      width: 44px;
+      height: 44px;
+    }
+
+    &:hover:not(:disabled) {
+      background: $color-bg-muted;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  &__info {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    min-width: 60px;
+    text-align: center;
+  }
+}
+
+// ── Mobile: stacked cards instead of a scrolling table ──────────────────────
+// Same table markup at every breakpoint (no duplicated JSX) — below
+// $breakpoint-mobile the table/row/cell display roles are overridden into a
+// card list, and each cell's `data-label` becomes its visible label via
+// ::before, replacing the now-hidden <thead> (mirrors CriticalIssuesList).
+@include mobile {
+  .header {
+    flex-direction: column;
+  }
+
+  .header__count {
+    margin-left: 0;
+  }
+
+  .tableWrapper {
+    overflow-x: visible;
+  }
+
+  .table {
+    display: block;
+    width: 100%;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tbody {
+    display: block;
+  }
+
+  .table tbody tr {
+    display: block;
+  }
+
+  .row {
+    padding: $space-sm $space-md;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid $color-border;
+    }
+  }
+
+  .td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-md;
+    padding: 6px 0;
+    text-align: right;
+    white-space: normal;
+
+    &::before {
+      content: attr(data-label);
+      font-size: $font-size-xs;
+      font-weight: $font-weight-semibold;
+      color: $color-text-secondary;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-align: left;
+      flex-shrink: 0;
+    }
+  }
+
+  .actorCell {
+    justify-content: flex-end;
+  }
+}

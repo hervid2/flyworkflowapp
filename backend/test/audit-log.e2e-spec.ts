@@ -16,6 +16,7 @@ interface AccessTokenBody {
 interface AuditLogEntry {
   id: string;
   incidentId: string;
+  incident: { id: string; sequenceId: string; title: string; project: { id: string; name: string } };
   action: string;
   actor: { id: string };
 }
@@ -113,6 +114,11 @@ describe('Audit log (e2e)', () => {
       incidentId,
       action: 'created',
       actor: { id: orgAMember.id },
+      incident: {
+        id: incidentId,
+        title: 'Leaking pipe',
+        project: { id: projectA.id, name: projectA.name },
+      },
     });
   });
 

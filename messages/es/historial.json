@@ -1,0 +1,37 @@
+{
+  "pageTitle": "Historial",
+  "pageSubtitle": "Registro de auditoría — quién hizo qué y cuándo, sobre todas las incidencias de la organización",
+  "sectionAriaLabel": "Historial de auditoría",
+
+  "filtersAriaLabel": "Filtrar historial",
+  "filterProjectLabel": "Proyecto",
+  "filterProjectAll": "Todos los proyectos",
+  "filterUserLabel": "Usuario",
+  "filterUserAll": "Todos los usuarios",
+  "filterClear": "Limpiar filtros",
+
+  "columnAction": "Acción",
+  "columnIncident": "Incidencia",
+  "columnProject": "Proyecto",
+  "columnActor": "Usuario",
+  "columnDate": "Fecha",
+
+  "actionCreated": "Creada",
+  "actionUpdated": "Editada",
+  "actionStatusChanged": "Cambio de estado",
+  "actionApproved": "Aprobada",
+  "actionRejected": "Rechazada",
+  "actionDeleted": "Eliminada",
+  "actionRestored": "Restaurada",
+
+  "emptyTable": "No hay eventos para mostrar con los filtros actuales.",
+  "resultsEmpty": "0 resultados",
+  "resultsRange": "{from}–{to} de {total}",
+
+  "paginationAriaLabel": "Paginación del historial",
+  "prevPageAriaLabel": "Página anterior",
+  "nextPageAriaLabel": "Página siguiente",
+
+  "forbiddenTitle": "Acceso restringido",
+  "forbiddenMessage": "El historial de auditoría solo está disponible para administradores de la organización."
+}
