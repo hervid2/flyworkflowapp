@@ -116,7 +116,7 @@ Parallelizable with Phase 3 (there's no real dependency between frontend fixes a
 
 ---
 
-## Phase 7 — Real frontend↔backend integration (MVP close-out)
+## Phase 7 — Real frontend↔backend integration (MVP close-out) _(complete)_
 
 **F7.1 — `feat/frontend-real-auth`** — `auth.service.ts` calls the real backend; access token in memory, refresh in an `httpOnly` cookie; `middleware.ts` validates expiration/signature. Docs: `requirements.md §1.1`. Commit: `feat(frontend): connect login and route guard to the real auth API`
 
