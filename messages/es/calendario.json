@@ -1,0 +1,36 @@
+{
+  "pageTitle": "Calendario",
+  "pageSubtitle": "Actividad de incidencias por día, vista de mes completo",
+  "sectionAriaLabel": "Vista de calendario completo",
+  "todayAction": "Hoy",
+
+  "calendarMainAriaLabel": "Calendario mensual de actividad",
+  "prevMonthAriaLabel": "Mes anterior",
+  "nextMonthAriaLabel": "Mes siguiente",
+  "daysOfMonthAriaLabel": "Días del mes",
+  "daySun": "Dom",
+  "dayMon": "Lun",
+  "dayTue": "Mar",
+  "dayWed": "Mié",
+  "dayThu": "Jue",
+  "dayFri": "Vie",
+  "daySat": "Sáb",
+
+  "legendAriaLabel": "Leyenda de intensidad",
+  "legendLess": "Menos",
+  "legendMore": "Más",
+
+  "clickHint": "Haz clic en un día para ver sus incidencias",
+  "dayDetailAriaLabel": "Detalle de incidencias del {date}",
+  "incidentsCount": "{count, plural, one {# incidencia} other {# incidencias}}",
+  "selectedSuffix": ", seleccionado",
+  "noIncidentsForDay": "No hay incidencias registradas para este día.",
+  "viewIncidentAriaLabel": "Ver detalle de {title}",
+
+  "priorityHigh": "Alta",
+  "priorityMedium": "Media",
+  "priorityLow": "Baja",
+  "statusOpen": "Abierta",
+  "statusOnPause": "Pausada",
+  "statusClosed": "Cerrada"
+}

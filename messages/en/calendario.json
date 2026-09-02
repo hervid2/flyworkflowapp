@@ -1,0 +1,36 @@
+{
+  "pageTitle": "Calendar",
+  "pageSubtitle": "Incident activity by day, full-month view",
+  "sectionAriaLabel": "Full calendar view",
+  "todayAction": "Today",
+
+  "calendarMainAriaLabel": "Monthly activity calendar",
+  "prevMonthAriaLabel": "Previous month",
+  "nextMonthAriaLabel": "Next month",
+  "daysOfMonthAriaLabel": "Days of the month",
+  "daySun": "Sun",
+  "dayMon": "Mon",
+  "dayTue": "Tue",
+  "dayWed": "Wed",
+  "dayThu": "Thu",
+  "dayFri": "Fri",
+  "daySat": "Sat",
+
+  "legendAriaLabel": "Intensity legend",
+  "legendLess": "Less",
+  "legendMore": "More",
+
+  "clickHint": "Click a day to see its incidents",
+  "dayDetailAriaLabel": "Incident details for {date}",
+  "incidentsCount": "{count, plural, one {# incident} other {# incidents}}",
+  "selectedSuffix": ", selected",
+  "noIncidentsForDay": "No incidents recorded for this day.",
+  "viewIncidentAriaLabel": "View details for {title}",
+
+  "priorityHigh": "High",
+  "priorityMedium": "Medium",
+  "priorityLow": "Low",
+  "statusOpen": "Open",
+  "statusOnPause": "On hold",
+  "statusClosed": "Closed"
+}
