@@ -11,6 +11,7 @@ import { IncidentTypesModule } from './modules/incident-types/incident-types.mod
 import { MediaModule } from './modules/media/media.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AuditModule } from './modules/audit/audit.module';
     MediaModule,
     TagsModule,
     AuditModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

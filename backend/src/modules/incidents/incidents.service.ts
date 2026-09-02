@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import {
   DEFAULT_PAGE_SIZE,
@@ -53,7 +54,10 @@ interface ScopedIncident {
 
 @Injectable()
 export class IncidentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async findAll(
     query: ListIncidentsQueryDto,
@@ -201,6 +205,13 @@ export class IncidentsService {
           },
           include: INCIDENT_INCLUDE,
         });
+        await this.notifications.notify(
+          user.orgId,
+          created.id,
+          dto.assigneeIds ?? [],
+          user.id,
+          'assignment',
+        );
         return toIncidentResponseDto(created);
       } catch (error) {
         const isSequenceCollision =
@@ -274,6 +285,23 @@ export class IncidentsService {
       },
       include: INCIDENT_INCLUDE,
     });
+
+    if (dto.assigneeIds) {
+      const previouslyAssigned = new Set(
+        incident.assignees.map((a) => a.userId),
+      );
+      const newlyAssigned = dto.assigneeIds.filter(
+        (userId) => !previouslyAssigned.has(userId),
+      );
+      await this.notifications.notify(
+        incident.orgId,
+        incident.id,
+        newlyAssigned,
+        user.id,
+        'assignment',
+      );
+    }
+
     return toIncidentResponseDto(updated);
   }
 
@@ -306,6 +334,15 @@ export class IncidentsService {
       data,
       include: INCIDENT_INCLUDE,
     });
+
+    await this.notifications.notify(
+      incident.orgId,
+      incident.id,
+      [incident.ownerId, ...incident.assignees.map((a) => a.userId)],
+      user.id,
+      'status_changed',
+    );
+
     return toIncidentResponseDto(updated);
   }
 
@@ -332,6 +369,15 @@ export class IncidentsService {
       data: { approval: dto.decision },
       include: INCIDENT_INCLUDE,
     });
+
+    await this.notifications.notify(
+      incident.orgId,
+      incident.id,
+      [incident.ownerId],
+      user.id,
+      'approval',
+    );
+
     return toIncidentResponseDto(updated);
   }
 

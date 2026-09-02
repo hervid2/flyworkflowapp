@@ -119,7 +119,10 @@ export class MediaService {
             id: m.incident.id,
             sequenceId: m.incident.sequenceId,
             title: m.incident.title,
-            project: { id: m.incident.project.id, name: m.incident.project.name },
+            project: {
+              id: m.incident.project.id,
+              name: m.incident.project.name,
+            },
           },
         }),
       ),
