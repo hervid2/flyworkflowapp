@@ -16,7 +16,12 @@ interface AccessTokenBody {
 interface AuditLogEntry {
   id: string;
   incidentId: string;
-  incident: { id: string; sequenceId: string; title: string; project: { id: string; name: string } };
+  incident: {
+    id: string;
+    sequenceId: string;
+    title: string;
+    project: { id: string; name: string };
+  };
   action: string;
   actor: { id: string };
 }

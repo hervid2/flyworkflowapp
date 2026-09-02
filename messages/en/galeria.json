@@ -1,0 +1,22 @@
+{
+  "pageTitle": "Gallery",
+  "pageSubtitle": "Photos and videos attached to incidents",
+  "sectionAriaLabel": "Media gallery",
+
+  "typeImage": "Image",
+  "typeVideo": "Video",
+
+  "resultsEmpty": "0 results",
+  "resultsRange": "{from}–{to} of {total}",
+  "emptyGallery": "No photos or videos have been attached to any incident yet.",
+
+  "viewAriaLabel": "View {name} full size",
+  "lightboxCloseAriaLabel": "Close enlarged view",
+  "metaProject": "Project",
+  "metaIncident": "Incident",
+  "metaDate": "Uploaded",
+
+  "paginationAriaLabel": "Gallery pagination",
+  "prevPageAriaLabel": "Previous page",
+  "nextPageAriaLabel": "Next page"
+}

@@ -1,0 +1,22 @@
+{
+  "pageTitle": "Galería",
+  "pageSubtitle": "Fotos y videos adjuntos a las incidencias",
+  "sectionAriaLabel": "Galería de medios",
+
+  "typeImage": "Imagen",
+  "typeVideo": "Video",
+
+  "resultsEmpty": "0 resultados",
+  "resultsRange": "{from}–{to} de {total}",
+  "emptyGallery": "Todavía no hay fotos ni videos adjuntos a ninguna incidencia.",
+
+  "viewAriaLabel": "Ver {name} en tamaño completo",
+  "lightboxCloseAriaLabel": "Cerrar vista ampliada",
+  "metaProject": "Proyecto",
+  "metaIncident": "Incidencia",
+  "metaDate": "Subido",
+
+  "paginationAriaLabel": "Paginación de la galería",
+  "prevPageAriaLabel": "Página anterior",
+  "nextPageAriaLabel": "Página siguiente"
+}
