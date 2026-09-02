@@ -1,0 +1,23 @@
+{
+  "pageTitle": "Documentos",
+  "pageSubtitle": "Documentos adjuntos a las incidencias",
+  "sectionAriaLabel": "Documentos de incidencias",
+
+  "columnDocument": "Documento",
+  "columnIncident": "Incidencia",
+  "columnProject": "Proyecto",
+  "columnSize": "Tamaño",
+  "columnDate": "Subido",
+  "columnActions": "Acciones",
+
+  "openAction": "Abrir",
+  "openAriaLabel": "Abrir {name}",
+
+  "emptyTable": "Todavía no hay documentos adjuntos a ninguna incidencia.",
+  "resultsEmpty": "0 resultados",
+  "resultsRange": "{from}–{to} de {total}",
+
+  "paginationAriaLabel": "Paginación de documentos",
+  "prevPageAriaLabel": "Página anterior",
+  "nextPageAriaLabel": "Página siguiente"
+}
