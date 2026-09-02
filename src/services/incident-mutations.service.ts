@@ -54,3 +54,9 @@ export async function updateIncidentStatus(id: string, status: IncidentStatus): 
 export async function deleteIncident(id: string): Promise<void> {
   await clientFetch<void>(`/incidents/${id}`, { method: 'DELETE' });
 }
+
+/** `POST /incidents/:id/restore` — admin+, brings a soft-deleted incident back out of the trash. */
+export async function restoreIncident(id: string): Promise<Incident> {
+  const raw = await clientFetch<RawIncident>(`/incidents/${id}/restore`, { method: 'POST' });
+  return toIncident(raw);
+}

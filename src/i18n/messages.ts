@@ -12,6 +12,7 @@ import esDashboard from '../../messages/es/dashboard.json';
 import esCreateIssue from '../../messages/es/createIssue.json';
 import esValidation from '../../messages/es/validation.json';
 import esHistorial from '../../messages/es/historial.json';
+import esPapelera from '../../messages/es/papelera.json';
 import enCommon from '../../messages/en/common.json';
 import enTopbar from '../../messages/en/topbar.json';
 import enMap from '../../messages/en/map.json';
@@ -19,6 +20,7 @@ import enDashboard from '../../messages/en/dashboard.json';
 import enCreateIssue from '../../messages/en/createIssue.json';
 import enValidation from '../../messages/en/validation.json';
 import enHistorial from '../../messages/en/historial.json';
+import enPapelera from '../../messages/en/papelera.json';
 
 export type Locale = 'es' | 'en';
 export const LOCALES: Locale[] = ['es', 'en'];
@@ -33,6 +35,7 @@ export const MESSAGES: Record<Locale, AbstractIntlMessages> = {
     createIssue: esCreateIssue,
     validation: esValidation,
     historial: esHistorial,
+    papelera: esPapelera,
   },
   en: {
     common: enCommon,
@@ -42,5 +45,6 @@ export const MESSAGES: Record<Locale, AbstractIntlMessages> = {
     createIssue: enCreateIssue,
     validation: enValidation,
     historial: enHistorial,
+    papelera: enPapelera,
   },
 };

@@ -1,0 +1,32 @@
+{
+  "pageTitle": "Papelera",
+  "pageSubtitle": "Incidencias eliminadas — restáuralas o déjalas aquí",
+  "sectionAriaLabel": "Papelera de incidencias",
+
+  "columnIncident": "Incidencia",
+  "columnProject": "Proyecto",
+  "columnPriority": "Prioridad",
+  "columnOwner": "Creada por",
+  "columnDeletedAt": "Eliminada",
+  "columnActions": "Acciones",
+
+  "priorityHigh": "Alta",
+  "priorityMedium": "Media",
+  "priorityLow": "Baja",
+
+  "restoreAction": "Restaurar",
+  "restoring": "Restaurando…",
+  "restoreError": "No se pudo restaurar la incidencia.",
+  "restoreAriaLabel": "Restaurar incidencia {title}",
+
+  "emptyTable": "La papelera está vacía.",
+  "resultsEmpty": "0 resultados",
+  "resultsRange": "{from}–{to} de {total}",
+
+  "paginationAriaLabel": "Paginación de la papelera",
+  "prevPageAriaLabel": "Página anterior",
+  "nextPageAriaLabel": "Página siguiente",
+
+  "forbiddenTitle": "Acceso restringido",
+  "forbiddenMessage": "La papelera solo está disponible para administradores de la organización."
+}
