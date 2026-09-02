@@ -6,5 +6,11 @@
   "logout": "Log out",
   "help": "Help",
   "home": "FlyWorkFlow - Home",
-  "defaultUser": "User"
+  "defaultUser": "User",
+  "notifications": "Notifications",
+  "notificationsUnread": "Notifications — {count} unread",
+  "notificationsEmpty": "You have no notifications",
+  "notificationAssignment": "You were assigned to incident {sequenceId} — {title}",
+  "notificationStatusChanged": "The status of incident {sequenceId} — {title} changed",
+  "notificationApproval": "There's an approval decision on incident {sequenceId} — {title}"
 }

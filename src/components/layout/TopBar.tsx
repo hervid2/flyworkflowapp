@@ -13,6 +13,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useLocaleStore } from '@/store/useLocaleStore';
 import type { Locale } from '@/i18n/messages';
 import FlyIcon from '@/components/ui/FlyIcon';
+import NotificationsBell from './NotificationsBell';
 import styles from './TopBar.module.scss';
 
 interface TopBarProps {
@@ -110,6 +111,8 @@ export default function TopBar({ projectName = 'Proyecto Onboarding' }: TopBarPr
             </ul>
           )}
         </div>
+
+        {mounted && isAuthenticated && <NotificationsBell />}
 
         <button
           className={styles.topbar__user}

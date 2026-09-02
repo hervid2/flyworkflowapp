@@ -6,5 +6,11 @@
   "logout": "Cerrar sesión",
   "help": "Ayuda",
   "home": "FlyWorkFlow - Inicio",
-  "defaultUser": "Usuario"
+  "defaultUser": "Usuario",
+  "notifications": "Notificaciones",
+  "notificationsUnread": "Notificaciones — {count} sin leer",
+  "notificationsEmpty": "No tienes notificaciones",
+  "notificationAssignment": "Te asignaron la incidencia {sequenceId} — {title}",
+  "notificationStatusChanged": "Cambió el estado de la incidencia {sequenceId} — {title}",
+  "notificationApproval": "Hay una decisión de aprobación en la incidencia {sequenceId} — {title}"
 }

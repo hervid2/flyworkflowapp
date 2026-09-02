@@ -8,6 +8,7 @@ import {
   type IncidentStatus,
   type MediaStatus,
   type MediaType,
+  type NotificationType,
   type Role,
 } from '@prisma/client';
 
@@ -107,6 +108,16 @@ export interface FakeAuditLog {
   createdAt: Date;
 }
 
+export interface FakeNotification {
+  id: string;
+  orgId: string;
+  recipientId: string;
+  incidentId: string;
+  type: NotificationType;
+  readAt: Date | null;
+  createdAt: Date;
+}
+
 interface FakeIncidentWhere {
   orgId?: string;
   deleted?: boolean;
@@ -127,6 +138,7 @@ export class FakePrismaService {
   readonly incidents: FakeIncident[] = [];
   readonly medias: FakeMedia[] = [];
   readonly auditLogs: FakeAuditLog[] = [];
+  readonly notifications: FakeNotification[] = [];
   // Real (v4-shaped) uuids so `@IsUUID()`-validated DTO fields (e.g.
   // projectId/typeId/assigneeIds on incidents) accept seeded fixture ids.
   private nextId(): string {
@@ -538,6 +550,103 @@ export class FakePrismaService {
         this.auditLogs.filter((l) => this.matchesAuditLogWhere(l, where))
           .length,
       );
+    },
+  };
+
+  async seedNotification(
+    params: Partial<Omit<FakeNotification, 'id'>> & {
+      orgId: string;
+      recipientId: string;
+      incidentId: string;
+      type: NotificationType;
+    },
+  ): Promise<FakeNotification> {
+    const notification: FakeNotification = {
+      id: this.nextId(),
+      orgId: params.orgId,
+      recipientId: params.recipientId,
+      incidentId: params.incidentId,
+      type: params.type,
+      readAt: params.readAt ?? null,
+      createdAt: params.createdAt ?? new Date(),
+    };
+    this.notifications.push(notification);
+    return Promise.resolve(notification);
+  }
+
+  readonly notification = {
+    createMany: ({
+      data,
+    }: {
+      data: {
+        orgId: string;
+        recipientId: string;
+        incidentId: string;
+        type: NotificationType;
+      }[];
+    }): Promise<{ count: number }> => {
+      const now = new Date();
+      for (const row of data) {
+        this.notifications.push({
+          id: this.nextId(),
+          readAt: null,
+          createdAt: now,
+          ...row,
+        });
+      }
+      return Promise.resolve({ count: data.length });
+    },
+    findUnique: ({
+      where,
+    }: {
+      where: { id: string };
+    }): Promise<FakeNotification | null> => {
+      return Promise.resolve(
+        this.notifications.find((n) => n.id === where.id) ?? null,
+      );
+    },
+    findMany: ({
+      where,
+      orderBy,
+      take,
+    }: {
+      where?: { recipientId?: string; createdAt?: { gt: Date } };
+      orderBy?: { createdAt?: 'asc' | 'desc' };
+      take?: number;
+    }) => {
+      let results = this.notifications.filter((n) => {
+        if (where?.recipientId && n.recipientId !== where.recipientId) {
+          return false;
+        }
+        if (where?.createdAt?.gt && n.createdAt <= where.createdAt.gt) {
+          return false;
+        }
+        return true;
+      });
+      if (orderBy?.createdAt) {
+        const direction = orderBy.createdAt === 'asc' ? 1 : -1;
+        results = [...results].sort(
+          (a, b) => direction * (a.createdAt.getTime() - b.createdAt.getTime()),
+        );
+      }
+      if (typeof take === 'number') results = results.slice(0, take);
+      return Promise.resolve(
+        results.map((n) => ({
+          ...n,
+          incident: this.hydrateAuditIncidentRef(n.incidentId),
+        })),
+      );
+    },
+    update: ({
+      where,
+      data,
+    }: {
+      where: { id: string };
+      data: Partial<FakeNotification>;
+    }): Promise<FakeNotification | null> => {
+      const notification = this.notifications.find((n) => n.id === where.id);
+      if (notification) Object.assign(notification, data);
+      return Promise.resolve(notification ?? null);
     },
   };
 
