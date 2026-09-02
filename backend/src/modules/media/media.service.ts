@@ -6,16 +6,27 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import {
   STORAGE_PROVIDER,
   type StorageProvider,
 } from '../../lib/s3/storage-provider.interface';
+import { DEFAULT_PAGE_SIZE } from '../../common/dto/pagination-query.dto';
+import {
+  PaginatedResponseDto,
+  toPaginatedResponse,
+} from '../../common/dto/paginated-response.dto';
 import { PresignMediaUploadDto } from './dto/presign-media-upload.dto';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { PresignedUploadDto } from './dto/presigned-upload.dto';
 import { MediaResponseDto, toMediaResponseDto } from './dto/media-response.dto';
+import { ListMediaQueryDto } from './dto/list-media-query.dto';
+import {
+  MediaGalleryItemDto,
+  toMediaGalleryItemDto,
+} from './dto/media-gallery-item.dto';
 import {
   MAX_MEDIA_SIZE_BYTES,
   mediaTypeFromContentType,
@@ -75,6 +86,47 @@ export class MediaService {
       },
     });
     return toMediaResponseDto(media);
+  }
+
+  /** Paginated media gallery across every non-deleted incident in the caller's org (roadmap 8.4). */
+  async list(
+    query: ListMediaQueryDto,
+    user: AuthenticatedUser,
+  ): Promise<PaginatedResponseDto<MediaGalleryItemDto>> {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? DEFAULT_PAGE_SIZE;
+    const where: Prisma.MediaWhereInput = {
+      incident: { orgId: user.orgId, deleted: false },
+      ...(query.type?.length ? { type: { in: query.type } } : {}),
+    };
+
+    const [items, total] = await Promise.all([
+      this.prisma.media.findMany({
+        where,
+        include: { incident: { include: { project: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.media.count({ where }),
+    ]);
+
+    return toPaginatedResponse(
+      items.map((m) =>
+        toMediaGalleryItemDto({
+          ...m,
+          incident: {
+            id: m.incident.id,
+            sequenceId: m.incident.sequenceId,
+            title: m.incident.title,
+            project: { id: m.incident.project.id, name: m.incident.project.name },
+          },
+        }),
+      ),
+      total,
+      page,
+      pageSize,
+    );
   }
 
   async remove(mediaId: string, user: AuthenticatedUser): Promise<void> {
