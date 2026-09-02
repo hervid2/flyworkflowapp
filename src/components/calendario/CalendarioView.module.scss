@@ -1,0 +1,370 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.section {
+  background: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-sm;
+  margin: $space-lg;
+
+  @include mobile {
+    margin: $space-md;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: $space-lg;
+  border-bottom: 1px solid $color-border;
+  gap: $space-md;
+
+  @include mobile {
+    flex-direction: column;
+  }
+
+  &__title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin: 0 0 4px;
+  }
+
+  &__subtitle {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin: 0;
+  }
+}
+
+.todayBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-xs;
+  padding: $space-xs $space-md;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: $color-bg-surface;
+  color: $color-text-primary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: background-color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background: $color-bg-muted;
+  }
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: $space-xl;
+  align-items: start;
+  padding: $space-lg;
+
+  @media (max-width: #{$breakpoint-desktop}) {
+    grid-template-columns: 1fr 300px;
+    gap: $space-lg;
+  }
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    grid-template-columns: 1fr;
+  }
+
+  @include mobile {
+    padding: $space-md;
+  }
+}
+
+// ── Calendar grid ────────────────────────────────────────────────────────
+
+.calendar {
+  @include flex-col;
+  gap: $space-md;
+}
+
+.nav {
+  @include flex-between;
+}
+
+.nav__btn {
+  width: 36px;
+  height: 36px;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: $color-bg-surface;
+  @include flex-center;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition:
+    background-color $transition-fast,
+    color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background-color: $color-bg-muted;
+    color: $color-text-primary;
+  }
+}
+
+.nav__month {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  text-transform: capitalize;
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: $space-xs;
+}
+
+.colHeader {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  text-align: center;
+  padding: $space-xs 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.empty {
+  aspect-ratio: 1;
+}
+
+.day {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: $radius-md;
+  border: none;
+  @include flex-center;
+  flex-direction: column;
+  gap: 2px;
+  background: $color-bg-muted;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background-color $transition-fast,
+    box-shadow $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    filter: brightness(1.06);
+  }
+
+  &--low {
+    background: rgba($color-info-blue, 0.15);
+  }
+
+  &--mid {
+    background: rgba($color-info-blue, 0.35);
+  }
+
+  &--high {
+    background: $color-info-blue;
+
+    .day__num,
+    .day__badge {
+      color: #fff;
+    }
+  }
+
+  &--today {
+    box-shadow: 0 0 0 2px $color-accent-gold;
+  }
+
+  &--selected {
+    box-shadow: 0 0 0 2px $color-text-primary;
+  }
+}
+
+.day__num {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-secondary;
+  line-height: 1;
+}
+
+.day__badge {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  color: $color-info-blue;
+  line-height: 1;
+}
+
+.legend {
+  @include flex-center;
+  gap: $space-xs;
+  margin-top: $space-xs;
+}
+
+.legend__label {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.legend__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: $radius-sm;
+  background: $color-bg-muted;
+
+  &.day--low {
+    background: rgba($color-info-blue, 0.15);
+  }
+
+  &.day--mid {
+    background: rgba($color-info-blue, 0.35);
+  }
+
+  &.day--high {
+    background: $color-info-blue;
+  }
+}
+
+// ── Day detail panel ────────────────────────────────────────────────────
+
+.dayDetail {
+  @include flex-col;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  overflow: hidden;
+  background: $color-bg-muted;
+  position: sticky;
+  top: $space-lg;
+  max-height: 560px;
+
+  @media (max-width: #{$breakpoint-tablet}) {
+    position: static;
+    max-height: none;
+  }
+}
+
+.dayDetail__hint {
+  padding: $space-lg;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  text-align: center;
+  margin: 0;
+}
+
+.dayDetail__header {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: $space-sm $space-md;
+  background: $color-bg-surface;
+  border-bottom: 1px solid $color-border;
+}
+
+.dayDetail__date {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  flex: 1;
+  text-transform: capitalize;
+}
+
+.dayDetail__count {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.dayDetail__empty {
+  padding: $space-lg $space-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  text-align: center;
+  margin: 0;
+}
+
+.dayDetail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  @include scrollbar-thin;
+}
+
+.dayDetail__item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: $space-sm;
+  width: 100%;
+  padding: $space-sm $space-md;
+  border: none;
+  border-bottom: 1px solid $color-border;
+  background: transparent;
+  font-size: $font-size-xs;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background: $color-bg-surface;
+  }
+}
+
+.dayDetail__id {
+  font-family: monospace;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  background: $color-bg-surface;
+  padding: 1px 5px;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+}
+
+.dayDetail__title {
+  color: $color-text-primary;
+  @include text-truncate;
+}
+
+.badge {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  flex-shrink: 0;
+
+  &--priority-high {
+    background: rgba($color-priority-high, 0.12);
+    color: $color-priority-high;
+  }
+
+  &--priority-medium {
+    background: rgba($color-priority-medium, 0.12);
+    color: $color-priority-medium;
+  }
+
+  &--priority-low {
+    background: rgba($color-priority-low, 0.12);
+    color: $color-priority-low;
+  }
+
+  &--status-open {
+    background: rgba($color-status-open, 0.12);
+    color: $color-status-open;
+  }
+
+  &--status-on_pause {
+    background: rgba($color-status-paused, 0.12);
+    color: $color-status-paused;
+  }
+
+  &--status-closed {
+    background: rgba($color-status-closed, 0.1);
+    color: $color-status-closed;
+  }
+}
