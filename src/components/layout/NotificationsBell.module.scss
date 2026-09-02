@@ -1,0 +1,140 @@
+@use '@/styles/abstracts/variables' as *;
+@use '@/styles/abstracts/mixins' as *;
+
+.bell {
+  position: relative;
+}
+
+.bell__trigger {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-sm;
+  @include flex-center;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: background-color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.bell__badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: $radius-full;
+  background-color: $color-priority-high;
+  color: #fff;
+  font-size: 10px;
+  font-weight: $font-weight-bold;
+  line-height: 15px;
+  text-align: center;
+}
+
+.bell__panel {
+  position: absolute;
+  top: calc(100% + #{$space-xs});
+  right: 0;
+  width: 320px;
+  max-width: calc(100vw - #{$space-md} * 2);
+  background-color: $color-bg-dark;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: $radius-sm;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  z-index: $z-topbar + 1;
+  overflow: hidden;
+}
+
+.bell__header {
+  padding: $space-sm $space-md;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bell__empty {
+  padding: $space-lg $space-md;
+  text-align: center;
+  font-size: $font-size-xs;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.bell__list {
+  list-style: none;
+  max-height: 360px;
+  overflow-y: auto;
+  @include scrollbar-thin;
+}
+
+.bell__item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: $space-sm;
+  padding: $space-sm $space-md;
+  text-align: left;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background-color $transition-fast;
+  @include focus-ring;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  &[data-unread='true'] {
+    background-color: rgba($color-accent-gold, 0.06);
+  }
+}
+
+.bell__icon--assignment {
+  color: $color-info-blue;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bell__icon--status_changed {
+  color: $color-accent-gold;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bell__icon--approval {
+  color: $color-status-open;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bell__itemBody {
+  @include flex-col;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.bell__itemText {
+  font-size: $font-size-xs;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: $line-height-tight;
+}
+
+.bell__itemTime {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.bell__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: $radius-full;
+  background-color: $color-accent-gold;
+  margin-top: 4px;
+}
