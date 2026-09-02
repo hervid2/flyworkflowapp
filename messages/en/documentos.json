@@ -1,0 +1,23 @@
+{
+  "pageTitle": "Documents",
+  "pageSubtitle": "Documents attached to incidents",
+  "sectionAriaLabel": "Incident documents",
+
+  "columnDocument": "Document",
+  "columnIncident": "Incident",
+  "columnProject": "Project",
+  "columnSize": "Size",
+  "columnDate": "Uploaded",
+  "columnActions": "Actions",
+
+  "openAction": "Open",
+  "openAriaLabel": "Open {name}",
+
+  "emptyTable": "No documents have been attached to any incident yet.",
+  "resultsEmpty": "0 results",
+  "resultsRange": "{from}–{to} of {total}",
+
+  "paginationAriaLabel": "Documents pagination",
+  "prevPageAriaLabel": "Previous page",
+  "nextPageAriaLabel": "Next page"
+}
