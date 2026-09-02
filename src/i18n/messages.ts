@@ -13,6 +13,7 @@ import esCreateIssue from '../../messages/es/createIssue.json';
 import esValidation from '../../messages/es/validation.json';
 import esHistorial from '../../messages/es/historial.json';
 import esPapelera from '../../messages/es/papelera.json';
+import esGaleria from '../../messages/es/galeria.json';
 import enCommon from '../../messages/en/common.json';
 import enTopbar from '../../messages/en/topbar.json';
 import enMap from '../../messages/en/map.json';
@@ -21,6 +22,7 @@ import enCreateIssue from '../../messages/en/createIssue.json';
 import enValidation from '../../messages/en/validation.json';
 import enHistorial from '../../messages/en/historial.json';
 import enPapelera from '../../messages/en/papelera.json';
+import enGaleria from '../../messages/en/galeria.json';
 
 export type Locale = 'es' | 'en';
 export const LOCALES: Locale[] = ['es', 'en'];
@@ -36,6 +38,7 @@ export const MESSAGES: Record<Locale, AbstractIntlMessages> = {
     validation: esValidation,
     historial: esHistorial,
     papelera: esPapelera,
+    galeria: esGaleria,
   },
   en: {
     common: enCommon,
@@ -46,5 +49,6 @@ export const MESSAGES: Record<Locale, AbstractIntlMessages> = {
     validation: enValidation,
     historial: enHistorial,
     papelera: enPapelera,
+    galeria: enGaleria,
   },
 };

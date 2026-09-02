@@ -27,6 +27,25 @@ interface MediaBody {
   status: string;
 }
 
+interface GalleryItemBody {
+  id: string;
+  type: string;
+  createdAt: string;
+  incident: {
+    id: string;
+    sequenceId: string;
+    title: string;
+    project: { id: string; name: string };
+  };
+}
+
+interface PaginatedBody<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 async function loginAs(
   app: INestApplication<App>,
   user: FakeUser,
@@ -220,6 +239,129 @@ describe('Media (e2e)', () => {
           size: 50 * 1024 * 1024,
         })
         .expect(400);
+    });
+  });
+
+  describe('GET /media', () => {
+    it('returns a page of media across every incident in the caller org, newest first, with an incident ref', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      const older = await prisma.seedMedia({
+        incidentId: incident.id,
+        name: 'older.jpg',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+      const newer = await prisma.seedMedia({
+        incidentId: incident.id,
+        name: 'newer.jpg',
+        createdAt: new Date('2026-06-01T00:00:00Z'),
+      });
+
+      const res = await request(app.getHttpServer())
+        .get('/media')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      const body = res.body as PaginatedBody<GalleryItemBody>;
+      expect(body.items.map((m) => m.id)).toEqual([newer.id, older.id]);
+      expect(body.items[0].incident).toEqual({
+        id: incident.id,
+        sequenceId: incident.sequenceId,
+        title: incident.title,
+        project: { id: projectA.id, name: projectA.name },
+      });
+    });
+
+    it('excludes media belonging to a soft-deleted incident', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      const deletedIncident = await prisma.seedIncident({
+        orgId: 'org-a',
+        projectId: projectA.id,
+        typeId: plumbingType.id,
+        ownerId: orgAMember.id,
+        title: 'Deleted incident',
+        priority: 'low',
+        deleted: true,
+      });
+      await prisma.seedMedia({ incidentId: incident.id });
+      await prisma.seedMedia({ incidentId: deletedIncident.id });
+
+      const res = await request(app.getHttpServer())
+        .get('/media')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      const body = res.body as PaginatedBody<GalleryItemBody>;
+      expect(body.items.every((m) => m.incident.id === incident.id)).toBe(true);
+    });
+
+    it('excludes media from another organization', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      const otherOrgOwner = await prisma.seedUser({
+        email: 'gallery-owner@org-b.test',
+        password: 'password123',
+        orgId: 'org-b',
+        role: 'member',
+        name: 'Org B Owner',
+      });
+      const otherProject = await prisma.seedProject({
+        orgId: 'org-b',
+        name: 'Los Almendros',
+      });
+      const otherIncident = await prisma.seedIncident({
+        orgId: 'org-b',
+        projectId: otherProject.id,
+        typeId: plumbingType.id,
+        ownerId: otherOrgOwner.id,
+        title: 'Other org incident',
+        priority: 'low',
+      });
+      await prisma.seedMedia({ incidentId: otherIncident.id });
+
+      const res = await request(app.getHttpServer())
+        .get('/media')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      const body = res.body as PaginatedBody<GalleryItemBody>;
+      expect(body.items.some((m) => m.incident.id === otherIncident.id)).toBe(
+        false,
+      );
+    });
+
+    it('filters by media type', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      await prisma.seedMedia({ incidentId: incident.id, type: 'image' });
+      await prisma.seedMedia({ incidentId: incident.id, type: 'document' });
+
+      const res = await request(app.getHttpServer())
+        .get('/media')
+        .query('type=image')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      const body = res.body as PaginatedBody<GalleryItemBody>;
+      expect(body.items.every((m) => m.type === 'image')).toBe(true);
+    });
+
+    it('paginates with page/pageSize', async () => {
+      const token = await loginAs(app, orgAMember, 'password123');
+      for (let i = 0; i < 5; i += 1) {
+        await prisma.seedMedia({
+          incidentId: incident.id,
+          name: `file-${i}.jpg`,
+        });
+      }
+
+      const res = await request(app.getHttpServer())
+        .get('/media')
+        .query('page=1&pageSize=2')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      const body = res.body as PaginatedBody<GalleryItemBody>;
+      expect(body.items).toHaveLength(2);
+      expect(body.total).toBe(5);
+      expect(body.pageSize).toBe(2);
     });
   });
 

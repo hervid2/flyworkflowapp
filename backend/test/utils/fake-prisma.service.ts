@@ -779,6 +779,30 @@ export class FakePrismaService {
     },
   };
 
+  private matchesMediaWhere(
+    media: FakeMedia,
+    where?: {
+      incident?: { orgId?: string; deleted?: boolean };
+      type?: { in: MediaType[] };
+    },
+  ): boolean {
+    if (where?.incident) {
+      const incident = this.incidents.find((i) => i.id === media.incidentId);
+      if (!incident) return false;
+      if (where.incident.orgId && incident.orgId !== where.incident.orgId) {
+        return false;
+      }
+      if (
+        where.incident.deleted !== undefined &&
+        incident.deleted !== where.incident.deleted
+      ) {
+        return false;
+      }
+    }
+    if (where?.type && !where.type.in.includes(media.type)) return false;
+    return true;
+  }
+
   readonly media = {
     create: ({
       data,
@@ -806,6 +830,48 @@ export class FakePrismaService {
       if (!media) return Promise.resolve(null);
       const incident = this.incidents.find((i) => i.id === media.incidentId);
       return Promise.resolve({ ...media, incident: incident ?? null });
+    },
+    findMany: ({
+      where,
+      orderBy,
+      skip,
+      take,
+    }: {
+      where?: {
+        incident?: { orgId?: string; deleted?: boolean };
+        type?: { in: MediaType[] };
+      };
+      orderBy?: { createdAt?: 'asc' | 'desc' };
+      skip?: number;
+      take?: number;
+    }) => {
+      let results = this.medias.filter((m) => this.matchesMediaWhere(m, where));
+      if (orderBy?.createdAt) {
+        const direction = orderBy.createdAt === 'asc' ? 1 : -1;
+        results = [...results].sort(
+          (a, b) => direction * (a.createdAt.getTime() - b.createdAt.getTime()),
+        );
+      }
+      if (typeof skip === 'number') results = results.slice(skip);
+      if (typeof take === 'number') results = results.slice(0, take);
+      return Promise.resolve(
+        results.map((m) => ({
+          ...m,
+          incident: this.hydrateAuditIncidentRef(m.incidentId),
+        })),
+      );
+    },
+    count: ({
+      where,
+    }: {
+      where?: {
+        incident?: { orgId?: string; deleted?: boolean };
+        type?: { in: MediaType[] };
+      };
+    }): Promise<number> => {
+      return Promise.resolve(
+        this.medias.filter((m) => this.matchesMediaWhere(m, where)).length,
+      );
     },
     delete: ({ where }: { where: { id: string } }): Promise<FakeMedia> => {
       const index = this.medias.findIndex((m) => m.id === where.id);

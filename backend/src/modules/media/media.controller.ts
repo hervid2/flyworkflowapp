@@ -2,10 +2,12 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { MediaService } from './media.service';
@@ -13,14 +15,29 @@ import { PresignMediaUploadDto } from './dto/presign-media-upload.dto';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { PresignedUploadDto } from './dto/presigned-upload.dto';
 import { MediaResponseDto } from './dto/media-response.dto';
+import { ListMediaQueryDto } from './dto/list-media-query.dto';
+import { MediaGalleryItemDto } from './dto/media-gallery-item.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @ApiTags('media')
 @ApiBearerAuth()
 @Controller()
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
+
+  @Get('media')
+  @ApiOperation({
+    summary:
+      'Paginated media gallery across every incident in the caller organization',
+  })
+  list(
+    @Query() query: ListMediaQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<PaginatedResponseDto<MediaGalleryItemDto>> {
+    return this.mediaService.list(query, user);
+  }
 
   @Post('media/presign')
   @HttpCode(HttpStatus.OK)
