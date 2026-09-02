@@ -8,7 +8,13 @@
 import { apiFetch } from '@/lib/api-client';
 import { useAuthStore, refreshAccessToken } from '@/store/useAuthStore';
 import { toIncident, type RawIncident } from '@/domain/mappers/incident.mapper';
-import type { Incident, CreateIncidentDto, IncidentStatus, Project } from '@/domain/models';
+import type {
+  Incident,
+  CreateIncidentDto,
+  IncidentStatus,
+  Project,
+  ApprovalStatus,
+} from '@/domain/models';
 
 function clientFetch<T>(path: string, options: Parameters<typeof apiFetch>[1] = {}): Promise<T> {
   const accessToken = useAuthStore.getState().accessToken;
@@ -58,5 +64,18 @@ export async function deleteIncident(id: string): Promise<void> {
 /** `POST /incidents/:id/restore` — admin+, brings a soft-deleted incident back out of the trash. */
 export async function restoreIncident(id: string): Promise<Incident> {
   const raw = await clientFetch<RawIncident>(`/incidents/${id}/restore`, { method: 'POST' });
+  return toIncident(raw);
+}
+
+/** `PATCH /incidents/:id/approval` — admin+, decides a pending incident; a `409` means it was already decided. */
+export async function updateIncidentApproval(
+  id: string,
+  decision: Extract<ApprovalStatus, 'approved' | 'rejected'>,
+  reason?: string,
+): Promise<Incident> {
+  const raw = await clientFetch<RawIncident>(`/incidents/${id}/approval`, {
+    method: 'PATCH',
+    body: { decision, ...(reason ? { reason } : {}) },
+  });
   return toIncident(raw);
 }

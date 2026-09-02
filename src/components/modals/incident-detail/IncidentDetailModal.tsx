@@ -12,7 +12,11 @@ import { es } from 'date-fns/locale';
 import { useIncidentDetailStore } from '@/store/useIncidentDetailStore';
 import { useIssuesStore } from '@/store/useIssuesStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { updateIncidentStatus, deleteIncident } from '@/services/incident-mutations.service';
+import {
+  updateIncidentStatus,
+  deleteIncident,
+  updateIncidentApproval,
+} from '@/services/incident-mutations.service';
 import { ApiError } from '@/lib/api-client';
 import type { UserRef, IncidentStatus } from '@/domain/models/incident.model';
 import styles from './IncidentDetailModal.module.scss';
@@ -24,6 +28,11 @@ const STATUS_LABELS: Record<string, string> = {
   closed: 'Cerrada',
 };
 const STATUS_OPTIONS: IncidentStatus[] = ['open', 'on_pause', 'closed'];
+const APPROVAL_LABELS: Record<string, string> = {
+  pending: 'Pendiente de aprobación',
+  approved: 'Aprobada',
+  rejected: 'Rechazada',
+};
 
 /** Small avatar + name chip reused for owner, assignees and observers. */
 function UserChip({ user }: { user: UserRef }) {
@@ -52,6 +61,10 @@ export default function IncidentDetailModal() {
   const [statusError, setStatusError] = useState('');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
+  const [approvalPending, setApprovalPending] = useState(false);
+  const [approvalError, setApprovalError] = useState('');
+  const [rejectingReason, setRejectingReason] = useState('');
+  const [showRejectForm, setShowRejectForm] = useState(false);
 
   // Intercept "Ver detalles" clicks from Mapbox popups (DOM-rendered, not React)
   useEffect(() => {
@@ -80,6 +93,9 @@ export default function IncidentDetailModal() {
   useEffect(() => {
     setStatusError('');
     setConfirmingDelete(false);
+    setApprovalError('');
+    setShowRejectForm(false);
+    setRejectingReason('');
   }, [selectedIncidentId]);
 
   const incident = incidents.find((i) => i.id === selectedIncidentId);
@@ -95,6 +111,7 @@ export default function IncidentDetailModal() {
       incident.assignees.some((a) => a.id === currentUser.id));
   const canChangeStatus = isAdmin || isOwnerOrAssignee;
   const canDelete = isAdmin || incident.owner.id === currentUser?.id;
+  const canDecideApproval = isAdmin && incident.approval === 'pending';
 
   const handleStatusChange = async (next: IncidentStatus) => {
     if (next === incident.status) return;
@@ -111,6 +128,46 @@ export default function IncidentDetailModal() {
       );
     } finally {
       setStatusPending(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    setApprovalError('');
+    setApprovalPending(true);
+    try {
+      const updated = await updateIncidentApproval(incident.id, 'approved');
+      updateIncidentInStore(updated);
+    } catch (err) {
+      setApprovalError(
+        err instanceof ApiError && err.status === 409
+          ? 'Esta incidencia ya fue decidida.'
+          : 'No se pudo aprobar la incidencia.',
+      );
+    } finally {
+      setApprovalPending(false);
+    }
+  };
+
+  const handleReject = async () => {
+    setApprovalError('');
+    setApprovalPending(true);
+    try {
+      const updated = await updateIncidentApproval(
+        incident.id,
+        'rejected',
+        rejectingReason.trim() || undefined,
+      );
+      updateIncidentInStore(updated);
+      setShowRejectForm(false);
+      setRejectingReason('');
+    } catch (err) {
+      setApprovalError(
+        err instanceof ApiError && err.status === 409
+          ? 'Esta incidencia ya fue decidida.'
+          : 'No se pudo rechazar la incidencia.',
+      );
+    } finally {
+      setApprovalPending(false);
     }
   };
 
@@ -147,6 +204,9 @@ export default function IncidentDetailModal() {
             </span>
             <span className={`${styles.badge} ${styles[`badge--status-${incident.status}`]}`}>
               {STATUS_LABELS[incident.status]}
+            </span>
+            <span className={`${styles.badge} ${styles[`badge--approval-${incident.approval}`]}`}>
+              {APPROVAL_LABELS[incident.approval]}
             </span>
             <span className={`${styles.badge} ${styles['badge--type']}`}>{incident.type.name}</span>
           </div>
@@ -286,6 +346,70 @@ export default function IncidentDetailModal() {
             </div>
           </div>
         </section>
+
+        {/* ── Aprobación (admin+, solo mientras está pendiente) ── */}
+        {canDecideApproval && (
+          <section className={styles.section}>
+            <h3 className={styles.section__label}>Aprobación</h3>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.approveBtn}
+                onClick={handleApprove}
+                disabled={approvalPending}
+              >
+                {approvalPending ? 'Procesando…' : 'Aprobar'}
+              </button>
+
+              {showRejectForm ? (
+                <div className={styles.rejectForm}>
+                  <input
+                    type="text"
+                    className={styles.rejectForm__input}
+                    placeholder="Motivo del rechazo (opcional)"
+                    value={rejectingReason}
+                    onChange={(e) => setRejectingReason(e.target.value)}
+                    disabled={approvalPending}
+                    aria-label="Motivo del rechazo"
+                  />
+                  <button
+                    type="button"
+                    className={styles.rejectForm__confirm}
+                    onClick={handleReject}
+                    disabled={approvalPending}
+                  >
+                    {approvalPending ? 'Procesando…' : 'Confirmar rechazo'}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.rejectForm__cancel}
+                    onClick={() => {
+                      setShowRejectForm(false);
+                      setRejectingReason('');
+                    }}
+                    disabled={approvalPending}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.rejectBtn}
+                  onClick={() => setShowRejectForm(true)}
+                  disabled={approvalPending}
+                >
+                  Rechazar
+                </button>
+              )}
+            </div>
+            {approvalError && (
+              <p className={styles.error} role="alert">
+                {approvalError}
+              </p>
+            )}
+          </section>
+        )}
 
         {/* ── Acciones ── */}
         {(canChangeStatus || canDelete) && (
