@@ -18,6 +18,7 @@ import {
   FolderOpen,
   Settings,
   Share2,
+  Trash2,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import FlyIcon from '@/components/ui/FlyIcon';
@@ -43,6 +44,7 @@ const mainNavItems: NavItem[] = [
 ];
 
 const bottomNavItems: NavItem[] = [
+  { href: '/papelera', icon: <Trash2 size={20} />, label: 'Papelera' },
   { href: '/ajustes', icon: <Settings size={20} />, label: 'Ajustes' },
   { href: '/compartir', icon: <Share2 size={20} />, label: 'Compartir' },
 ];

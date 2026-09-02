@@ -33,6 +33,7 @@
 | `PATCH /incidents/:id/status`   | Bearer, author/assignee/admin         | `{ status }`                                                                            | `200`                                        | `409` invalid transition                               |
 | `PATCH /incidents/:id/approval` | Bearer, role with approval permission | `{ decision: 'approved' \| 'rejected', reason? }`                                       | `200`                                        | `403` no permission                                    |
 | `DELETE /incidents/:id`         | Bearer, author/admin                  | —                                                                                       | `204` — soft delete (`deleted = true`)       | `403` · `404`                                          |
+| `GET /incidents/trash`          | Bearer, admin                         | query: `page, pageSize`                                                                 | `200` a page of soft-deleted incidents       | `403` no permission                                    |
 | `POST /incidents/:id/restore`   | Bearer, admin                         | —                                                                                       | `200` restored                               | `404` not in trash                                     |
 
 ## Incident types

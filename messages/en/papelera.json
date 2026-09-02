@@ -1,0 +1,32 @@
+{
+  "pageTitle": "Trash",
+  "pageSubtitle": "Deleted incidents — restore them or leave them here",
+  "sectionAriaLabel": "Incident trash",
+
+  "columnIncident": "Incident",
+  "columnProject": "Project",
+  "columnPriority": "Priority",
+  "columnOwner": "Created by",
+  "columnDeletedAt": "Deleted",
+  "columnActions": "Actions",
+
+  "priorityHigh": "High",
+  "priorityMedium": "Medium",
+  "priorityLow": "Low",
+
+  "restoreAction": "Restore",
+  "restoring": "Restoring…",
+  "restoreError": "Could not restore the incident.",
+  "restoreAriaLabel": "Restore incident {title}",
+
+  "emptyTable": "The trash is empty.",
+  "resultsEmpty": "0 results",
+  "resultsRange": "{from}–{to} of {total}",
+
+  "paginationAriaLabel": "Trash pagination",
+  "prevPageAriaLabel": "Previous page",
+  "nextPageAriaLabel": "Next page",
+
+  "forbiddenTitle": "Access restricted",
+  "forbiddenMessage": "The trash is only available to organization admins."
+}
