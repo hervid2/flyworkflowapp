@@ -30,8 +30,9 @@ interface NavItem {
   label: string;
 }
 
-// Primary destinations; only /dashboard and /mapa are implemented, the rest
-// are navigational placeholders for future routes.
+// Primary destinations; /dashboard, /mapa, /historial, /calendario, /galeria
+// and /documentos are implemented — /informacion is still a navigational
+// placeholder for a future route.
 const mainNavItems: NavItem[] = [
   { href: '/', icon: <Home size={20} />, label: 'Inicio' },
   { href: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
