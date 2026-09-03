@@ -26,6 +26,7 @@ interface AuthState {
   hydrated: boolean;
   login: (user: AuthUser, accessToken: string) => void;
   setAccessToken: (token: string) => void;
+  updateUser: (patch: Partial<AuthUser>) => void;
   logout: () => Promise<void>;
   hydrateFromCookie: () => Promise<void>;
 }
@@ -62,6 +63,14 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   setAccessToken: (token) => {
     writeAccessTokenCookie(token);
     set({ accessToken: token, isAuthenticated: true });
+  },
+
+  // Applied after a successful profile update so the TopBar/sidebar avatar
+  // and name reflect the change immediately, without re-fetching /users/me.
+  updateUser: (patch) => {
+    const current = get().user;
+    if (!current) return;
+    set({ user: { ...current, ...patch } });
   },
 
   logout: async () => {

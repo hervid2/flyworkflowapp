@@ -19,5 +19,18 @@
   },
   "priority": {
     "invalid": "Select a priority"
+  },
+  "name": {
+    "required": "Name is required",
+    "max": "Name cannot exceed 120 characters"
+  },
+  "avatarUrl": {
+    "invalid": "Enter a valid URL"
+  },
+  "password": {
+    "currentRequired": "Enter your current password",
+    "newMin": "New password must be at least 8 characters",
+    "confirmRequired": "Confirm the new password",
+    "mismatch": "Passwords do not match"
   }
 }
