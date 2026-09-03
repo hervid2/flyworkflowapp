@@ -280,6 +280,18 @@ export class FakePrismaService {
     }): Promise<FakeUser[]> => {
       return Promise.resolve(this.users.filter((u) => u.orgId === where.orgId));
     },
+    update: ({
+      where,
+      data,
+    }: {
+      where: { id: string };
+      data: Partial<FakeUser>;
+    }): Promise<FakeUser> => {
+      const user = this.users.find((u) => u.id === where.id);
+      if (!user) throw new Error('User not found in fake store');
+      Object.assign(user, data);
+      return Promise.resolve(user);
+    },
   };
 
   readonly refreshToken = {

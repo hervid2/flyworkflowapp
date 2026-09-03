@@ -1,0 +1,31 @@
+{
+  "pageTitle": "Ajustes",
+  "pageSubtitle": "Administra tu perfil y tu contraseña",
+  "sectionAriaLabel": "Ajustes de la cuenta",
+
+  "profileTitle": "Perfil",
+  "profileSubtitle": "Tu nombre y foto visibles para el resto del equipo",
+  "labelName": "Nombre",
+  "labelEmail": "Correo electrónico",
+  "emailHint": "El correo no se puede modificar",
+  "labelAvatarUrl": "URL de la foto de perfil",
+  "avatarUrlPlaceholder": "https://ejemplo.com/foto.jpg",
+  "saveProfile": "Guardar cambios",
+  "savingProfile": "Guardando…",
+  "profileSuccess": "Perfil actualizado correctamente.",
+  "profileError": "No se pudo actualizar el perfil. Intenta de nuevo.",
+
+  "passwordTitle": "Cambiar contraseña",
+  "passwordSubtitle": "Usa una contraseña de al menos 8 caracteres",
+  "labelCurrentPassword": "Contraseña actual",
+  "labelNewPassword": "Nueva contraseña",
+  "labelConfirmPassword": "Confirmar nueva contraseña",
+  "savePassword": "Actualizar contraseña",
+  "savingPassword": "Actualizando…",
+  "passwordSuccess": "Contraseña actualizada correctamente.",
+  "passwordErrorWrongCurrent": "La contraseña actual no es correcta.",
+  "passwordError": "No se pudo actualizar la contraseña. Intenta de nuevo.",
+
+  "roleLabel": "Rol",
+  "organizationLabel": "Organización"
+}

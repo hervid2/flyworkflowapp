@@ -19,5 +19,18 @@
   },
   "priority": {
     "invalid": "Selecciona una prioridad"
+  },
+  "name": {
+    "required": "El nombre es obligatorio",
+    "max": "El nombre no puede superar los 120 caracteres"
+  },
+  "avatarUrl": {
+    "invalid": "Ingresa una URL válida"
+  },
+  "password": {
+    "currentRequired": "Ingresa tu contraseña actual",
+    "newMin": "La nueva contraseña debe tener al menos 8 caracteres",
+    "confirmRequired": "Confirma la nueva contraseña",
+    "mismatch": "Las contraseñas no coinciden"
   }
 }
