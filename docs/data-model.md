@@ -159,6 +159,25 @@ See the full flow in the target-architecture artifact — a NestJS interceptor w
 
 ---
 
+## Invitation **[new]**
+
+Org-scoped collaborator invite (roadmap 8.9, `requirements.md §1.5`) — the functional reinterpretation of the map toolbar's decorative "Share" button. No `ProjectMember` model exists in this schema (a `User` belongs to exactly one `Organization`), so this is org-scoped only, not per-project.
+
+| Field         | Type                                 | Notes                                                                                               |
+| ------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `id`          | uuid                                 | PK                                                                                                  |
+| `orgId`       | uuid                                 | FK → `Organization`                                                                                 |
+| `email`       | string                               | the invitee's email — not yet a `User` row                                                          |
+| `role`        | enum(`Role`), default `member`       | applied to the `User` created on acceptance; never `superadmin` (not exposed through this flow)     |
+| `tokenHash`   | string, unique                       | sha256 digest of the raw token; the raw value is only ever returned once, in the create response    |
+| `invitedById` | uuid                                 | FK → `User` — who sent it                                                                           |
+| `status`      | enum(`pending`,`accepted`,`revoked`) | "expired" isn't a stored state — computed at read time from `expiresAt` instead of a background job |
+| `expiresAt`   | datetime                             | 7 days from creation                                                                                |
+| `createdAt`   | datetime                             |                                                                                                     |
+| `acceptedAt`  | datetime?                            | set when the invitee completes `/invitar/:token`                                                    |
+
+---
+
 ## Expected indexes (see `best-practices.md §Prisma / SQL`)
 
 `Incident(orgId, status)`, `Incident(orgId, createdAt)`, `AuditLog(incidentId)`, `Notification(recipientId, readAt)` — the four combinations that `api-contracts.md`'s endpoints filter or sort on most often.

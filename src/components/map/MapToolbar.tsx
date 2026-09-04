@@ -21,9 +21,10 @@ import { useModalStore } from '@/store/useModalStore';
 import styles from './MapToolbar.module.scss';
 
 /**
- * Floating map toolbar. Two controls are wired: the 2D/3D projection toggle
- * (filters store) and the "create incident" action (modal store); the
- * remaining icon buttons are presentational placeholders.
+ * Floating map toolbar. Three controls are wired: the 2D/3D projection toggle
+ * (filters store), the "create incident" action and "Share" — now a real
+ * invite-collaborators flow, not decorative (roadmap 8.9) — both via the
+ * modal store; the remaining icon buttons are presentational placeholders.
  */
 export default function MapToolbar() {
   const t = useTranslations('map');
@@ -38,7 +39,6 @@ export default function MapToolbar() {
     { icon: Layers, label: t('layers') },
     { icon: Map, label: t('heatmap') },
     { icon: Brush, label: t('annotations') },
-    { icon: Share2, label: t('share') },
   ];
 
   return (
@@ -160,6 +160,15 @@ export default function MapToolbar() {
               <Icon size={17} />
             </button>
           ))}
+          <button
+            className={styles['toolbar__btn']}
+            type="button"
+            onClick={() => openModal('invite-collaborators')}
+            aria-label={t('share')}
+            title={t('share')}
+          >
+            <Share2 size={17} />
+          </button>
         </div>
       </div>
     </>

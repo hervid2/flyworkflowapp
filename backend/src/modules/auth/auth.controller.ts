@@ -18,6 +18,7 @@ import { LoginDto } from './dto/login.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { DtoValidationGuard } from '../../common/guards/dto-validation.guard';
+import { setRefreshCookie } from '../../common/utils/refresh-cookie.util';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import {
   LOGIN_THROTTLE_LIMIT,
@@ -52,7 +53,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ accessToken: string }> {
     const { accessToken, refreshToken } = await this.authService.login(user);
-    this.setRefreshCookie(res, refreshToken);
+    setRefreshCookie(res, refreshToken, this.configService);
     return { accessToken };
   }
 
@@ -70,7 +71,7 @@ export class AuthController {
     }
     const { accessToken, refreshToken } =
       await this.authService.refresh(rawToken);
-    this.setRefreshCookie(res, refreshToken);
+    setRefreshCookie(res, refreshToken, this.configService);
     return { accessToken };
   }
 
@@ -87,27 +88,5 @@ export class AuthController {
       await this.authService.logout(user.id, rawToken);
     }
     res.clearCookie(REFRESH_TOKEN_COOKIE, { path: REFRESH_TOKEN_COOKIE_PATH });
-  }
-
-  /**
-   * `secure`/`sameSite` follow `NODE_ENV`: `best-practices.md §Security` calls
-   * for `Secure; SameSite=None` for the real cross-domain Vercel↔API Gateway
-   * deployment (F6.3+), but that combination requires HTTPS — local dev and
-   * CI run over plain HTTP, where a `Secure` cookie would silently never be
-   * stored by the browser.
-   */
-  private setRefreshCookie(res: Response, token: string): void {
-    const isProd = this.configService.get('NODE_ENV') === 'production';
-    const ttlDays = this.configService.get<number>(
-      'JWT_REFRESH_EXPIRES_IN_DAYS',
-      7,
-    );
-    res.cookie(REFRESH_TOKEN_COOKIE, token, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
-      path: REFRESH_TOKEN_COOKIE_PATH,
-      maxAge: ttlDays * 24 * 60 * 60 * 1000,
-    });
   }
 }
