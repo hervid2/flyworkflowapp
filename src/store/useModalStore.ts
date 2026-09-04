@@ -6,7 +6,11 @@
 import { create } from 'zustand';
 
 /** Identifiers for the mutually-exclusive top-level modals. */
-export type ModalId = 'create-issue' | 'category-manager' | 'dashboard-filters';
+export type ModalId =
+  | 'create-issue'
+  | 'category-manager'
+  | 'dashboard-filters'
+  | 'invite-collaborators';
 
 interface ModalState {
   activeModal: ModalId | null;

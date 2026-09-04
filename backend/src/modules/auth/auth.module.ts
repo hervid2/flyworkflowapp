@@ -56,5 +56,8 @@ import {
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
+  // InvitationsModule reuses AuthService.login to auto-log-in a newly
+  // accepted invitee, the same session-issuance path a real login takes.
+  exports: [AuthService],
 })
 export class AuthModule {}
