@@ -6,6 +6,7 @@ import {
   type AuditAction,
   type IncidentPriority,
   type IncidentStatus,
+  type InvitationStatus,
   type MediaStatus,
   type MediaType,
   type NotificationType,
@@ -118,6 +119,25 @@ export interface FakeNotification {
   createdAt: Date;
 }
 
+export interface FakeOrganization {
+  id: string;
+  name: string;
+  createdAt: Date;
+}
+
+export interface FakeInvitation {
+  id: string;
+  orgId: string;
+  email: string;
+  role: Role;
+  tokenHash: string;
+  invitedById: string;
+  status: InvitationStatus;
+  expiresAt: Date;
+  createdAt: Date;
+  acceptedAt: Date | null;
+}
+
 interface FakeIncidentWhere {
   orgId?: string;
   deleted?: boolean;
@@ -139,6 +159,8 @@ export class FakePrismaService {
   readonly medias: FakeMedia[] = [];
   readonly auditLogs: FakeAuditLog[] = [];
   readonly notifications: FakeNotification[] = [];
+  readonly organizations: FakeOrganization[] = [];
+  readonly invitations: FakeInvitation[] = [];
   // Real (v4-shaped) uuids so `@IsUUID()`-validated DTO fields (e.g.
   // projectId/typeId/assigneeIds on incidents) accept seeded fixture ids.
   private nextId(): string {
@@ -290,6 +312,26 @@ export class FakePrismaService {
       const user = this.users.find((u) => u.id === where.id);
       if (!user) throw new Error('User not found in fake store');
       Object.assign(user, data);
+      return Promise.resolve(user);
+    },
+    create: ({
+      data,
+    }: {
+      data: {
+        orgId: string;
+        name: string;
+        email: string;
+        passwordHash: string;
+        role: Role;
+      };
+    }): Promise<FakeUser> => {
+      const user: FakeUser = {
+        id: this.nextId(),
+        avatarUrl: null,
+        createdAt: new Date(),
+        ...data,
+      };
+      this.users.push(user);
       return Promise.resolve(user);
     },
   };
@@ -661,6 +703,124 @@ export class FakePrismaService {
       return Promise.resolve(notification ?? null);
     },
   };
+
+  async seedOrganization(params: {
+    name: string;
+    id?: string;
+  }): Promise<FakeOrganization> {
+    const organization: FakeOrganization = {
+      id: params.id ?? this.nextId(),
+      name: params.name,
+      createdAt: new Date(),
+    };
+    this.organizations.push(organization);
+    return Promise.resolve(organization);
+  }
+
+  async seedInvitation(
+    params: Partial<Omit<FakeInvitation, 'id'>> & {
+      orgId: string;
+      email: string;
+      tokenHash: string;
+      invitedById: string;
+      expiresAt: Date;
+    },
+  ): Promise<FakeInvitation> {
+    const invitation: FakeInvitation = {
+      id: this.nextId(),
+      orgId: params.orgId,
+      email: params.email,
+      role: params.role ?? 'member',
+      tokenHash: params.tokenHash,
+      invitedById: params.invitedById,
+      status: params.status ?? 'pending',
+      expiresAt: params.expiresAt,
+      createdAt: params.createdAt ?? new Date(),
+      acceptedAt: params.acceptedAt ?? null,
+    };
+    this.invitations.push(invitation);
+    return Promise.resolve(invitation);
+  }
+
+  readonly invitation = {
+    create: ({
+      data,
+    }: {
+      data: {
+        orgId: string;
+        email: string;
+        role: Role;
+        tokenHash: string;
+        invitedById: string;
+        expiresAt: Date;
+      };
+    }) => {
+      const invitation: FakeInvitation = {
+        id: this.nextId(),
+        status: 'pending',
+        createdAt: new Date(),
+        acceptedAt: null,
+        ...data,
+      };
+      this.invitations.push(invitation);
+      return Promise.resolve({
+        ...invitation,
+        invitedBy: this.hydrateUserRef(invitation.invitedById),
+      });
+    },
+    findMany: ({
+      where,
+      orderBy,
+    }: {
+      where?: { orgId?: string };
+      orderBy?: { createdAt?: 'asc' | 'desc' };
+    }) => {
+      let results = this.invitations.filter(
+        (i) => !where?.orgId || i.orgId === where.orgId,
+      );
+      if (orderBy?.createdAt) {
+        const direction = orderBy.createdAt === 'asc' ? 1 : -1;
+        results = [...results].sort(
+          (a, b) => direction * (a.createdAt.getTime() - b.createdAt.getTime()),
+        );
+      }
+      return Promise.resolve(
+        results.map((i) => ({
+          ...i,
+          invitedBy: this.hydrateUserRef(i.invitedById),
+        })),
+      );
+    },
+    findUnique: ({ where }: { where: { id?: string; tokenHash?: string } }) => {
+      const invitation = where.id
+        ? this.invitations.find((i) => i.id === where.id)
+        : this.invitations.find((i) => i.tokenHash === where.tokenHash);
+      if (!invitation) return Promise.resolve(null);
+      return Promise.resolve({
+        ...invitation,
+        invitedBy: this.hydrateUserRef(invitation.invitedById),
+        organization: this.hydrateOrganizationRef(invitation.orgId),
+      });
+    },
+    update: ({
+      where,
+      data,
+    }: {
+      where: { id: string };
+      data: Partial<FakeInvitation>;
+    }): Promise<FakeInvitation | null> => {
+      const invitation = this.invitations.find((i) => i.id === where.id);
+      if (invitation) Object.assign(invitation, data);
+      return Promise.resolve(invitation ?? null);
+    },
+  };
+
+  private hydrateOrganizationRef(orgId: string): { id: string; name: string } {
+    const organization = this.organizations.find((o) => o.id === orgId);
+    return organization
+      ? { id: organization.id, name: organization.name }
+      : { id: orgId, name: 'Unknown organization' };
+  }
 
   private hydrateUserRef(userId: string): {
     id: string;

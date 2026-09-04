@@ -13,7 +13,7 @@ import { jwtVerify } from 'jose';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/auth-cookie';
 
 // Routes reachable without a session.
-const PUBLIC_PATHS = ['/login'];
+const PUBLIC_PATHS = ['/login', '/invitar'];
 
 function getSecretKey(): Uint8Array {
   const secret = process.env.JWT_ACCESS_SECRET;

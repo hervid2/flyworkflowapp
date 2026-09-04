@@ -68,6 +68,18 @@ Added in Phase 7 (F7.2): the frontend has no other way to discover the `typeId` 
 | `GET /notifications`            | Bearer                            | query: `since?` (for incremental polling) | `200` list, most recent first | —             |
 | `PATCH /notifications/:id/read` | Bearer, owner of the notification | —                                         | `204`                         | `403` · `404` |
 
+## Invitations (`requirements.md §1.5`)
+
+Functional reinterpretation of the map toolbar's decorative "Share" button (roadmap 8.9). No `ProjectMember` model exists (a `User` belongs to exactly one `Organization`, and `Project` access is implicit at the org level), so an invitation is org-scoped only. `POST /invitations` returns the raw token embedded in `inviteUrl` exactly once — only its hash (`Invitation.tokenHash`) is persisted, so it can never be recovered afterward; the admin is expected to copy and share that link manually (no email is sent).
+
+| Method and route                        | Auth           | Request                               | Response                                                                              | Errors                                                                                    |
+| --------------------------------------- | -------------- | ------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `POST /invitations`                     | Bearer, admin+ | `{ email, role?: 'member'\|'admin' }` | `201` invitation + `inviteUrl` (raw token, shown once)                                | `400` invalid email · `403` · `409` email already a user                                  |
+| `GET /invitations`                      | Bearer, admin+ | —                                     | `200` the organization's invitations, most recent first (no `inviteUrl`)              | `403`                                                                                     |
+| `DELETE /invitations/:id`               | Bearer, admin+ | —                                     | `204` — revokes a pending invitation                                                  | `403` · `404` · `409` already accepted                                                    |
+| `GET /invitations/token/:token`         | public         | —                                     | `200 { email, role, orgName, expiresAt }` — backs the `/invitar/:token` page          | `404` unknown token · `410` expired/revoked/accepted                                      |
+| `POST /invitations/token/:token/accept` | public         | `{ name, password }`                  | `200 { accessToken }` + `Set-Cookie refreshToken` — creates the account, auto-logs in | `400` weak password · `404` · `409` email already a user · `410` expired/revoked/accepted |
+
 ## Audit / History (`requirements.md §1.8`)
 
 | Method and route | Auth           | Request                            | Response                                                                                                                                                                                                       | Errors |

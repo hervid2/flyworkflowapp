@@ -66,6 +66,12 @@ enum NotificationType {
   approval
 }
 
+enum InvitationStatus {
+  pending
+  accepted
+  revoked
+}
+
 model Organization {
   id        String   @id @default(uuid())
   name      String   @unique
@@ -77,6 +83,7 @@ model Organization {
   incidents     Incident[]
   auditLogs     AuditLog[]
   notifications Notification[]
+  invitations   Invitation[]
 }
 
 model User {
@@ -96,6 +103,7 @@ model User {
   refreshTokens     RefreshToken[]
   auditLogs         AuditLog[]         @relation("AuditActor")
   notifications     Notification[]     @relation("NotificationRecipient")
+  sentInvitations   Invitation[]       @relation("InvitationInviter")
 
   @@index([orgId])
 }
@@ -266,4 +274,27 @@ model Notification {
   incident     Incident     @relation(fields: [incidentId], references: [id], onDelete: Cascade)
 
   @@index([recipientId, readAt])
+}
+
+// Org-scoped invites (requirements.md §1.5 — the "Share" button's functional
+// reinterpretation). No ProjectMember model exists in this schema (a User
+// belongs to exactly one Organization, and Project access is implicit at the
+// org level), so an invite is org-scoped only; "project" collaboration in the
+// roadmap wording resolves to the same thing here.
+model Invitation {
+  id          String           @id @default(uuid())
+  orgId       String
+  email       String
+  role        Role             @default(member)
+  tokenHash   String           @unique
+  invitedById String
+  status      InvitationStatus @default(pending)
+  expiresAt   DateTime
+  createdAt   DateTime         @default(now())
+  acceptedAt  DateTime?
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  invitedBy    User         @relation("InvitationInviter", fields: [invitedById], references: [id])
+
+  @@index([orgId])
 }

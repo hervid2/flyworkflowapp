@@ -2,8 +2,9 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { randomBytes, createHash } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { hashToken } from '../../common/utils/hash-token.util';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import type { JwtAccessPayload } from './interfaces/jwt-payload.interface';
 import {
@@ -50,7 +51,7 @@ export class AuthService {
 
   /** Rotates the refresh token: the presented one is revoked, a new one is issued. */
   async refresh(rawToken: string): Promise<AuthTokens> {
-    const tokenHash = this.hashToken(rawToken);
+    const tokenHash = hashToken(rawToken);
     const stored = await this.prisma.refreshToken.findFirst({
       where: { tokenHash },
       include: { user: true },
@@ -77,7 +78,7 @@ export class AuthService {
   }
 
   async logout(userId: string, rawToken: string): Promise<void> {
-    const tokenHash = this.hashToken(rawToken);
+    const tokenHash = hashToken(rawToken);
     await this.prisma.refreshToken.updateMany({
       where: { userId, tokenHash, revokedAt: null },
       data: { revokedAt: new Date() },
@@ -112,18 +113,9 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
 
     await this.prisma.refreshToken.create({
-      data: { userId, tokenHash: this.hashToken(token), expiresAt },
+      data: { userId, tokenHash: hashToken(token), expiresAt },
     });
 
     return token;
-  }
-
-  /**
-   * Refresh tokens are high-entropy random values looked up by exact match,
-   * so a deterministic digest (not bcrypt's salted hash) is what makes the
-   * `WHERE tokenHash = ?` lookup possible.
-   */
-  private hashToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
   }
 }

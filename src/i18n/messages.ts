@@ -17,6 +17,7 @@ import esGaleria from '../../messages/es/galeria.json';
 import esDocumentos from '../../messages/es/documentos.json';
 import esCalendario from '../../messages/es/calendario.json';
 import esAjustes from '../../messages/es/ajustes.json';
+import esInvitar from '../../messages/es/invitar.json';
 import enCommon from '../../messages/en/common.json';
 import enTopbar from '../../messages/en/topbar.json';
 import enMap from '../../messages/en/map.json';
@@ -29,6 +30,7 @@ import enGaleria from '../../messages/en/galeria.json';
 import enDocumentos from '../../messages/en/documentos.json';
 import enCalendario from '../../messages/en/calendario.json';
 import enAjustes from '../../messages/en/ajustes.json';
+import enInvitar from '../../messages/en/invitar.json';
 
 export type Locale = 'es' | 'en';
 export const LOCALES: Locale[] = ['es', 'en'];
@@ -48,6 +50,7 @@ export const MESSAGES: Record<Locale, AbstractIntlMessages> = {
     documentos: esDocumentos,
     calendario: esCalendario,
     ajustes: esAjustes,
+    invitar: esInvitar,
   },
   en: {
     common: enCommon,
@@ -62,5 +65,6 @@ export const MESSAGES: Record<Locale, AbstractIntlMessages> = {
     documentos: enDocumentos,
     calendario: enCalendario,
     ajustes: enAjustes,
+    invitar: enInvitar,
   },
 };
