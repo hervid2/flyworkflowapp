@@ -1,0 +1,18 @@
+{
+  "ariaLabel": "Planos del proyecto",
+  "title": "Planos del proyecto",
+  "close": "Cerrar",
+  "intro": "Consulta los planos adjuntos a un proyecto (imagen o PDF).",
+  "projectLabel": "Proyecto",
+  "projectAriaLabel": "Seleccionar proyecto",
+  "noProjects": "No hay proyectos disponibles",
+  "attachPlan": "Adjuntar plano",
+  "uploading": "Subiendo…",
+  "acceptedFormats": "JPG, PNG, WEBP, GIF o PDF",
+  "uploadError": "No se pudo subir el plano. Intenta de nuevo.",
+  "listAriaLabel": "Planos adjuntos",
+  "loading": "Cargando…",
+  "empty": "Este proyecto todavía no tiene planos adjuntos.",
+  "openAriaLabel": "Abrir {name}",
+  "deleteAriaLabel": "Eliminar {name}"
+}

@@ -116,6 +116,23 @@ The central entity. Fields already typed in `incident.model.ts` are kept; the on
 
 ---
 
+## ProjectPlan **[new]**
+
+Project-level attachment (roadmap 8.11, `requirements.md §1.2` Could) — the functional reinterpretation of the map toolbar's decorative "BIM Plans" button: real image/PDF plans, not a native BIM/IFC viewer (explicitly Won't v1). Reuses `Media`'s `type` enum rather than a dedicated one, though only `image`/`document` are ever populated here.
+
+| Field       | Type                             | Notes                                            |
+| ----------- | -------------------------------- | ------------------------------------------------ |
+| `id`        | uuid                             | PK                                               |
+| `projectId` | uuid                             | FK → `Project`                                   |
+| `name`      | string                           |                                                  |
+| `type`      | enum(`image`,`video`,`document`) | only `image`/`document` allowed at the API layer |
+| `format`    | string                           | extension/mime                                   |
+| `size`      | int                              | bytes — also validated server-side, 20MB cap     |
+| `url`       | string                           | S3 URL                                           |
+| `createdAt` | datetime                         |                                                  |
+
+---
+
 ## RefreshToken **[new]**
 
 | Field       | Type      | Notes                                                                  |

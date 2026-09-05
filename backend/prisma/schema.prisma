@@ -117,6 +117,7 @@ model Project {
 
   organization Organization @relation(fields: [orgId], references: [id])
   incidents    Incident[]
+  plans        ProjectPlan[]
 
   @@index([orgId])
 }
@@ -230,6 +231,26 @@ model Media {
   createdAt  DateTime    @default(now())
 
   incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+}
+
+// Project-level attachments (roadmap 8.11, requirements.md §1.2 Could) — a
+// realistic reinterpretation of the map toolbar's decorative "BIM Plans"
+// button: real project plans (image/PDF), not a native BIM/IFC viewer
+// (explicitly Won't v1). Reuses `MediaType` (only `image`/`document` ever
+// populated here) instead of a dedicated enum.
+model ProjectPlan {
+  id        String    @id @default(uuid())
+  projectId String
+  name      String
+  type      MediaType
+  format    String
+  size      Int
+  url       String
+  createdAt DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model RefreshToken {

@@ -9,6 +9,7 @@ import { ProjectsModule } from './modules/projects/projects.module';
 import { IncidentsModule } from './modules/incidents/incidents.module';
 import { IncidentTypesModule } from './modules/incident-types/incident-types.module';
 import { MediaModule } from './modules/media/media.module';
+import { ProjectPlansModule } from './modules/project-plans/project-plans.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -29,6 +30,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     IncidentsModule,
     IncidentTypesModule,
     MediaModule,
+    ProjectPlansModule,
     TagsModule,
     AuditModule,
     NotificationsModule,
