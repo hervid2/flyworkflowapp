@@ -104,6 +104,7 @@ model User {
   auditLogs         AuditLog[]         @relation("AuditActor")
   notifications     Notification[]     @relation("NotificationRecipient")
   sentInvitations   Invitation[]       @relation("InvitationInviter")
+  exportToken       ExportToken?
 
   @@index([orgId])
 }
@@ -295,6 +296,26 @@ model Invitation {
 
   organization Organization @relation(fields: [orgId], references: [id])
   invitedBy    User         @relation("InvitationInviter", fields: [invitedById], references: [id])
+
+  @@index([orgId])
+}
+
+// Long-lived, per-user token that authenticates `GET /reports/dashboard-data`
+// — deliberately distinct from the short-lived session JWT (roadmap 8.10,
+// requirements.md §1.10 "Export and connect"): it's meant to be pasted once
+// into an external tool (Power BI's Web connector, Looker Studio) as a stable
+// URL, which a 15-minute access token can't be. Only its hash is persisted,
+// same convention as Invitation.tokenHash/RefreshToken.tokenHash — the raw
+// value is shown exactly once, at generation time. One token per user
+// (`userId` unique); regenerating replaces it and invalidates the old link.
+model ExportToken {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  orgId     String
+  tokenHash String   @unique
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 
   @@index([orgId])
 }

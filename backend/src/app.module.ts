@@ -13,6 +13,7 @@ import { TagsModule } from './modules/tags/tags.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { InvitationsModule } from './modules/invitations/invitations.module';
     AuditModule,
     NotificationsModule,
     InvitationsModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}

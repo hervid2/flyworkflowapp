@@ -1,0 +1,80 @@
+@use '@/styles/abstracts/variables' as *;
+
+.menu {
+  position: relative;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-xs;
+  padding: 8px $space-md;
+  border-radius: $radius-md;
+  border: 1px solid $color-border;
+  background: $color-bg-surface;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: all $transition-fast;
+  white-space: nowrap;
+  font-family: inherit;
+
+  &:hover {
+    background: $color-bg-muted;
+  }
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + #{$space-xs});
+  right: 0;
+  min-width: 240px;
+  background: $color-bg-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  box-shadow: $shadow-lg;
+  z-index: $z-modal;
+  padding: $space-xs;
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  width: 100%;
+  padding: $space-sm $space-md;
+  border: none;
+  background: transparent;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-bg-muted;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.divider {
+  height: 1px;
+  background: $color-border;
+  margin: $space-xs 0;
+}
+
+.error {
+  font-size: $font-size-xs;
+  color: $color-priority-high;
+  padding: $space-xs $space-md 0;
+  margin: 0;
+}

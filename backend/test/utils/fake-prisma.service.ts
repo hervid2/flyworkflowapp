@@ -138,6 +138,14 @@ export interface FakeInvitation {
   acceptedAt: Date | null;
 }
 
+export interface FakeExportToken {
+  id: string;
+  userId: string;
+  orgId: string;
+  tokenHash: string;
+  createdAt: Date;
+}
+
 interface FakeIncidentWhere {
   orgId?: string;
   deleted?: boolean;
@@ -161,6 +169,7 @@ export class FakePrismaService {
   readonly notifications: FakeNotification[] = [];
   readonly organizations: FakeOrganization[] = [];
   readonly invitations: FakeInvitation[] = [];
+  readonly exportTokens: FakeExportToken[] = [];
   // Real (v4-shaped) uuids so `@IsUUID()`-validated DTO fields (e.g.
   // projectId/typeId/assigneeIds on incidents) accept seeded fixture ids.
   private nextId(): string {
@@ -812,6 +821,78 @@ export class FakePrismaService {
       const invitation = this.invitations.find((i) => i.id === where.id);
       if (invitation) Object.assign(invitation, data);
       return Promise.resolve(invitation ?? null);
+    },
+  };
+
+  seedExportToken(
+    params: Partial<Omit<FakeExportToken, 'id'>> & {
+      userId: string;
+      orgId: string;
+      tokenHash: string;
+    },
+  ): Promise<FakeExportToken> {
+    const token: FakeExportToken = {
+      id: this.nextId(),
+      userId: params.userId,
+      orgId: params.orgId,
+      tokenHash: params.tokenHash,
+      createdAt: params.createdAt ?? new Date(),
+    };
+    this.exportTokens.push(token);
+    return Promise.resolve(token);
+  }
+
+  readonly exportToken = {
+    findUnique: ({
+      where,
+    }: {
+      where: { userId?: string; tokenHash?: string };
+    }): Promise<FakeExportToken | null> => {
+      const found = where.userId
+        ? this.exportTokens.find((t) => t.userId === where.userId)
+        : this.exportTokens.find((t) => t.tokenHash === where.tokenHash);
+      return Promise.resolve(found ?? null);
+    },
+    upsert: ({
+      where,
+      create,
+      update,
+    }: {
+      where: { userId: string };
+      create: { userId: string; orgId: string; tokenHash: string };
+      update: { orgId: string; tokenHash: string };
+    }): Promise<FakeExportToken> => {
+      const existing = this.exportTokens.find((t) => t.userId === where.userId);
+      if (existing) {
+        Object.assign(existing, update);
+        return Promise.resolve(existing);
+      }
+      const token: FakeExportToken = {
+        id: this.nextId(),
+        createdAt: new Date(),
+        ...create,
+      };
+      this.exportTokens.push(token);
+      return Promise.resolve(token);
+    },
+    delete: ({
+      where,
+    }: {
+      where: { userId: string };
+    }): Promise<FakeExportToken> => {
+      const index = this.exportTokens.findIndex(
+        (t) => t.userId === where.userId,
+      );
+      if (index === -1) {
+        return Promise.reject(
+          new Prisma.PrismaClientKnownRequestError(
+            'An operation failed because it depends on one or more records that were required but not found.',
+            { code: 'P2025', clientVersion: 'fake' },
+          ),
+        );
+      }
+      const [removed] = this.exportTokens.splice(index, 1);
+      return Promise.resolve(removed);
     },
   };
 

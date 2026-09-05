@@ -11,6 +11,7 @@ import { es } from 'date-fns/locale';
 import { useFiltersStore } from '@/store/useFiltersStore';
 import { useModalStore } from '@/store/useModalStore';
 import type { DashboardPeriod } from '@/domain/models/filters.model';
+import ExportMenu from './ExportMenu';
 import styles from './DashboardHeader.module.scss';
 
 // Selectable period presets shown as the quick-switch buttons.
@@ -83,6 +84,8 @@ export default function DashboardHeader() {
             <Filter size={16} />
             <span>{t('headerFilters')}</span>
           </button>
+
+          <ExportMenu />
 
           <button
             className={`${styles.btn} ${styles['btn--primary']}`}

@@ -30,6 +30,7 @@ import {
   ALLOWED_STATUS_TRANSITIONS,
   INCIDENT_SEQUENCE_ID_LENGTH,
 } from './incidents.constants';
+import { toCsv, CsvColumn } from '../../common/utils/csv.util';
 
 const INCIDENT_INCLUDE = {
   project: true,
@@ -41,6 +42,33 @@ const INCIDENT_INCLUDE = {
 } as const;
 
 const MAX_SEQUENCE_ID_ATTEMPTS = 3;
+
+// Caps `GET /incidents/export.csv` — well above this project's ~200-incident
+// mock scale, just a guard against an unbounded response body.
+const INCIDENT_EXPORT_MAX_ROWS = 5000;
+
+const INCIDENT_CSV_COLUMNS: CsvColumn<IncidentResponseDto>[] = [
+  { header: 'id', value: (i) => i.sequenceId },
+  { header: 'title', value: (i) => i.title },
+  { header: 'type', value: (i) => i.type.name },
+  { header: 'status', value: (i) => i.status },
+  { header: 'priority', value: (i) => i.priority },
+  { header: 'approval', value: (i) => i.approval },
+  { header: 'project', value: (i) => i.project.name },
+  { header: 'owner', value: (i) => i.owner.name },
+  { header: 'ownerEmail', value: (i) => i.owner.email },
+  {
+    header: 'assignees',
+    value: (i) => i.assignees.map((a) => a.name).join('; '),
+  },
+  { header: 'tags', value: (i) => i.tags.map((t) => t.name).join('; ') },
+  { header: 'createdAt', value: (i) => i.createdAt.toISOString() },
+  { header: 'dueDate', value: (i) => i.dueDate?.toISOString() ?? '' },
+  { header: 'closingDate', value: (i) => i.closingDate?.toISOString() ?? '' },
+  { header: 'locationDescription', value: (i) => i.locationDescription ?? '' },
+  { header: 'lat', value: (i) => i.coordinates?.lat ?? '' },
+  { header: 'lng', value: (i) => i.coordinates?.lng ?? '' },
+];
 
 interface ScopedIncident {
   id: string;
@@ -59,17 +87,15 @@ export class IncidentsService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  async findAll(
-    query: ListIncidentsQueryDto,
-    user: AuthenticatedUser,
-  ): Promise<PaginatedResponseDto<IncidentResponseDto>> {
-    const page = query.page ?? 1;
-    const pageSize = query.pageSize ?? DEFAULT_PAGE_SIZE;
-
-    const where: Prisma.IncidentWhereInput = {
-      orgId: user.orgId,
-      deleted: false,
-    };
+  /** Shared by `findAll` and `exportCsv` — every filter dimension `GET /incidents` supports. */
+  private buildWhere(
+    query: Pick<
+      ListIncidentsQueryDto,
+      'status' | 'priority' | 'typeKey' | 'projectId' | 'dateFrom' | 'dateTo'
+    >,
+    orgId: string,
+  ): Prisma.IncidentWhereInput {
+    const where: Prisma.IncidentWhereInput = { orgId, deleted: false };
     if (query.status?.length) where.status = { in: query.status };
     if (query.priority?.length) where.priority = { in: query.priority };
     if (query.typeKey?.length) where.type = { key: { in: query.typeKey } };
@@ -80,6 +106,16 @@ export class IncidentsService {
         ...(query.dateTo ? { lte: new Date(query.dateTo) } : {}),
       };
     }
+    return where;
+  }
+
+  async findAll(
+    query: ListIncidentsQueryDto,
+    user: AuthenticatedUser,
+  ): Promise<PaginatedResponseDto<IncidentResponseDto>> {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? DEFAULT_PAGE_SIZE;
+    const where = this.buildWhere(query, user.orgId);
 
     const [items, total] = await Promise.all([
       this.prisma.incident.findMany({
@@ -98,6 +134,25 @@ export class IncidentsService {
       page,
       pageSize,
     );
+  }
+
+  /**
+   * `GET /incidents/export.csv` — same filter dimensions as `findAll`, no
+   * pagination (a full CSV export of everything matching, capped so a
+   * runaway org doesn't produce an unbounded response body).
+   */
+  async exportCsv(
+    query: Omit<ListIncidentsQueryDto, 'page' | 'pageSize'>,
+    user: AuthenticatedUser,
+  ): Promise<string> {
+    const where = this.buildWhere(query, user.orgId);
+    const items = await this.prisma.incident.findMany({
+      where,
+      include: INCIDENT_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+      take: INCIDENT_EXPORT_MAX_ROWS,
+    });
+    return toCsv(items.map(toIncidentResponseDto), INCIDENT_CSV_COLUMNS);
   }
 
   async findOne(
