@@ -5,3 +5,4 @@ export * from './dashboard-metrics.model';
 export * from './audit-log.model';
 export * from './media-gallery.model';
 export * from './notification.model';
+export * from './project-plan.model';

@@ -61,6 +61,17 @@ Added in Phase 7 (F7.2): the frontend has no other way to discover the `typeId` 
 | `GET /projects`                  | Bearer         | —          | `200` the organization's projects                      | —                        |
 | `POST /projects`                 | Bearer, admin+ | `{ name }` | `201`                                                  | `403`                    |
 
+## Project plans (`requirements.md §1.2` Could, roadmap 8.11)
+
+Functional reinterpretation of the map toolbar's decorative "BIM Plans" button — real image/PDF attachments on a `Project`, not a native BIM/IFC viewer (explicitly Won't v1). Mirrors the `Media`/presigned-upload flow but scoped to `Project` instead of `Incident`, with a narrower content-type allowlist (image or `application/pdf` only, 20MB cap). Viewing is open to any org member (matches `GET /projects`); attaching/deleting is admin+ (matches `POST /projects`).
+
+| Method and route                   | Auth           | Request                                 | Response                                      | Errors                                                   |
+| ---------------------------------- | -------------- | --------------------------------------- | --------------------------------------------- | -------------------------------------------------------- |
+| `GET /projects/:id/plans`          | Bearer         | —                                       | `200` the project's plans, newest first       | `404` other organization                                 |
+| `POST /projects/:id/plans/presign` | Bearer, admin+ | `{ filename, contentType, size }`       | `200 { uploadUrl, fileUrl }` — single-use URL | `400` disallowed type or size · `403` · `404`            |
+| `POST /projects/:id/plans`         | Bearer, admin+ | `{ fileUrl, name, type, format, size }` | `201` plan record created                     | `400` type/size rejected server-side too · `403` · `404` |
+| `DELETE /plans/:id`                | Bearer, admin+ | —                                       | `204` — removes the S3 object too             | `403` · `404`                                            |
+
 ## Notifications (`requirements.md §1.5`)
 
 | Method and route                | Auth                              | Request                                   | Response                      | Errors        |

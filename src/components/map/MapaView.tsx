@@ -9,6 +9,7 @@ import MapFilterBar from './MapFilterBar';
 import MapToolbar from './MapToolbar';
 import CreateIssueModal from '@/components/modals/create-issue/CreateIssueModal';
 import InviteCollaboratorsModal from '@/components/modals/invite/InviteCollaboratorsModal';
+import ProjectPlansModal from '@/components/modals/project-plans/ProjectPlansModal';
 import styles from './MapaView.module.scss';
 
 export default function MapaView() {
@@ -19,6 +20,7 @@ export default function MapaView() {
       <MapToolbar />
       <CreateIssueModal />
       <InviteCollaboratorsModal />
+      <ProjectPlansModal />
     </div>
   );
 }

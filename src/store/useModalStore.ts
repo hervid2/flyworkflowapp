@@ -11,7 +11,8 @@ export type ModalId =
   | 'category-manager'
   | 'dashboard-filters'
   | 'invite-collaborators'
-  | 'export-connect';
+  | 'export-connect'
+  | 'project-plans';
 
 interface ModalState {
   activeModal: ModalId | null;

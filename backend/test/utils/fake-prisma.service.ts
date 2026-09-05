@@ -99,6 +99,17 @@ export interface FakeMedia {
   createdAt: Date;
 }
 
+export interface FakeProjectPlan {
+  id: string;
+  projectId: string;
+  name: string;
+  type: MediaType;
+  format: string;
+  size: number;
+  url: string;
+  createdAt: Date;
+}
+
 export interface FakeAuditLog {
   id: string;
   orgId: string;
@@ -165,6 +176,7 @@ export class FakePrismaService {
   readonly tags: FakeTag[] = [];
   readonly incidents: FakeIncident[] = [];
   readonly medias: FakeMedia[] = [];
+  readonly projectPlans: FakeProjectPlan[] = [];
   readonly auditLogs: FakeAuditLog[] = [];
   readonly notifications: FakeNotification[] = [];
   readonly organizations: FakeOrganization[] = [];
@@ -269,6 +281,27 @@ export class FakePrismaService {
     };
     this.medias.push(media);
     return Promise.resolve(media);
+  }
+
+  async seedProjectPlan(
+    params: Partial<Omit<FakeProjectPlan, 'id' | 'projectId'>> & {
+      projectId: string;
+    },
+  ): Promise<FakeProjectPlan> {
+    const plan: FakeProjectPlan = {
+      id: this.nextId(),
+      projectId: params.projectId,
+      name: params.name ?? 'floor-1.pdf',
+      type: params.type ?? 'document',
+      format: params.format ?? 'pdf',
+      size: params.size ?? 2048,
+      url:
+        params.url ??
+        'https://fake-bucket.s3.fake-region.amazonaws.com/projects/test/plans/floor-1.pdf',
+      createdAt: params.createdAt ?? new Date(),
+    };
+    this.projectPlans.push(plan);
+    return Promise.resolve(plan);
   }
 
   async seedUser(params: {
@@ -447,6 +480,67 @@ export class FakePrismaService {
     delete: ({ where }: { where: { id: string } }): Promise<FakeProject> => {
       const index = this.projects.findIndex((p) => p.id === where.id);
       const [removed] = this.projects.splice(index, 1);
+      return Promise.resolve(removed);
+    },
+  };
+
+  readonly projectPlan = {
+    create: ({
+      data,
+    }: {
+      data: {
+        projectId: string;
+        name: string;
+        type: MediaType;
+        format: string;
+        size: number;
+        url: string;
+      };
+    }): Promise<FakeProjectPlan> => {
+      const plan: FakeProjectPlan = {
+        id: this.nextId(),
+        createdAt: new Date(),
+        ...data,
+      };
+      this.projectPlans.push(plan);
+      return Promise.resolve(plan);
+    },
+    findMany: ({
+      where,
+      orderBy,
+    }: {
+      where?: { projectId?: string };
+      orderBy?: { createdAt?: 'asc' | 'desc' };
+    }): Promise<FakeProjectPlan[]> => {
+      let results = this.projectPlans.filter(
+        (p) => !where?.projectId || p.projectId === where.projectId,
+      );
+      if (orderBy?.createdAt) {
+        const direction = orderBy.createdAt === 'asc' ? 1 : -1;
+        results = [...results].sort(
+          (a, b) => direction * (a.createdAt.getTime() - b.createdAt.getTime()),
+        );
+      }
+      return Promise.resolve(results);
+    },
+    findUnique: ({
+      where,
+    }: {
+      where: { id: string };
+    }): Promise<(FakeProjectPlan & { project: FakeProject | null }) | null> => {
+      const plan = this.projectPlans.find((p) => p.id === where.id);
+      if (!plan) return Promise.resolve(null);
+      const project =
+        this.projects.find((p) => p.id === plan.projectId) ?? null;
+      return Promise.resolve({ ...plan, project });
+    },
+    delete: ({
+      where,
+    }: {
+      where: { id: string };
+    }): Promise<FakeProjectPlan> => {
+      const index = this.projectPlans.findIndex((p) => p.id === where.id);
+      const [removed] = this.projectPlans.splice(index, 1);
       return Promise.resolve(removed);
     },
   };
