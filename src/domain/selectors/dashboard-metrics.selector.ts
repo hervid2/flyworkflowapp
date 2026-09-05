@@ -9,6 +9,40 @@ import type { Incident } from '../models/incident.model';
 import type { DashboardFilters } from '../models/filters.model';
 import type { DashboardMetrics } from '../models/dashboard-metrics.model';
 
+/**
+ * Narrows the full incident list down to whatever the active dashboard
+ * filters (status/priority/type/creator/responsible) select — the same base
+ * set the KPI cards and charts are computed from. Exported separately so the
+ * CSV export button (roadmap 8.10) can download exactly this set without
+ * duplicating the filter predicates.
+ */
+export function filterIncidentsByDashboardFilters(
+  incidents: Incident[],
+  filters: DashboardFilters,
+): Incident[] {
+  let filtered = incidents.filter((i) => !('deleted' in i && i.deleted));
+
+  if (filters.status?.length) {
+    filtered = filtered.filter((i) => filters.status!.includes(i.status));
+  }
+  if (filters.priority?.length) {
+    filtered = filtered.filter((i) => filters.priority!.includes(i.priority));
+  }
+  if (filters.typeKey?.length) {
+    filtered = filtered.filter((i) => filters.typeKey!.includes(i.type.key));
+  }
+  if (filters.createdByUser?.length) {
+    filtered = filtered.filter((i) => filters.createdByUser!.includes(i.owner.id));
+  }
+  if (filters.responsibleUser?.length) {
+    filtered = filtered.filter((i) =>
+      i.assignees.some((a) => filters.responsibleUser!.includes(a.id)),
+    );
+  }
+
+  return filtered;
+}
+
 /** Resolves the active filter preset into a concrete `[from, to]` date range. */
 function getPeriodRange(filters: DashboardFilters): { from: Date; to: Date } {
   const to = startOfDay(new Date());
@@ -40,26 +74,7 @@ export function getDashboardMetrics(
   const today = startOfDay(new Date());
   const { from, to } = getPeriodRange(filters);
 
-  // Drop soft-deleted rows, then narrow by each active filter dimension.
-  let filtered = incidents.filter((i) => !('deleted' in i && i.deleted));
-
-  if (filters.status?.length) {
-    filtered = filtered.filter((i) => filters.status!.includes(i.status));
-  }
-  if (filters.priority?.length) {
-    filtered = filtered.filter((i) => filters.priority!.includes(i.priority));
-  }
-  if (filters.typeKey?.length) {
-    filtered = filtered.filter((i) => filters.typeKey!.includes(i.type.key));
-  }
-  if (filters.createdByUser?.length) {
-    filtered = filtered.filter((i) => filters.createdByUser!.includes(i.owner.id));
-  }
-  if (filters.responsibleUser?.length) {
-    filtered = filtered.filter((i) =>
-      i.assignees.some((a) => filters.responsibleUser!.includes(a.id)),
-    );
-  }
+  const filtered = filterIncidentsByDashboardFilters(incidents, filters);
 
   // Subset created inside the selected window — basis for period-scoped KPIs.
   const inPeriod = filtered.filter((i) => {

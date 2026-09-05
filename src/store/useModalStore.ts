@@ -10,7 +10,8 @@ export type ModalId =
   | 'create-issue'
   | 'category-manager'
   | 'dashboard-filters'
-  | 'invite-collaborators';
+  | 'invite-collaborators'
+  | 'export-connect';
 
 interface ModalState {
   activeModal: ModalId | null;

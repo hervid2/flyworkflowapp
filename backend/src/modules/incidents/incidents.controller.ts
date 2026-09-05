@@ -9,10 +9,12 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { IncidentsService } from './incidents.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
@@ -46,7 +48,25 @@ export class IncidentsController {
     return this.incidentsService.findAll(query, user);
   }
 
-  // Must stay ahead of `:id` below — otherwise "trash" is parsed as an id.
+  // Must stay ahead of `:id` below — otherwise "export.csv"/"trash" are parsed as an id.
+  @Get('export.csv')
+  @ApiOperation({
+    summary:
+      "CSV export of the caller's filtered incidents (roadmap 8.10, requirements.md §1.10)",
+  })
+  async exportCsv(
+    @Query() query: ListIncidentsQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<string> {
+    const csv = await this.incidentsService.exportCsv(query, user);
+    res.set({
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="incidents.csv"',
+    });
+    return csv;
+  }
+
   @Get('trash')
   @Roles('admin')
   @UseGuards(RolesGuard)

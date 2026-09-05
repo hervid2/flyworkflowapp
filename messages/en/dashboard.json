@@ -154,5 +154,32 @@
   "trendWeekPrefix": "Week {date}",
   "trendCreatedSeries": "Created",
   "trendClosedSeries": "Closed",
-  "trendBacklogSeries": "Accumulated backlog"
+  "trendBacklogSeries": "Accumulated backlog",
+
+  "exportMenuTrigger": "Export",
+  "exportMenuAriaLabel": "Export options",
+  "exportIncidentsCsv": "Download incidents (CSV)",
+  "exportMetricsCsv": "Download metrics (CSV)",
+  "exportConnectMenuItem": "Export and connect",
+  "exportErrorGeneric": "Couldn't generate the file. Please try again.",
+
+  "exportConnectAriaLabel": "Export and connect",
+  "exportConnectTitle": "Export and connect",
+  "exportConnectClose": "Close",
+  "exportConnectIntro": "Generate a stable data link to connect the dashboard to Power BI's \"Web\" connector or to Looker Studio, without re-authenticating every time the tool refreshes the data.",
+  "exportConnectLoading": "Loading…",
+  "exportConnectNoTokenHint": "You haven't generated a data link yet.",
+  "exportConnectGenerate": "Generate link",
+  "exportConnectGenerating": "Generating…",
+  "exportConnectRegenerate": "Regenerate link",
+  "exportConnectRegenerating": "Regenerating…",
+  "exportConnectRevoke": "Revoke access",
+  "exportConnectRevoking": "Revoking…",
+  "exportConnectExistingToken": "You already have an active data link, created on {date}.",
+  "exportConnectLinkReady": "Copy this link now: it won't be shown again. If you lose it, you'll need to generate a new one (which invalidates this one).",
+  "exportConnectCopy": "Copy",
+  "exportConnectCopied": "Copied!",
+  "exportConnectCopyAriaLabel": "Copy data link",
+  "exportConnectError": "Couldn't complete the request. Please try again.",
+  "exportConnectRevokedStatus": "Link revoked."
 }
