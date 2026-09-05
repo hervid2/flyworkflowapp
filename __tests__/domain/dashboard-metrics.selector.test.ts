@@ -4,7 +4,10 @@
  * pins one metric group (KPIs, byStatus, risk, team, filters…) to the fixtures.
  */
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
-import { getDashboardMetrics } from '@/domain/selectors/dashboard-metrics.selector';
+import {
+  getDashboardMetrics,
+  filterIncidentsByDashboardFilters,
+} from '@/domain/selectors/dashboard-metrics.selector';
 import { FIXTURE_INCIDENTS } from '../fixtures/incidents.fixture';
 import type { DashboardFilters } from '@/domain/models/filters.model';
 
@@ -272,5 +275,60 @@ describe('getDashboardMetrics', () => {
       const totalFromCal = metrics.calendarActivity.reduce((acc, e) => acc + e.count, 0);
       expect(totalFromCal).toBe(FIXTURE_INCIDENTS.length);
     });
+  });
+});
+
+// Backs the CSV export button (roadmap 8.10): the exact base set the KPI
+// cards/charts are computed from, exposed separately so the export can reuse
+// it without re-deriving the filter predicates.
+describe('filterIncidentsByDashboardFilters', () => {
+  it('sin filtros activos, devuelve todas las incidencias no eliminadas', () => {
+    const result = filterIncidentsByDashboardFilters(FIXTURE_INCIDENTS, { period: '30d' });
+    expect(result).toHaveLength(FIXTURE_INCIDENTS.length);
+  });
+
+  it('filtra por status', () => {
+    const result = filterIncidentsByDashboardFilters(FIXTURE_INCIDENTS, {
+      period: '30d',
+      status: ['open'],
+    });
+    // open: f1, f2, f5
+    expect(result.map((i) => i.id).sort()).toEqual(['f1', 'f2', 'f5']);
+  });
+
+  it('filtra por priority', () => {
+    const result = filterIncidentsByDashboardFilters(FIXTURE_INCIDENTS, {
+      period: '30d',
+      priority: ['high'],
+    });
+    expect(result.map((i) => i.id)).toEqual(['f1']);
+  });
+
+  it('filtra por typeKey', () => {
+    const result = filterIncidentsByDashboardFilters(FIXTURE_INCIDENTS, {
+      period: '30d',
+      typeKey: ['plumbing'],
+    });
+    // f2 and f4 are typePlumbing
+    expect(result.map((i) => i.id).sort()).toEqual(['f2', 'f4']);
+  });
+
+  it('filtra por responsibleUser (assignee)', () => {
+    const result = filterIncidentsByDashboardFilters(FIXTURE_INCIDENTS, {
+      period: '30d',
+      responsibleUser: ['user_2'],
+    });
+    // f1, f3, f5 carry the shared assignee fixture; f2 and f4 have none
+    expect(result.map((i) => i.id).sort()).toEqual(['f1', 'f3', 'f5']);
+  });
+
+  it('combina varios filtros con AND', () => {
+    const result = filterIncidentsByDashboardFilters(FIXTURE_INCIDENTS, {
+      period: '30d',
+      status: ['open'],
+      priority: ['low'],
+    });
+    // open AND low: only f5
+    expect(result.map((i) => i.id)).toEqual(['f5']);
   });
 });

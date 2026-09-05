@@ -178,6 +178,20 @@ Org-scoped collaborator invite (roadmap 8.9, `requirements.md §1.5`) — the fu
 
 ---
 
+## ExportToken **[new]**
+
+Long-lived, per-user token backing `GET /reports/dashboard-data` (roadmap 8.10, `requirements.md §1.10` — "Export and connect"). Deliberately distinct from the 15-minute session JWT: it's meant to be pasted once into an external tool (Power BI's Web connector, Looker Studio) as a stable URL. One row per user (`userId` unique); regenerating replaces it and immediately invalidates the previous URL.
+
+| Field       | Type           | Notes                                                                                      |
+| ----------- | -------------- | ------------------------------------------------------------------------------------------ |
+| `id`        | uuid           | PK                                                                                         |
+| `userId`    | uuid           | FK → `User`, unique — one token per user                                                   |
+| `orgId`     | uuid           | FK → `Organization` — denormalized for a join-free lookup, same convention as `Invitation` |
+| `tokenHash` | string, unique | sha256 digest of the raw token; the raw value is only ever returned once, on generation    |
+| `createdAt` | datetime       |                                                                                            |
+
+---
+
 ## Expected indexes (see `best-practices.md §Prisma / SQL`)
 
 `Incident(orgId, status)`, `Incident(orgId, createdAt)`, `AuditLog(incidentId)`, `Notification(recipientId, readAt)` — the four combinations that `api-contracts.md`'s endpoints filter or sort on most often.

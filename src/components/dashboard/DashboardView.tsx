@@ -16,6 +16,7 @@ import HeatmapSection from './HeatmapSection';
 import DistributionCharts from './DistributionCharts';
 import TeamPerformance from './TeamPerformance';
 import CreateIssueModal from '@/components/modals/create-issue/CreateIssueModal';
+import ExportConnectModal from '@/components/modals/export/ExportConnectModal';
 import type { RiskFilter } from './RiskIndicators';
 import styles from './DashboardView.module.scss';
 
@@ -68,6 +69,7 @@ export default function DashboardView() {
 
       <DashboardFiltersModal />
       <CreateIssueModal />
+      <ExportConnectModal />
     </div>
   );
 }
