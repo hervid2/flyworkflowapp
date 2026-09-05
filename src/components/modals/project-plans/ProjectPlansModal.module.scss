@@ -1,0 +1,247 @@
+@use '@/styles/abstracts/variables' as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: calc($z-modal + 10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-md;
+}
+
+.modal {
+  background: $color-bg-surface;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-lg;
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $space-md $space-lg;
+  border-bottom: 1px solid $color-border;
+
+  h3 {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin: 0;
+  }
+}
+
+.close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: $radius-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: $color-bg-muted;
+  }
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: $space-md $space-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $space-md;
+}
+
+.intro {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin: 0;
+}
+
+.project-picker {
+  display: flex;
+  flex-direction: column;
+  gap: $space-xs;
+
+  span {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+  }
+
+  select {
+    padding: $space-sm $space-md;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    background: $color-bg-surface;
+    font-family: inherit;
+    outline: none;
+
+    &:focus {
+      border-color: $color-accent-gold;
+    }
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.upload-row {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  flex-wrap: wrap;
+
+  &__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+
+    &:focus-visible + label {
+      outline: 2px solid $color-accent-gold;
+      outline-offset: 2px;
+    }
+  }
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-xs;
+    padding: $space-sm $space-md;
+    border: none;
+    border-radius: $radius-md;
+    background: $color-accent-gold;
+    color: $color-text-primary;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+    transition: filter $transition-fast;
+    white-space: nowrap;
+
+    &:hover {
+      filter: brightness(0.93);
+    }
+  }
+
+  &__hint {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  font-size: $font-size-sm;
+  color: $color-priority-high;
+  margin: 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-xs;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: $space-sm $space-md;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg-muted;
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    color: $color-text-secondary;
+    flex-shrink: 0;
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__name {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__meta {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+
+  &__open,
+  &__delete {
+    display: flex;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: $color-text-secondary;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: $radius-sm;
+    flex-shrink: 0;
+    transition:
+      color $transition-fast,
+      background $transition-fast;
+
+    &:hover {
+      color: $color-text-primary;
+      background: rgba($color-text-primary, 0.08);
+    }
+  }
+
+  &__delete {
+    &:hover {
+      color: $color-priority-high;
+      background: rgba($color-priority-high, 0.08);
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.empty {
+  text-align: center;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  padding: $space-md 0;
+}

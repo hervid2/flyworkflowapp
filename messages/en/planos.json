@@ -1,0 +1,18 @@
+{
+  "ariaLabel": "Project plans",
+  "title": "Project plans",
+  "close": "Close",
+  "intro": "Browse the plans attached to a project (image or PDF).",
+  "projectLabel": "Project",
+  "projectAriaLabel": "Select project",
+  "noProjects": "No projects available",
+  "attachPlan": "Attach plan",
+  "uploading": "Uploading…",
+  "acceptedFormats": "JPG, PNG, WEBP, GIF or PDF",
+  "uploadError": "Couldn't upload the plan. Try again.",
+  "listAriaLabel": "Attached plans",
+  "loading": "Loading…",
+  "empty": "This project has no attached plans yet.",
+  "openAriaLabel": "Open {name}",
+  "deleteAriaLabel": "Delete {name}"
+}

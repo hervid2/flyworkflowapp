@@ -21,10 +21,11 @@ import { useModalStore } from '@/store/useModalStore';
 import styles from './MapToolbar.module.scss';
 
 /**
- * Floating map toolbar. Three controls are wired: the 2D/3D projection toggle
- * (filters store), the "create incident" action and "Share" — now a real
- * invite-collaborators flow, not decorative (roadmap 8.9) — both via the
- * modal store; the remaining icon buttons are presentational placeholders.
+ * Floating map toolbar. Four controls are wired: the 2D/3D projection toggle
+ * (filters store), "create incident", "Share" — a real invite-collaborators
+ * flow (roadmap 8.9) — and "BIM Plans" — a real attach/view project plans
+ * flow, image/PDF only (roadmap 8.11) — the last two via the modal store; the
+ * remaining icon buttons are presentational placeholders.
  */
 export default function MapToolbar() {
   const t = useTranslations('map');
@@ -33,7 +34,6 @@ export default function MapToolbar() {
   const openModal = useModalStore((s) => s.open);
 
   const secondaryGroup = [
-    { icon: FileStack, label: t('bimPlans') },
     { icon: Star, label: t('favorites') },
     { icon: MapPin, label: t('location') },
     { icon: Layers, label: t('layers') },
@@ -149,6 +149,15 @@ export default function MapToolbar() {
         </button>
 
         <div className={styles['toolbar__secondary-group']}>
+          <button
+            className={styles['toolbar__btn']}
+            type="button"
+            onClick={() => openModal('project-plans')}
+            aria-label={t('bimPlans')}
+            title={t('bimPlans')}
+          >
+            <FileStack size={17} />
+          </button>
           {secondaryGroup.map(({ icon: Icon, label }) => (
             <button
               key={label}
