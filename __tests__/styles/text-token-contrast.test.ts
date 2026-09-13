@@ -14,6 +14,12 @@
  * Each `$color-<name>-text` token is paired with `$color-<name>`, its fill.
  * A new text token without a fill of the same name fails here on purpose, so
  * it has to arrive with the pair it is meant to be read against.
+ *
+ * F9.8 added the two surfaces this file itself was missing: the tint on
+ * `$color-bg-muted`, not only on white. Every token cleared the white cases
+ * and failed the muted ones, which is how the calendar's badges reached CI at
+ * 4.16:1 — measured there for the first time once the view stopped clipping
+ * the panel they render in.
  */
 import { describe, it, expect } from 'vitest';
 import { AA_NORMAL_TEXT, VARIABLES, WHITE, contrast, over, token, type Rgb } from './contrast';
@@ -36,6 +42,13 @@ describe('accessible foreground tokens', () => {
       [`${fill}-text`, '$color-bg-muted', muted],
       [`${fill}-text`, `its own 10% tint`, over(base, 0.1, WHITE)],
       [`${fill}-text`, `its own 12% tint`, over(base, 0.12, WHITE)],
+      // A tint is only as light as what it sits on, and these badges do not
+      // always sit on white: the calendar's day-detail panel is
+      // $color-bg-muted. Every token passed the two cases above and failed
+      // these two, at 4.16-4.20:1 — the failure F9.8 met in CI (see the block
+      // comment in `_variables.scss`).
+      [`${fill}-text`, `its own 10% tint on $color-bg-muted`, over(base, 0.1, muted)],
+      [`${fill}-text`, `its own 12% tint on $color-bg-muted`, over(base, 0.12, muted)],
     ] as [string, string, Rgb][];
   });
 
