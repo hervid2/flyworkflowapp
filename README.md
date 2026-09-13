@@ -50,7 +50,7 @@ The demo is shared: anything you create stays visible to the next visitor until 
 
 ![FlyWorkFlow production architecture](docs/architecture/flyworkflow-share-card.png)
 
-<sub>Drawn with [Archify](https://github.com/tt-a1i/archify) from [`docs/architecture/flyworkflow.architecture.json`](docs/architecture/flyworkflow.architecture.json) — the diagram is source, not a picture someone redraws. Open [`docs/architecture/flyworkflow.html`](docs/architecture/flyworkflow.html) after cloning for the interactive version: guided views, and each node links to the file it stands for.</sub>
+<sub>Drawn with [Archify](https://github.com/tt-a1i/archify) from [`docs/architecture/flyworkflow.architecture.json`](docs/architecture/flyworkflow.architecture.json) — the diagram is source, not a picture someone redraws. There is an [interactive version](https://hervid2.github.io/flyworkflowapp/architecture/flyworkflow.html) too, with guided views, where each node links to the file it stands for.</sub>
 
 - **Two deploy paths from one repository.** Vercel's Git integration builds the frontend on every push to `main`. `backend-deploy.yml` applies Prisma migrations, builds the Lambda image and runs `sam deploy` — migrations first, because they are additive and the running image keeps working against the new schema while the new one rolls out.
 - **Uploads never pass through Lambda.** The API presigns a PUT with the file size inside the signature, the browser writes straight to S3, and the API then asks S3 what actually arrived and records that type and size rather than the ones the client declared. Reads go out as short-lived signed GETs, with documents signed as downloads.
