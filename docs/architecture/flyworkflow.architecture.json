@@ -1,0 +1,298 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "FlyWorkFlow — production architecture",
+    "subtitle": "Incident management for construction sites: Next.js on Vercel, NestJS on AWS Lambda, PostgreSQL on Railway",
+    "output": "docs/architecture/flyworkflow.html",
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/hervid2/flyworkflowapp",
+      "provider": "github",
+      "revision": "ea62ec2f23859b693bab73911a1c89f452206da5"
+    },
+    "views": [
+      {
+        "id": "request",
+        "label": "A request",
+        "focus": ["browser", "web", "api", "lambda", "db"],
+        "note": "Pages render on Vercel; the browser and the server components call the same API."
+      },
+      {
+        "id": "media",
+        "label": "Media round trip",
+        "focus": ["browser", "lambda", "bucket"],
+        "note": "Uploads go straight to S3. The API signs the PUT, then reads back what actually landed."
+      },
+      {
+        "id": "delivery",
+        "label": "Delivery",
+        "focus": ["gh", "actions", "web", "lambda", "db"],
+        "note": "Two deploy paths from one repository, with migrations applied before the new image."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "external",
+      "label": "Browser",
+      "sublabel": "desktop + mobile",
+      "pos": [40, 330],
+      "size": [140, 64]
+    },
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "Next.js 16 app",
+      "sublabel": "SSR · session gate · nonce CSP",
+      "brand": "next-js",
+      "pos": [250, 330],
+      "size": [190, 64],
+      "sources": [
+        {
+          "path": "src/middleware.ts",
+          "label": "session gate + CSP"
+        }
+      ]
+    },
+    {
+      "id": "bucket",
+      "type": "cloud",
+      "label": "S3 media bucket",
+      "sublabel": "SSE-S3 · versioned",
+      "pos": [820, 170],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "backend/src/lib/s3/s3-storage.provider.ts",
+          "label": "presign + signed reads"
+        }
+      ]
+    },
+    {
+      "id": "logs",
+      "type": "cloud",
+      "label": "CloudWatch",
+      "sublabel": "JSON logs · 3 alarms → SNS",
+      "pos": [1100, 170],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "backend/template.yaml",
+          "label": "alarms"
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "cloud",
+      "label": "API Gateway",
+      "sublabel": "HTTP API",
+      "pos": [580, 330],
+      "size": [150, 64],
+      "sources": [
+        {
+          "path": "backend/template.yaml",
+          "label": "SAM template"
+        }
+      ]
+    },
+    {
+      "id": "lambda",
+      "type": "backend",
+      "label": "NestJS API",
+      "sublabel": "Lambda container image",
+      "pos": [820, 330],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "backend/src/modules/auth/auth.service.ts",
+          "label": "auth + account lockout"
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "Railway · Prisma",
+      "brand": "postgresql",
+      "pos": [1100, 480],
+      "size": [170, 64],
+      "sources": [
+        {
+          "path": "backend/prisma/schema.prisma",
+          "label": "schema"
+        }
+      ]
+    },
+    {
+      "id": "gh",
+      "type": "external",
+      "label": "GitHub",
+      "sublabel": "push to main",
+      "pos": [250, 560],
+      "size": [150, 64]
+    },
+    {
+      "id": "actions",
+      "type": "cloud",
+      "label": "GitHub Actions",
+      "sublabel": "migrate · build · sam deploy",
+      "brand": "github-actions",
+      "pos": [580, 560],
+      "size": [190, 64],
+      "sources": [
+        {
+          "path": ".github/workflows/backend-deploy.yml",
+          "label": "migrate then deploy"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Vercel",
+      "wraps": ["web"],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "AWS · us-east-1",
+      "wraps": ["api", "lambda", "bucket", "logs"],
+      "pad": 24
+    },
+    {
+      "kind": "region",
+      "label": "Railway",
+      "wraps": ["db"],
+      "pad": 18
+    }
+  ],
+  "connections": [
+    {
+      "from": "browser",
+      "to": "web",
+      "label": "pages",
+      "variant": "emphasis"
+    },
+    {
+      "from": "browser",
+      "to": "api",
+      "label": "REST · Bearer JWT",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [110, 262],
+        [655, 262]
+      ]
+    },
+    {
+      "from": "web",
+      "to": "api",
+      "label": "server-side fetch",
+      "route": "straight"
+    },
+    {
+      "from": "api",
+      "to": "lambda",
+      "label": "invoke",
+      "variant": "emphasis"
+    },
+    {
+      "from": "lambda",
+      "to": "bucket",
+      "label": "presign · HEAD · delete",
+      "route": "straight"
+    },
+    {
+      "from": "browser",
+      "to": "bucket",
+      "label": "presigned PUT · signed GET",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [110, 92],
+        [910, 92]
+      ]
+    },
+    {
+      "from": "lambda",
+      "to": "logs",
+      "label": "structured logs",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "via": [[1190, 362]]
+    },
+    {
+      "from": "lambda",
+      "to": "db",
+      "label": "Prisma · SQL",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [[910, 512]]
+    },
+    {
+      "from": "gh",
+      "to": "actions",
+      "label": "push to main"
+    },
+    {
+      "from": "gh",
+      "to": "web",
+      "label": "Vercel Git integration",
+      "variant": "dashed",
+      "route": "orthogonal-v"
+    },
+    {
+      "from": "actions",
+      "to": "lambda",
+      "label": "image → ECR · sam deploy",
+      "variant": "dashed"
+    },
+    {
+      "from": "actions",
+      "to": "db",
+      "label": "prisma migrate deploy",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "via": [[1185, 592]]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Request path",
+      "items": [
+        "Browser and server components call the same API",
+        "One HTTP API in front of one Lambda container image",
+        "15-minute JWT, rotating refresh token in an httpOnly cookie"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Uploads bypass the API",
+      "items": [
+        "Presigned PUT with the size inside the signature",
+        "The API reads type and size back off the stored object",
+        "Reads are short-lived signed GETs, documents as downloads"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Delivery",
+      "items": [
+        "Vercel's Git integration builds the frontend",
+        "Actions migrates the database, then deploys the image",
+        "Alarms cover Lambda errors, gateway 5xx and handled 500s"
+      ]
+    }
+  ]
+}
