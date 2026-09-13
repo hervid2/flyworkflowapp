@@ -36,6 +36,10 @@
   display: flex;
   flex-direction: column;
 
+  // El alto es fijo (la barra superior y la lateral son `position: fixed`), así
+  // que una página más alta que el viewport tiene que desplazarse aquí dentro.
+  overflow-y: auto;
+
   @media (max-width: #{$breakpoint-mobile - 1}) {
     margin-left: 0;
     // Subtract the bottom nav height directly instead of adding margin-bottom:
@@ -44,4 +48,14 @@
     // viewport, hidden under the fixed bottom nav.
     height: calc(100vh - #{$topbar-height} - 56px);
   }
+}
+
+// Esta columna flex tiene alto definido, así que sus hijos se encogen por
+// defecto. Las vistas-tarjeta (`/documentos`, `/historial`, `/papelera`,
+// `/galeria`, `/calendario`) llevan `overflow: hidden` para redondear sus
+// esquinas, y eso anula su tamaño mínimo automático (`min-height: auto`):
+// sin esta regla se comprimen hasta el alto disponible y recortan lo último
+// que renderizan — la paginación — sin dejar scroll para alcanzarla.
+.app-layout__content > * {
+  flex-shrink: 0;
 }
