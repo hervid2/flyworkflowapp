@@ -30,3 +30,34 @@ test('un documento sembrado en /documentos abre como PDF', async ({ page }) => {
   expect(response.headers()['content-type']).toContain('application/pdf');
   expect((await response.body()).subarray(0, 5).toString('latin1')).toBe('%PDF-');
 });
+
+/**
+ * Regresión (F9.8): con una página llena de filas la tarjeta de `/documentos`
+ * es más alta que el viewport. `.app-layout__content` es una columna flex de
+ * alto fijo, así que la tarjeta —que lleva `overflow: hidden` y por tanto
+ * pierde su tamaño mínimo automático— se comprimía hasta el alto disponible y
+ * recortaba lo último que renderiza, la paginación, sin scroll por el que
+ * llegar hasta ella.
+ *
+ * Lo que se comprueba es poder alcanzarla, no `toBeVisible`: el elemento
+ * recortado conserva su caja. Y se desplaza el contenedor de la vista, no el
+ * propio elemento con `scrollIntoView`, porque `overflow: hidden` sigue siendo
+ * desplazable por código — eso alcanzaría una paginación a la que ningún
+ * usuario puede llegar con la rueda.
+ */
+test('la paginación de /documentos se alcanza con la lista llena', async ({ page }) => {
+  await loginViaCookie(page, 'isabela.nieto@constructoradelvalle.com');
+  await page.goto('/documentos');
+
+  const rows = page.locator('tbody tr');
+  await expect(rows.first()).toBeVisible({ timeout: 15_000 });
+  // El caso solo se da cuando la página completa de filas desborda el viewport.
+  expect(await rows.count()).toBeGreaterThan(10);
+
+  await page.evaluate(() => {
+    const content = document.querySelector('main');
+    if (content) content.scrollTop = content.scrollHeight;
+  });
+
+  await expect(page.getByRole('navigation', { name: /paginaci|pagination/i })).toBeInViewport();
+});
