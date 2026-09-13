@@ -1,6 +1,6 @@
 # Iteration Roadmap — FlyWorkFlow
 
-> Planning document, versioned alongside the code. Last updated: 2026-09-07.
+> Planning document, versioned alongside the code. Last updated: 2026-09-11.
 > Each iteration = one git branch, one scoped work cycle. When closing an iteration, use `scripts/commit-push.ps1` with the suggested message. This document does **not duplicate** content from `requirements.md` or `best-practices.md` — it only references the exact section that applies to each task.
 >
 > Base branch for every iteration: `develop`. PRs target `develop`; `main` only receives merges from an already-validated `develop` (a pattern the repo already uses).
@@ -294,7 +294,17 @@ The first axe run against real rows failed, which was the point of doing this. `
 
 Two guards keep this from regressing quietly. The a11y spec now requires `/historial`, `/papelera` and `/documentos` to render at least one data cell before axe runs, so the empty state F9.7 met through the superadmin cannot pass again by another route. And `documents.spec.ts` follows a seeded document link through `middleware.ts` and checks that a real PDF answers, since a relative link renders the same whether or not anything is behind it. Commit: `feat(seed): seed documents and an audit trail so every demo page has rows`
 
-**F9.8 — `docs/portfolio-readme-demo`** — Root README with demo links (Vercel + AWS API), screenshots, final architecture diagram. Commit: `docs: update root README with production links and architecture diagram`
+**F9.8 — `docs/portfolio-readme-demo`** _(complete)_ — Root README with demo links, screenshots and the architecture map.
+
+The README it replaces was written before the backend existed and never caught up: Next.js 14, a mock `auth.service.ts` whose three plaintext credentials no longer log in to anything, a middleware guarding two routes, and a Vercel link "to be added after the first deploy to `main`". It is rewritten in English, since a portfolio README's audience is international and `docs/` already was, and what it claims was checked rather than carried over: both demo links answered before they were written down (`/health` 200, `/login` 200), and the URLs come from the stack's own `ApiUrl` output and `FrontendOrigin` parameter rather than from memory. The old MIT line is gone, because the repository has no license file. `requirements.md` and `frontend-architecture.md` are labelled as what they are — the plan before the backend existed, and the frontend as it stood then — rather than linked as current.
+
+The architecture map is drawn with [Archify](https://github.com/tt-a1i/archify), which turns a typed JSON description into a self-contained HTML viewer plus PNG and share-card exports. The JSON is the versioned source, and the 1200×630 share card is what the README shows and what the LinkedIn entry carries. Two things it did that a hand-drawn picture cannot. It refused to render while `meta.repository` declared source evidence without `--repo-root`, then verified all seven `sources` paths against the checkout at the pinned commit — so a node claiming to be `src/middleware.ts` has to point at a file that exists. And its showcase composition check failed the first layout with exact geometry: a label wider than the 80 px gap it sat in, and another label zero pixels from a neighbouring route. The fix was the geometry, not nudged labels.
+
+The screenshots are from production, as the demo admin, after the deploy and the reseed below — so `/historial` and `/documentos` show rows rather than empty states, and the sidebar no longer offers a link to a page that does not exist. The map and gallery are JPEG and the interface pages PNG: at 1440×900 those two photographic pages were 1.07 MB and 850 KB as PNG, and every byte of that would have stayed in git history for good.
+
+**The reseed.** Production still held the two incidents from the media verification, two more restored out of the trash during it, one uploaded PDF and four audit rows. It now holds the 200 seeded incidents, 70 documents and 482 audit rows, with the same invariants checked in place that the seed branch checked locally: nothing future-dated, every trail starting at `created`, no actor outside its own organization, approvals only by admins, deleted rows matching the trash exactly. The connection string was read from the deployed Lambda's environment rather than kept anywhere, a dry run checked `migrate status` and the current counts first, and the two objects the verification uploads had left behind in S3 were deleted afterwards — the bucket is versioned, so both are still recoverable.
+
+**Found while taking the screenshots, and left open.** Two defects that predate this iteration are visible in them. The top bar and the dashboard breadcrumb read "Proyecto Onboarding", which is `SidebarNav`'s default prop rather than the organization's real project name — F7.4 is the iteration that was supposed to have removed that hardcoding. And the dashboard's date-range pill stays in Spanish while the rest of the interface is in English, because those views call `date-fns` with the `es` locale unconditionally. Neither is a documentation change, and neither belonged in a deploy whose purpose was the README. Commit: `docs: update root README with production links and architecture diagram`
 
 ---
 
