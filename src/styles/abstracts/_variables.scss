@@ -39,20 +39,33 @@ $color-info-blue: #3b82f6;
 // 12% tint, where WCAG AA asks 4.5:1. They stay exactly as they are for fills
 // (a fill only owes 3:1, and the palette is the brand's), and text uses these
 // darkened siblings, each the lightest value of the same hue and saturation
-// that clears 4.5:1 against white, $color-bg-muted and its own 10%/12% tint.
-$color-status-open-text: #228039;
-$color-status-paused-text: #9d6407;
-$color-status-closed-text: #d31e24;
-$color-priority-high-text: #d31e24;
-$color-priority-medium-text: #9d6407;
-$color-priority-low-text: #228039;
-// #0b63f2 until the seed gained an audit trail. Added after F9.7 for white text
+// that clears 4.5:1 against white, $color-bg-muted, its own 10%/12% tint, and
+// that tint composited on $color-bg-muted.
+//
+// That last base is the one this block missed until F9.8. A tint is only as
+// light as what it sits on, and the calendar's day-detail panel is the one
+// place these badges sit on $color-bg-muted rather than on white: every token
+// here landed at ~4.52:1 on its tint over white and fell to 4.16-4.20:1 there.
+// Nothing could see it. The panel renders below the month grid, and on mobile
+// the view was clipping everything past the fold, so axe measured a badge that
+// was not on screen -- a pass that meant the element was invisible, not legible.
+// Fixing the clipping is what made the audit measure them for the first time.
+// The values below are re-derived against all four bases with a margin over
+// 4.5:1, since the browser rounds a composited tint to 8-bit before axe reads it.
+$color-status-open-text: #207836;
+$color-status-paused-text: #945e07;
+$color-status-closed-text: #c61c22;
+$color-priority-high-text: #c61c22;
+$color-priority-medium-text: #945e07;
+$color-priority-low-text: #207836;
+// #0b63f2 until the seed gained an audit trail, #0b62f1 until F9.8 measured
+// every tint on $color-bg-muted as well. Added after F9.7 for white text
 // on a blue fill, it was never measured against its own tint, where it gave
 // 4.49:1 -- and the history view's "Editada" badge, the one place that pairing
 // renders, had no row to render in until then. text-token-contrast.test.ts
 // holds every token in this block to the rule above rather than trusting it
 // was applied.
-$color-info-blue-text: #0b62f1;
+$color-info-blue-text: #0a5ce3;
 // The mirror image, for the dark auth surfaces: there the fix is a *lighter*
 // red, not a darker one. Same reason the secondary text needed two tokens --
 // contrast belongs to the pair, not to the colour.
